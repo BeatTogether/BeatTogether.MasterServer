@@ -4,6 +4,11 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using BeatTogether.MasterServer.Configuration;
+using BeatTogether.MasterServer.Data.Abstractions;
+using BeatTogether.MasterServer.Data.Abstractions.Repositories;
+using BeatTogether.MasterServer.Data.Configuration;
+using BeatTogether.MasterServer.Data.Implementations;
+using BeatTogether.MasterServer.Data.Implementations.Repositories;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -54,14 +59,25 @@ namespace BeatTogether.MasterServer
 
         public static void ConfigureServices(IServiceCollection services)
         {
-            services.AddSingleton(new MasterServerConfiguration());
+            var dataConfiguration = new DataConfiguration();
+            services.AddSingleton(dataConfiguration);
+            services.AddSingleton(dataConfiguration.Redis);
+            services.AddSingleton<IConnectionMultiplexerPool, ConnectionMultiplexerPool>();
+            services.AddScoped(
+                serviceProvider => serviceProvider
+                    .GetRequiredService<IConnectionMultiplexerPool>()
+                    .GetConnection()
+            );
+            services.AddSingleton<IServerRepository, ServerRepository>();
 
-            // services.AddSingleton<IServerRepository, ServerRepository>();
+            services.AddSingleton<MasterServerConfiguration>();
             services.AddHostedService<Implementations.MasterServer>();
         }
 
         public static void ConfigureAppConfiguration(IServiceProvider serviceProvider, IConfiguration builder)
         {
+            builder.GetSection("Data").Bind(serviceProvider.GetRequiredService<DataConfiguration>());
+            builder.GetSection("Data").GetSection("Redis").Bind(serviceProvider.GetRequiredService<RedisConfiguration>());
             builder.GetSection("MasterServer").Bind(serviceProvider.GetRequiredService<MasterServerConfiguration>());
         }
     }

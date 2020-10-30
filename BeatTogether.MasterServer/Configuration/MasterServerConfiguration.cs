@@ -2,6 +2,6 @@
 {
     public class MasterServerConfiguration
     {
-        public string Endpoint { get; set; } = "http://127.0.0.1:9000";
+        public string Endpoint { get; set; } = "127.0.0.1:9000";
     }
 }

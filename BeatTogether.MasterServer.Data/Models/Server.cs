@@ -1,8 +1,8 @@
 ﻿namespace BeatTogether.MasterServer.Data.Entities
 {
-    public class ServerEntity
+    public class Server
     {
-        public PlayerEntity Host { get; set; }
+        public Player Host { get; set; }
         public string Code { get; set; }
         public bool IsPublic { get; set; }
         public int MaximumPlayerCount { get; set; }
