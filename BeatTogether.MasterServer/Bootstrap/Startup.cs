@@ -39,7 +39,15 @@ namespace BeatTogether.MasterServer
             await Task.WhenAll(
                 serviceProvider
                     .GetServices<IHostedService>()
-                    .Select(hostedService => hostedService.StartAsync(cancellationToken))
+                    .Select(hostedService =>
+                    {
+                        AppDomain.CurrentDomain.ProcessExit += (sender, e) =>
+                        {
+                            hostedService.StopAsync(cancellationToken).Wait();
+                            Task.Delay(1000).Wait();
+                        };
+                        return hostedService.StartAsync(cancellationToken);
+                    })
             );
             await Task.Delay(-1);
         }
