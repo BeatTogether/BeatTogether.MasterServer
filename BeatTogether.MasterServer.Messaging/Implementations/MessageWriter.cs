@@ -10,8 +10,6 @@ namespace BeatTogether.MasterServer.Messaging.Implementations
     public class MessageWriter<TMessageRegistry> : IMessageWriter
         where TMessageRegistry : class, IMessageRegistry
     {
-        private const int _maxMessageSize = 412;
-
         private readonly TMessageRegistry _messageRegistry;
 
         public MessageWriter(TMessageRegistry messageRegistry)
@@ -28,7 +26,7 @@ namespace BeatTogether.MasterServer.Messaging.Implementations
             buffer.WriteUInt64((ulong)_messageRegistry.MessageGroup);
             buffer.WriteVarUInt(_messageRegistry.ProtocolVersion);
 
-            var messageBuffer = new GrowingSpanBuffer(stackalloc byte[_maxMessageSize]);
+            var messageBuffer = new GrowingSpanBuffer(stackalloc byte[412]);
             message.WriteTo(messageBuffer);
             buffer.WriteVarUInt((uint)messageBuffer.Size);
             buffer.WriteVarUInt((uint)messageId);

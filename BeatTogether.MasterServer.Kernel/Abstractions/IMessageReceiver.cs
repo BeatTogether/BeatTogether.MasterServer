@@ -1,11 +1,11 @@
 ﻿using System;
-using System.Threading.Tasks;
+using System.Buffers;
 using BeatTogether.MasterServer.Kernel.Models;
 
 namespace BeatTogether.MasterServer.Kernel.Abstractions
 {
     public interface IMessageReceiver
     {
-        Task OnReceived(Session session, ReadOnlySpan<byte> data);
+        void OnReceived(Session session, ReadOnlySpan<byte> data, ReadOnlySpanAction<byte, Session> responseCallback);
     }
 }
