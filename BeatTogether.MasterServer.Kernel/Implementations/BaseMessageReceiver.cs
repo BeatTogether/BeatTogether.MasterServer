@@ -13,7 +13,7 @@ using Serilog;
 
 namespace BeatTogether.MasterServer.Kernel.Implementations
 {
-    public abstract class BaseMessageReceiver<TService, TMessageRegistry> : IMessageReceiver
+    public abstract class BaseMessageReceiver<TMessageRegistry, TService> : IMessageReceiver
         where TMessageRegistry : class, IMessageRegistry
     {
         private readonly IServiceProvider _serviceProvider;
@@ -31,7 +31,9 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             _serviceProvider = serviceProvider;
             _messageReader = messageReader;
             _messageWriter = messageWriter;
-            _logger = Log.ForContext<BaseMessageReceiver<TService, TMessageRegistry>>();
+            _logger = Log.ForContext<BaseMessageReceiver<TMessageRegistry, TService>>();
+
+            _messageHandlerByTypeLookup = new Dictionary<Type, Action<Session, IMessage, ReadOnlySpanAction<byte, Session>>>();
         }
 
         #region Public Methods
@@ -72,23 +74,27 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         #region Protected Methods
 
-        protected void AddMessageHandler<TMessage>(Action<TService, TMessage> messageHandler)
+        protected void AddMessageHandler<TMessage>(Action<TService, Session, TMessage, ReadOnlySpanAction<byte, Session>> messageHandler)
             where TMessage : class, IMessage
             => _messageHandlerByTypeLookup[typeof(TMessage)] = (session, message, responseCallback) =>
             {
                 using var scope = _serviceProvider.CreateScope();
                 var service = scope.ServiceProvider.GetRequiredService<TService>();
-                messageHandler(service, (TMessage)message);
+                messageHandler(service, session, (TMessage)message, responseCallback);
             };
+
+        protected void AddMessageHandler<TMessage>(Action<TService, TMessage> messageHandler)
+            where TMessage : class, IMessage
+            => AddMessageHandler<TMessage>(
+                (service, session, message, responseCallback) => messageHandler(service, message)
+            );
 
         protected void AddMessageHandler<TRequest, TResponse>(Func<TService, TRequest, TResponse> messageHandler)
             where TRequest : class, IMessage
             where TResponse : class, IMessage
-            => _messageHandlerByTypeLookup[typeof(TRequest)] = (session, message, responseCallback) =>
+            => AddMessageHandler<TRequest>((service, session, message, responseCallback) =>
             {
-                using var scope = _serviceProvider.CreateScope();
-                var service = scope.ServiceProvider.GetRequiredService<TService>();
-                var response = messageHandler(service, (TRequest)message);
+                var response = messageHandler(service, message);
 
                 Span<byte> span = stackalloc byte[412];
 
@@ -96,17 +102,15 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 var responseBuffer = new GrowingSpanBuffer(span);
                 _messageWriter.WriteTo(responseBuffer, response);
                 responseCallback(responseBuffer.Data, session);
-            };
+            });
 
         protected void AddMessageHandler<TRequest, TResponse1, TResponse2>(Func<TService, TRequest, (TResponse1, TResponse2)> messageHandler)
             where TRequest : class, IMessage
             where TResponse1 : class, IMessage
             where TResponse2 : class, IMessage
-            => _messageHandlerByTypeLookup[typeof(TRequest)] = (session, message, responseCallback) =>
+            => AddMessageHandler<TRequest>((service, session, message, responseCallback) =>
             {
-                using var scope = _serviceProvider.CreateScope();
-                var service = scope.ServiceProvider.GetRequiredService<TService>();
-                var (response1, response2) = messageHandler(service, (TRequest)message);
+                var (response1, response2) = messageHandler(service, message);
 
                 Span<byte> span = stackalloc byte[412];
 
@@ -119,15 +123,23 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 var response2Buffer = new GrowingSpanBuffer(span);
                 _messageWriter.WriteTo(response2Buffer, response2);
                 responseCallback(response2Buffer.Data, session);
-            };
+            });
 
-        protected void AddReliableMessageHandler<TMessage>(Action<TService, TMessage> messageHandler)
-            where TMessage : BaseReliableRequest
-            => _messageHandlerByTypeLookup[typeof(TMessage)] = (session, message, responseCallback) =>
+        protected void AddReliableMessageHandler<TRequest>(Action<TService, Session, TRequest, ReadOnlySpanAction<byte, Session>> messageHandler)
+            where TRequest : BaseReliableRequest
+            => _messageHandlerByTypeLookup[typeof(TRequest)] = (session, message, responseCallback) =>
             {
                 using var scope = _serviceProvider.CreateScope();
                 var service = scope.ServiceProvider.GetRequiredService<TService>();
-                var request = (TMessage)message;
+                var request = (TRequest)message;
+                // TODO: Determine if we should handle this now or later
+                messageHandler(service, session, request, responseCallback);
+            };
+
+        protected void AddReliableMessageHandler<TRequest>(Action<TService, TRequest> messageHandler)
+            where TRequest : BaseReliableRequest
+            => AddReliableMessageHandler<TRequest>((service, session, request, responseCallback) =>
+            {
                 messageHandler(service, request);
 
                 Span<byte> span = stackalloc byte[412];
@@ -143,16 +155,13 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     }
                 );
                 responseCallback(acknowledgeBuffer.Data, session);
-            };
+            });
 
         protected void AddReliableMessageHandler<TRequest, TResponse>(Func<TService, TRequest, TResponse> messageHandler)
             where TRequest : BaseReliableRequest
             where TResponse : BaseReliableResponse
-            => _messageHandlerByTypeLookup[typeof(TRequest)] = (session, message, responseCallback) =>
+            => AddReliableMessageHandler<TRequest>((service, session, request, responseCallback) =>
             {
-                using var scope = _serviceProvider.CreateScope();
-                var service = scope.ServiceProvider.GetRequiredService<TService>();
-                var request = (TRequest)message;
                 var response = messageHandler(service, request);
                 response.RequestId = request.RequestId;
                 response.ResponseId = 0;  // TODO
@@ -175,17 +184,14 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 var responseBuffer = new GrowingSpanBuffer(span);
                 _messageWriter.WriteTo(responseBuffer, response);
                 responseCallback(responseBuffer.Data, session);
-            };
+            });
 
         protected void AddReliableMessageHandler<TRequest, TResponse1, TResponse2>(Func<TService, TRequest, (TResponse1, TResponse2)> messageHandler)
             where TRequest : BaseReliableRequest
             where TResponse1 : BaseReliableResponse
             where TResponse2 : BaseReliableResponse
-            => _messageHandlerByTypeLookup[typeof(TRequest)] = (session, message, responseCallback) =>
+            => AddReliableMessageHandler<TRequest>((service, session, request, responseCallback) =>
             {
-                using var scope = _serviceProvider.CreateScope();
-                var service = scope.ServiceProvider.GetRequiredService<TService>();
-                var request = (TRequest)message;
                 var (response1, response2) = messageHandler(service, request);
                 response1.RequestId = request.RequestId;
                 response1.ResponseId = 0;  // TODO
@@ -215,7 +221,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 var response2Buffer = new GrowingSpanBuffer(span);
                 _messageWriter.WriteTo(response2Buffer, response2);
                 responseCallback(response2Buffer.Data, session);
-            };
+            });
 
         #endregion
     }
