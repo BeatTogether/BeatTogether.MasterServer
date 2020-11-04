@@ -83,18 +83,18 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 messageHandler(service, session, (TMessage)message, responseCallback);
             };
 
-        protected void AddMessageHandler<TMessage>(Action<TService, TMessage> messageHandler)
+        protected void AddMessageHandler<TMessage>(Action<TService, Session, TMessage> messageHandler)
             where TMessage : class, IMessage
             => AddMessageHandler<TMessage>(
-                (service, session, message, responseCallback) => messageHandler(service, message)
+                (service, session, message, responseCallback) => messageHandler(service, session, message)
             );
 
-        protected void AddMessageHandler<TRequest, TResponse>(Func<TService, TRequest, TResponse> messageHandler)
+        protected void AddMessageHandler<TRequest, TResponse>(Func<TService, Session, TRequest, TResponse> messageHandler)
             where TRequest : class, IMessage
             where TResponse : class, IMessage
             => AddMessageHandler<TRequest>((service, session, message, responseCallback) =>
             {
-                var response = messageHandler(service, message);
+                var response = messageHandler(service, session, message);
 
                 Span<byte> span = stackalloc byte[412];
 
@@ -104,13 +104,13 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 responseCallback(responseBuffer.Data, session);
             });
 
-        protected void AddMessageHandler<TRequest, TResponse1, TResponse2>(Func<TService, TRequest, (TResponse1, TResponse2)> messageHandler)
+        protected void AddMessageHandler<TRequest, TResponse1, TResponse2>(Func<TService, Session, TRequest, (TResponse1, TResponse2)> messageHandler)
             where TRequest : class, IMessage
             where TResponse1 : class, IMessage
             where TResponse2 : class, IMessage
             => AddMessageHandler<TRequest>((service, session, message, responseCallback) =>
             {
-                var (response1, response2) = messageHandler(service, message);
+                var (response1, response2) = messageHandler(service, session, message);
 
                 Span<byte> span = stackalloc byte[412];
 
@@ -126,21 +126,23 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             });
 
         protected void AddReliableMessageHandler<TRequest>(Action<TService, Session, TRequest, ReadOnlySpanAction<byte, Session>> messageHandler)
-            where TRequest : BaseReliableRequest
+            where TRequest : class, IReliableMessage
             => _messageHandlerByTypeLookup[typeof(TRequest)] = (session, message, responseCallback) =>
             {
                 using var scope = _serviceProvider.CreateScope();
                 var service = scope.ServiceProvider.GetRequiredService<TService>();
                 var request = (TRequest)message;
+                if (request is BaseReliableResponse)
+                    request.ResponseId = 0;  // TODO
                 // TODO: Determine if we should handle this now or later
                 messageHandler(service, session, request, responseCallback);
             };
 
-        protected void AddReliableMessageHandler<TRequest>(Action<TService, TRequest> messageHandler)
-            where TRequest : BaseReliableRequest
+        protected void AddReliableMessageHandler<TRequest>(Action<TService, Session, TRequest> messageHandler)
+            where TRequest : class, IReliableMessage
             => AddReliableMessageHandler<TRequest>((service, session, request, responseCallback) =>
             {
-                messageHandler(service, request);
+                messageHandler(service, session, request);
 
                 Span<byte> span = stackalloc byte[412];
 
@@ -157,12 +159,12 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 responseCallback(acknowledgeBuffer.Data, session);
             });
 
-        protected void AddReliableMessageHandler<TRequest, TResponse>(Func<TService, TRequest, TResponse> messageHandler)
-            where TRequest : BaseReliableRequest
+        protected void AddReliableMessageHandler<TRequest, TResponse>(Func<TService, Session, TRequest, TResponse> messageHandler)
+            where TRequest : class, IReliableMessage
             where TResponse : BaseReliableResponse
             => AddReliableMessageHandler<TRequest>((service, session, request, responseCallback) =>
             {
-                var response = messageHandler(service, request);
+                var response = messageHandler(service, session, request);
                 response.RequestId = request.RequestId;
                 response.ResponseId = 0;  // TODO
 
@@ -186,13 +188,13 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 responseCallback(responseBuffer.Data, session);
             });
 
-        protected void AddReliableMessageHandler<TRequest, TResponse1, TResponse2>(Func<TService, TRequest, (TResponse1, TResponse2)> messageHandler)
-            where TRequest : BaseReliableRequest
+        protected void AddReliableMessageHandler<TRequest, TResponse1, TResponse2>(Func<TService, Session, TRequest, (TResponse1, TResponse2)> messageHandler)
+            where TRequest : class, IReliableMessage
             where TResponse1 : BaseReliableResponse
             where TResponse2 : BaseReliableResponse
             => AddReliableMessageHandler<TRequest>((service, session, request, responseCallback) =>
             {
-                var (response1, response2) = messageHandler(service, request);
+                var (response1, response2) = messageHandler(service, session, request);
                 response1.RequestId = request.RequestId;
                 response1.ResponseId = 0;  // TODO
                 response2.RequestId = request.RequestId;

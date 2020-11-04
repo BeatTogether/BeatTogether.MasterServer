@@ -3,7 +3,7 @@ using Krypton.Buffers;
 
 namespace BeatTogether.MasterServer.Messaging.Implementations.Messages
 {
-    public abstract class BaseReliableResponse : IMessage
+    public abstract class BaseReliableResponse : IReliableMessage
     {
         public uint RequestId { get; set; }
         public uint ResponseId { get; set; }

@@ -3,9 +3,10 @@ using Krypton.Buffers;
 
 namespace BeatTogether.MasterServer.Messaging.Implementations.Messages
 {
-    public abstract class BaseReliableRequest : IMessage
+    public abstract class BaseReliableRequest : IReliableMessage
     {
         public uint RequestId { get; set; }
+        public uint ResponseId { get; set; }
 
         public virtual void WriteTo(GrowingSpanBuffer buffer)
         {
