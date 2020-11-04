@@ -9,7 +9,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BeatTogether.MasterServer.D
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BeatTogether.MasterServer.Messaging", "BeatTogether.MasterServer.Messaging\BeatTogether.MasterServer.Messaging.csproj", "{7144B9EE-45BD-4934-BCB3-9CCCAE101D1C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BeatTogether.MasterServer.Kernel", "BeatTogether.MasterServer.Kernel\BeatTogether.MasterServer.Kernel.csproj", "{95889E1B-3DE3-4341-8C10-AFAE0F481C9B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BeatTogether.MasterServer.Kernel", "BeatTogether.MasterServer.Kernel\BeatTogether.MasterServer.Kernel.csproj", "{95889E1B-3DE3-4341-8C10-AFAE0F481C9B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetCoreServer", "dependencies\NetCoreServer\source\NetCoreServer\NetCoreServer.csproj", "{476381B8-BCA7-4893-9726-38A477AA4AD4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{95889E1B-3DE3-4341-8C10-AFAE0F481C9B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{95889E1B-3DE3-4341-8C10-AFAE0F481C9B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{95889E1B-3DE3-4341-8C10-AFAE0F481C9B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{476381B8-BCA7-4893-9726-38A477AA4AD4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{476381B8-BCA7-4893-9726-38A477AA4AD4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{476381B8-BCA7-4893-9726-38A477AA4AD4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{476381B8-BCA7-4893-9726-38A477AA4AD4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

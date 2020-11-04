@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System;
+using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -24,9 +25,9 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         protected override void OnStarted() => ReceiveAsync();
 
-        protected override void OnReceived(EndPoint endpoint, byte[] buffer, long offset, long size)
+        protected override void OnReceived(EndPoint endpoint, ReadOnlySpan<byte> buffer)
         {
-            _logger.Verbose($"Handling OnReceived (Endpoint='{endpoint}', Offset={offset}, Size={size}).");
+            _logger.Verbose($"Handling OnReceived (Endpoint='{endpoint}', Size={buffer.Length}).");
             ReceiveAsync();
         }
 
