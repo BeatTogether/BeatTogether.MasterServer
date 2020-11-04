@@ -8,7 +8,7 @@ using Microsoft.Extensions.Hosting;
 using NetCoreServer;
 using Serilog;
 
-namespace BeatTogether.MasterServer.Implementations
+namespace BeatTogether.MasterServer.Kernel.Implementations
 {
     public class MasterServer : UdpServer, IHostedService
     {
@@ -27,7 +27,6 @@ namespace BeatTogether.MasterServer.Implementations
         protected override void OnReceived(EndPoint endpoint, byte[] buffer, long offset, long size)
         {
             _logger.Verbose($"Handling OnReceived (Endpoint='{endpoint}', Offset={offset}, Size={size}).");
-            var bufferReader = new SpanBufferReader(buffer);
             ReceiveAsync();
         }
 

@@ -1,7 +1,7 @@
 ﻿using System.Net;
-using BeatTogether.MasterServer.Models;
+using BeatTogether.MasterServer.Kernel.Models;
 
-namespace BeatTogether.MasterServer.Abstractions
+namespace BeatTogether.MasterServer.Kernel.Abstractions
 {
     public interface ISessionService
     {

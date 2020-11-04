@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using BeatTogether.MasterServer.Messaging.Abstractions;
+using BeatTogether.MasterServer.Messaging.Abstractions.Messages;
 using BeatTogether.MasterServer.Messaging.Abstractions.Registries;
 using BeatTogether.MasterServer.Messaging.Enums;
 
@@ -9,16 +9,17 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Registries
     public abstract class BaseMessageRegistry : IMessageRegistry
     {
         public abstract MessageGroup MessageGroup { get; }
+        public abstract uint ProtocolVersion { get; }
 
         private readonly Dictionary<object, Type> _typeByIdLookup;
         private readonly Dictionary<Type, object> _idByTypeLookup;
-        private readonly Dictionary<object, Func<IMessage>> _constructorByIdLookup;
+        private readonly Dictionary<object, Func<IMessage>> _factoryByIdLookup;
 
         public BaseMessageRegistry()
         {
             _typeByIdLookup = new Dictionary<object, Type>();
             _idByTypeLookup = new Dictionary<Type, object>();
-            _constructorByIdLookup = new Dictionary<object, Func<IMessage>>();
+            _factoryByIdLookup = new Dictionary<object, Func<IMessage>>();
         }
 
         #region Public Methods
@@ -44,13 +45,13 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Registries
             => TryGetMessageId(typeof(T), out id);
 
         public IMessage GetMessage(object id)
-            => _constructorByIdLookup[id]();
+            => _factoryByIdLookup[id]();
 
         public bool TryGetMessage(object id, out IMessage message)
         {
-            if (_constructorByIdLookup.TryGetValue(id, out var constructor))
+            if (_factoryByIdLookup.TryGetValue(id, out var factory))
             {
-                message = constructor();
+                message = factory();
                 return true;
             }
 
@@ -68,7 +69,7 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Registries
             var type = typeof(TMessage);
             _typeByIdLookup[id] = type;
             _idByTypeLookup[type] = id;
-            _constructorByIdLookup[id] = () => new TMessage();
+            _factoryByIdLookup[id] = () => new TMessage();
         }
 
         #endregion

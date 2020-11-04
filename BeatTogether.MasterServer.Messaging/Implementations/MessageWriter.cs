@@ -1,15 +1,15 @@
 ﻿using System;
 using BeatTogether.MasterServer.Messaging.Abstractions;
+using BeatTogether.MasterServer.Messaging.Abstractions.Messages;
 using BeatTogether.MasterServer.Messaging.Abstractions.Registries;
 using BeatTogether.MasterServer.Messaging.Extensions;
 using Krypton.Buffers;
 
 namespace BeatTogether.MasterServer.Messaging.Implementations
 {
-    public class MessageWriter<TMessageRegistry> : IMessageWriter<TMessageRegistry>
+    public class MessageWriter<TMessageRegistry> : IMessageWriter
         where TMessageRegistry : class, IMessageRegistry
     {
-        private const int _protocolVersion = 1;
         private const int _maxMessageSize = 412;
 
         private readonly TMessageRegistry _messageRegistry;
@@ -26,7 +26,7 @@ namespace BeatTogether.MasterServer.Messaging.Implementations
                 throw new Exception($"Message of type '{nameof(TMessage)}' does not exist in the message registry");
 
             buffer.WriteUInt64((ulong)_messageRegistry.MessageGroup);
-            buffer.WriteVarUInt(_protocolVersion);
+            buffer.WriteVarUInt(_messageRegistry.ProtocolVersion);
 
             var messageBuffer = new GrowingSpanBuffer(stackalloc byte[_maxMessageSize]);
             message.WriteTo(messageBuffer);

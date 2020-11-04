@@ -1,6 +1,6 @@
 ﻿using Krypton.Buffers;
 
-namespace BeatTogether.MasterServer.Messaging.Abstractions
+namespace BeatTogether.MasterServer.Messaging.Abstractions.Messages
 {
     public interface IMessage
     {

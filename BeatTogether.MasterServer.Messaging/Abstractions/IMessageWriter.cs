@@ -1,10 +1,9 @@
-﻿using BeatTogether.MasterServer.Messaging.Abstractions.Registries;
+﻿using BeatTogether.MasterServer.Messaging.Abstractions.Messages;
 using Krypton.Buffers;
 
 namespace BeatTogether.MasterServer.Messaging.Abstractions
 {
-    public interface IMessageWriter<TMessageRegistry>
-        where TMessageRegistry : class, IMessageRegistry
+    public interface IMessageWriter
     {
         void WriteTo<TMessage>(GrowingSpanBuffer buffer, TMessage message)
             where TMessage : class, IMessage;

@@ -1,4 +1,4 @@
-﻿using BeatTogether.MasterServer.Messaging.Abstractions;
+﻿using BeatTogether.MasterServer.Messaging.Abstractions.Messages;
 using Krypton.Buffers;
 
 namespace BeatTogether.MasterServer.Messaging.Implementations.Messages.User

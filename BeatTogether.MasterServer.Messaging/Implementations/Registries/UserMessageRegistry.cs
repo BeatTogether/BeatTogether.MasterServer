@@ -7,6 +7,7 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Registries
     public class UserMessageRegistry : BaseMessageRegistry
     {
         public override MessageGroup MessageGroup => MessageGroup.User;
+        public override uint ProtocolVersion => 1;
 
         public UserMessageRegistry()
         {

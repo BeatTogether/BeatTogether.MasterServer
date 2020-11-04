@@ -1,7 +1,7 @@
 ﻿using System.Net;
-using BeatTogether.MasterServer.Enums;
+using BeatTogether.MasterServer.Kernel.Enums;
 
-namespace BeatTogether.MasterServer.Models
+namespace BeatTogether.MasterServer.Kernel.Models
 {
     public class Session
     {

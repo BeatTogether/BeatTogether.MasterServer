@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using BeatTogether.MasterServer.Messaging.Implementations.Messages.User;
 
-namespace BeatTogether.MasterServer.Abstractions
+namespace BeatTogether.MasterServer.Kernel.Abstractions
 {
     public interface IUserService
     {

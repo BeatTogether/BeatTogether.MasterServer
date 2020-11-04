@@ -1,4 +1,4 @@
-﻿namespace BeatTogether.MasterServer.Enums
+﻿namespace BeatTogether.MasterServer.Kernel.Enums
 {
     public enum SessionState
     {

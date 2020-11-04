@@ -4,11 +4,10 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using BeatTogether.MasterServer.Configuration;
-using BeatTogether.MasterServer.Data.Abstractions;
-using BeatTogether.MasterServer.Data.Abstractions.Repositories;
+using BeatTogether.MasterServer.Data.Bootstrap;
 using BeatTogether.MasterServer.Data.Configuration;
-using BeatTogether.MasterServer.Data.Implementations;
-using BeatTogether.MasterServer.Data.Implementations.Repositories;
+using BeatTogether.MasterServer.Kernel.Bootstrap;
+using BeatTogether.MasterServer.Messaging.Bootstrap;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -16,7 +15,7 @@ using Serilog;
 
 namespace BeatTogether.MasterServer
 {
-    public static class Startup
+    public static class MasterServerStartup
     {
         public static async Task Main(string[] args)
         {
@@ -59,26 +58,16 @@ namespace BeatTogether.MasterServer
 
         public static void ConfigureServices(IServiceCollection services)
         {
-            var dataConfiguration = new DataConfiguration();
-            services.AddSingleton(dataConfiguration);
-            services.AddSingleton(dataConfiguration.Redis);
-            services.AddSingleton<IConnectionMultiplexerPool, ConnectionMultiplexerPool>();
-            services.AddScoped(
-                serviceProvider => serviceProvider
-                    .GetRequiredService<IConnectionMultiplexerPool>()
-                    .GetConnection()
-            );
-            services.AddSingleton<IServerRepository, ServerRepository>();
-
-            services.AddSingleton<MasterServerConfiguration>();
-            services.AddHostedService<Implementations.MasterServer>();
+            MasterServerDataStartup.ConfigureServices(services);
+            MasterServerMessagingStartup.ConfigureServices(services);
+            MasterServerKernelStartup.ConfigureServices(services);
         }
 
-        public static void ConfigureAppConfiguration(IServiceProvider serviceProvider, IConfiguration builder)
+        public static void ConfigureAppConfiguration(IServiceProvider serviceProvider, IConfiguration configuration)
         {
-            builder.GetSection("Data").Bind(serviceProvider.GetRequiredService<DataConfiguration>());
-            builder.GetSection("Data").GetSection("Redis").Bind(serviceProvider.GetRequiredService<RedisConfiguration>());
-            builder.GetSection("MasterServer").Bind(serviceProvider.GetRequiredService<MasterServerConfiguration>());
+            configuration.GetSection("Data").Bind(serviceProvider.GetRequiredService<DataConfiguration>());
+            configuration.GetSection("Data").GetSection("Redis").Bind(serviceProvider.GetRequiredService<RedisConfiguration>());
+            configuration.GetSection("MasterServer").Bind(serviceProvider.GetRequiredService<MasterServerConfiguration>());
         }
     }
 }
