@@ -11,45 +11,45 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Registries
         public abstract MessageGroup MessageGroup { get; }
         public abstract uint ProtocolVersion { get; }
 
-        private readonly Dictionary<object, Type> _typeByIdLookup;
-        private readonly Dictionary<Type, object> _idByTypeLookup;
-        private readonly Dictionary<object, Func<IMessage>> _factoryByIdLookup;
+        private readonly Dictionary<int, Type> _typeByIdLookup;
+        private readonly Dictionary<Type, int> _idByTypeLookup;
+        private readonly Dictionary<int, Func<IMessage>> _factoryByIdLookup;
 
         public BaseMessageRegistry()
         {
-            _typeByIdLookup = new Dictionary<object, Type>();
-            _idByTypeLookup = new Dictionary<Type, object>();
-            _factoryByIdLookup = new Dictionary<object, Func<IMessage>>();
+            _typeByIdLookup = new Dictionary<int, Type>();
+            _idByTypeLookup = new Dictionary<Type, int>();
+            _factoryByIdLookup = new Dictionary<int, Func<IMessage>>();
         }
 
         #region Public Methods
 
         public Type GetMessageType(object id)
-            => _typeByIdLookup[id];
+            => _typeByIdLookup[(int)id];
 
         public bool TryGetMessageType(object id, out Type type)
-            => _typeByIdLookup.TryGetValue(id, out type);
+            => _typeByIdLookup.TryGetValue((int)id, out type);
 
-        public object GetMessageId(Type type)
+        public int GetMessageId(Type type)
             => _idByTypeLookup[type];
 
-        public bool TryGetMessageId(Type type, out object id)
+        public bool TryGetMessageId(Type type, out int id)
             => _idByTypeLookup.TryGetValue(type, out id);
 
-        public object GetMessageId<T>()
+        public int GetMessageId<T>()
             where T : class, IMessage
             => GetMessageId(typeof(T));
 
-        public bool TryGetMessageId<T>(out object id)
+        public bool TryGetMessageId<T>(out int id)
             where T : class, IMessage
             => TryGetMessageId(typeof(T), out id);
 
         public IMessage GetMessage(object id)
-            => _factoryByIdLookup[id]();
+            => _factoryByIdLookup[(int)id]();
 
         public bool TryGetMessage(object id, out IMessage message)
         {
-            if (_factoryByIdLookup.TryGetValue(id, out var factory))
+            if (_factoryByIdLookup.TryGetValue((int)id, out var factory))
             {
                 message = factory();
                 return true;
@@ -67,9 +67,9 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Registries
             where TMessage : class, IMessage, new()
         {
             var type = typeof(TMessage);
-            _typeByIdLookup[id] = type;
-            _idByTypeLookup[type] = id;
-            _factoryByIdLookup[id] = () => new TMessage();
+            _typeByIdLookup[(int)id] = type;
+            _idByTypeLookup[type] = (int)id;
+            _factoryByIdLookup[(int)id] = () => new TMessage();
         }
 
         #endregion

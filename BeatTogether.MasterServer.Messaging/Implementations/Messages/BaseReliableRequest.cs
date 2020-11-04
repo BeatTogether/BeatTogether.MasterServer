@@ -8,12 +8,12 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Messages
         public uint RequestId { get; set; }
         public uint ResponseId { get; set; }
 
-        public virtual void WriteTo(GrowingSpanBuffer buffer)
+        public virtual void WriteTo(ref GrowingSpanBuffer buffer)
         {
             buffer.WriteUInt32(RequestId);
         }
 
-        public virtual void ReadFrom(SpanBufferReader bufferReader)
+        public virtual void ReadFrom(ref SpanBufferReader bufferReader)
         {
             RequestId = bufferReader.ReadUInt32();
         }

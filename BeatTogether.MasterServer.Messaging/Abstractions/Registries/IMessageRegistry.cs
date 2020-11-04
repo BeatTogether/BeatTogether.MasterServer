@@ -12,11 +12,11 @@ namespace BeatTogether.MasterServer.Messaging.Abstractions.Registries
         Type GetMessageType(object id);
         bool TryGetMessageType(object id, out Type type);
 
-        object GetMessageId(Type type);
-        object GetMessageId<T>()
+        int GetMessageId(Type type);
+        int GetMessageId<T>()
             where T : class, IMessage;
-        bool TryGetMessageId(Type type, out object id);
-        bool TryGetMessageId<T>(out object id)
+        bool TryGetMessageId(Type type, out int id);
+        bool TryGetMessageId<T>(out int id)
             where T : class, IMessage;
 
         IMessage GetMessage(object id);

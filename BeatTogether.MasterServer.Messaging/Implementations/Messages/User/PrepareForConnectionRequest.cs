@@ -14,9 +14,9 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Messages.User
         public bool IsConnectionOwner { get; set; }
         public bool IsDedicatedServer { get; set; }
 
-        public override void WriteTo(GrowingSpanBuffer buffer)
+        public override void WriteTo(ref GrowingSpanBuffer buffer)
         {
-            base.WriteTo(buffer);
+            base.WriteTo(ref buffer);
 
             buffer.WriteString(UserId);
             buffer.WriteString(UserName);
@@ -26,16 +26,16 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Messages.User
             buffer.WriteUInt8((byte)((IsConnectionOwner ? 1 : 0) | (IsDedicatedServer ? 2 : 0)));
         }
 
-        public override void ReadFrom(SpanBufferReader bufferReader)
+        public override void ReadFrom(ref SpanBufferReader bufferReader)
         {
-            base.ReadFrom(bufferReader);
+            base.ReadFrom(ref bufferReader);
 
             UserId = bufferReader.ReadString();
             UserName = bufferReader.ReadString();
             RemoteEndPoint = bufferReader.ReadIPEndPoint();
             Random = bufferReader.ReadBytes(32).ToArray();
             PublicKey = bufferReader.ReadVarBytes().ToArray();
-            var flags = bufferReader.ReadUInt8();
+            var flags = bufferReader.ReadByte();
             IsConnectionOwner = (flags & 1) > 0;
             IsDedicatedServer = (flags & 2) > 0;
         }

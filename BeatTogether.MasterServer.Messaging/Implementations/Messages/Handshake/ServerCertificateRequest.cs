@@ -8,18 +8,18 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Messages.Handshake
     {
         public List<byte[]> Certificates { get; set; }
 
-        public override void WriteTo(GrowingSpanBuffer buffer)
+        public override void WriteTo(ref GrowingSpanBuffer buffer)
         {
-            base.WriteTo(buffer);
+            base.WriteTo(ref buffer);
 
             buffer.WriteVarUInt((uint)Certificates.Count);
             foreach (var certificate in Certificates)
                 buffer.WriteVarBytes(certificate);
         }
 
-        public override void ReadFrom(SpanBufferReader bufferReader)
+        public override void ReadFrom(ref SpanBufferReader bufferReader)
         {
-            base.ReadFrom(bufferReader);
+            base.ReadFrom(ref bufferReader);
 
             Certificates = new List<byte[]>();
             var certificateCount = bufferReader.ReadVarUInt();

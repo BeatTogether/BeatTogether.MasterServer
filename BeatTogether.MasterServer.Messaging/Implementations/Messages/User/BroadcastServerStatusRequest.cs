@@ -20,9 +20,9 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Messages.User
         public byte[] Random { get; set; }
         public byte[] PublicKey { get; set; }
 
-        public override void WriteTo(GrowingSpanBuffer buffer)
+        public override void WriteTo(ref GrowingSpanBuffer buffer)
         {
-            base.WriteTo(buffer);
+            base.WriteTo(ref buffer);
 
             buffer.WriteString(ServerName);
             buffer.WriteString(UserId);
@@ -33,14 +33,14 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Messages.User
             buffer.WriteVarInt(MaximumPlayerCount);
             buffer.WriteUInt8((byte)DiscoveryPolicy);
             buffer.WriteUInt8((byte)InvitePolicy);
-            Configuration.WriteTo(buffer);
+            Configuration.WriteTo(ref buffer);
             buffer.WriteBytes(Random);
             buffer.WriteVarBytes(PublicKey);
         }
 
-        public override void ReadFrom(SpanBufferReader bufferReader)
+        public override void ReadFrom(ref SpanBufferReader bufferReader)
         {
-            base.ReadFrom(bufferReader);
+            base.ReadFrom(ref bufferReader);
 
             ServerName = bufferReader.ReadString();
             UserId = bufferReader.ReadString();
@@ -49,10 +49,10 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Messages.User
             Password = bufferReader.ReadString();
             CurrentPlayerCount = bufferReader.ReadVarInt();
             MaximumPlayerCount = bufferReader.ReadVarInt();
-            DiscoveryPolicy = (DiscoveryPolicy)bufferReader.ReadUInt8();
-            InvitePolicy = (InvitePolicy)bufferReader.ReadUInt8();
+            DiscoveryPolicy = (DiscoveryPolicy)bufferReader.ReadByte();
+            InvitePolicy = (InvitePolicy)bufferReader.ReadByte();
             Configuration = new GameplayServerConfiguration();
-            Configuration.ReadFrom(bufferReader);
+            Configuration.ReadFrom(ref bufferReader);
             Random = bufferReader.ReadBytes(32).ToArray();
             PublicKey = bufferReader.ReadVarBytes().ToArray();
         }

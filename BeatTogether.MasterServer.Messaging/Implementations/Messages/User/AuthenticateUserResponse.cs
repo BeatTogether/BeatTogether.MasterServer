@@ -15,18 +15,18 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Messages.User
 
         public bool Success => Result == ResultCode.Success;
 
-        public override void WriteTo(GrowingSpanBuffer buffer)
+        public override void WriteTo(ref GrowingSpanBuffer buffer)
         {
-            base.WriteTo(buffer);
+            base.WriteTo(ref buffer);
 
             buffer.WriteUInt8((byte)Result);
         }
 
-        public override void ReadFrom(SpanBufferReader bufferReader)
+        public override void ReadFrom(ref SpanBufferReader bufferReader)
         {
-            base.ReadFrom(bufferReader);
+            base.ReadFrom(ref bufferReader);
 
-            Result = (ResultCode)bufferReader.ReadUInt8();
+            Result = (ResultCode)bufferReader.ReadByte();
         }
     }
 }

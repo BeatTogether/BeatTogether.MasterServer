@@ -15,9 +15,9 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Messages
         public uint TotalLength { get; set; }
         public byte[] Data { get; set; }
 
-        public override void WriteTo(GrowingSpanBuffer buffer)
+        public override void WriteTo(ref GrowingSpanBuffer buffer)
         {
-            base.WriteTo(buffer);
+            base.WriteTo(ref buffer);
 
             buffer.WriteUInt32(MultipartMessageId);
             buffer.WriteVarUInt(Offset);
@@ -26,9 +26,9 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Messages
             buffer.WriteBytes(Data);
         }
 
-        public override void ReadFrom(SpanBufferReader bufferReader)
+        public override void ReadFrom(ref SpanBufferReader bufferReader)
         {
-            base.ReadFrom(bufferReader);
+            base.ReadFrom(ref bufferReader);
 
             MultipartMessageId = bufferReader.ReadUInt32();
             Offset = bufferReader.ReadVarUInt();

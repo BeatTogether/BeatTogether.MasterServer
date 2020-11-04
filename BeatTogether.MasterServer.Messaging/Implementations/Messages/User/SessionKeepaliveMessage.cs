@@ -5,11 +5,11 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Messages.User
 {
     public class SessionKeepaliveMessage : IMessage
     {
-        public void ReadFrom(SpanBufferReader bufferReader)
+        public void ReadFrom(ref SpanBufferReader bufferReader)
         {
         }
 
-        public void WriteTo(GrowingSpanBuffer buffer)
+        public void WriteTo(ref GrowingSpanBuffer buffer)
         {
         }
     }

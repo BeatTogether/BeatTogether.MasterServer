@@ -1,4 +1,5 @@
-﻿using System.Runtime.Serialization;
+﻿using System;
+using System.Runtime.Serialization;
 using BeatTogether.MasterServer.Messaging.Abstractions;
 using BeatTogether.MasterServer.Messaging.Abstractions.Messages;
 using BeatTogether.MasterServer.Messaging.Abstractions.Registries;
@@ -18,22 +19,38 @@ namespace BeatTogether.MasterServer.Messaging.Implementations
             _messageRegistry = messageRegistry;
         }
 
-        public IMessage ReadFrom(SpanBufferReader bufferReader)
+        public IMessage ReadFrom(ref SpanBufferReader bufferReader)
         {
-            var messageGroup = (MessageGroup)bufferReader.ReadUInt64();
+            bufferReader.SkipBytes(2);
+
+            var messageGroup = (MessageGroup)bufferReader.ReadUInt32();
             if (messageGroup != _messageRegistry.MessageGroup)
-                throw new InvalidDataContractException("Invalid message group");
+                throw new InvalidDataContractException(
+                    "Invalid message group " +
+                    $"(MessageGroup={messageGroup}, " +
+                    $"Expected={_messageRegistry.MessageGroup})."
+                );
             var protocolVersion = bufferReader.ReadVarUInt();
             if (protocolVersion != _messageRegistry.ProtocolVersion)
-                throw new InvalidDataContractException("Invalid message protocol version");
+                throw new InvalidDataContractException(
+                    "Invalid message protocol version " +
+                    $"(ProtocolVersion={protocolVersion}, " +
+                    $"Expected={_messageRegistry.ProtocolVersion})."
+                );
             var length = bufferReader.ReadVarUInt();
-            if (bufferReader.RemainingSize < length)
-                throw new InvalidDataContractException("Invalid message length");
-            var messageId = bufferReader.ReadVarUInt();
+            if (bufferReader.RemainingSize != length)
+                throw new InvalidDataContractException(
+                    "Invalid message length " +
+                    $"(Length={length}, Expected={bufferReader.RemainingSize})."
+                );
+            var messageId = (int)bufferReader.ReadVarUInt();
             if (!_messageRegistry.TryGetMessage(messageId, out var message))
-                throw new InvalidDataContractException("Invalid message id");
+                throw new InvalidDataContractException(
+                    "Invalid message id " +
+                    $"(MessageId={messageId})."
+                );
 
-            message.ReadFrom(bufferReader);
+            message.ReadFrom(ref bufferReader);
             return message;
         }
     }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Models;
 using BeatTogether.MasterServer.Messaging.Abstractions.Messages;
@@ -21,7 +22,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         private readonly MessageWriter<TMessageRegistry> _messageWriter;
         private readonly ILogger _logger;
 
-        private readonly Dictionary<Type, Action<Session, IMessage, ReadOnlySpanAction<byte, Session>>> _messageHandlerByTypeLookup;
+        private readonly Dictionary<Type, Action<Session, IMessage, ResponseCallback>> _messageHandlerByTypeLookup;
 
         public BaseMessageReceiver(
             IServiceProvider serviceProvider,
@@ -33,20 +34,20 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             _messageWriter = messageWriter;
             _logger = Log.ForContext<BaseMessageReceiver<TMessageRegistry, TService>>();
 
-            _messageHandlerByTypeLookup = new Dictionary<Type, Action<Session, IMessage, ReadOnlySpanAction<byte, Session>>>();
+            _messageHandlerByTypeLookup = new Dictionary<Type, Action<Session, IMessage, ResponseCallback>>();
         }
 
         #region Public Methods
 
-        public void OnReceived(Session session, ReadOnlySpan<byte> data, ReadOnlySpanAction<byte, Session> responseCallback)
+        public void OnReceived(Session session, ReadOnlySpan<byte> buffer, ResponseCallback responseCallback)
         {
-            var bufferReader = new SpanBufferReader(data);
+            var bufferReader = new SpanBufferReader(buffer);
             IMessage message;
             try
             {
-                message = _messageReader.ReadFrom(bufferReader);
+                message = _messageReader.ReadFrom(ref bufferReader);
             }
-            catch (IndexOutOfRangeException e)
+            catch (Exception e) when (e is IndexOutOfRangeException || e is InvalidDataContractException)
             {
                 _logger.Warning(e,
                     "Failed to read message " +
@@ -74,7 +75,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         #region Protected Methods
 
-        protected void AddMessageHandler<TMessage>(Action<TService, Session, TMessage, ReadOnlySpanAction<byte, Session>> messageHandler)
+        protected void AddMessageHandler<TMessage>(Action<TService, Session, TMessage, ResponseCallback> messageHandler)
             where TMessage : class, IMessage
             => _messageHandlerByTypeLookup[typeof(TMessage)] = (session, message, responseCallback) =>
             {
@@ -99,9 +100,12 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 Span<byte> span = stackalloc byte[412];
 
                 // Send the response
-                var responseBuffer = new GrowingSpanBuffer(span);
-                _messageWriter.WriteTo(responseBuffer, response);
-                responseCallback(responseBuffer.Data, session);
+                if (response != null)
+                {
+                    var responseBuffer = new GrowingSpanBuffer(span);
+                    _messageWriter.WriteTo(ref responseBuffer, response);
+                    responseCallback(responseBuffer.Data);
+                }
             });
 
         protected void AddMessageHandler<TRequest, TResponse1, TResponse2>(Func<TService, Session, TRequest, (TResponse1, TResponse2)> messageHandler)
@@ -115,17 +119,23 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 Span<byte> span = stackalloc byte[412];
 
                 // Send the first response
-                var response1Buffer = new GrowingSpanBuffer(span);
-                _messageWriter.WriteTo(response1Buffer, response1);
-                responseCallback(response1Buffer.Data, session);
+                if (response1 != null)
+                {
+                    var response1Buffer = new GrowingSpanBuffer(span);
+                    _messageWriter.WriteTo(ref response1Buffer, response1);
+                    responseCallback(response1Buffer.Data);
+                }
 
                 // Send the second response
-                var response2Buffer = new GrowingSpanBuffer(span);
-                _messageWriter.WriteTo(response2Buffer, response2);
-                responseCallback(response2Buffer.Data, session);
+                if (response2 != null)
+                {
+                    var response2Buffer = new GrowingSpanBuffer(span);
+                    _messageWriter.WriteTo(ref response2Buffer, response2);
+                    responseCallback(response2Buffer.Data);
+                }
             });
 
-        protected void AddReliableMessageHandler<TRequest>(Action<TService, Session, TRequest, ReadOnlySpanAction<byte, Session>> messageHandler)
+        protected void AddReliableMessageHandler<TRequest>(Action<TService, Session, TRequest, ResponseCallback> messageHandler)
             where TRequest : class, IReliableMessage
             => _messageHandlerByTypeLookup[typeof(TRequest)] = (session, message, responseCallback) =>
             {
@@ -149,14 +159,14 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 // Send the acknowledge message
                 var acknowledgeBuffer = new GrowingSpanBuffer(span);
                 _messageWriter.WriteTo(
-                    acknowledgeBuffer,
+                    ref acknowledgeBuffer,
                     new AcknowledgeMessage()
                     {
                         RequestId = request.RequestId,
                         ResponseId = 0  // TODO
                     }
                 );
-                responseCallback(acknowledgeBuffer.Data, session);
+                responseCallback(acknowledgeBuffer.Data);
             });
 
         protected void AddReliableMessageHandler<TRequest, TResponse>(Func<TService, Session, TRequest, TResponse> messageHandler)
@@ -165,27 +175,31 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             => AddReliableMessageHandler<TRequest>((service, session, request, responseCallback) =>
             {
                 var response = messageHandler(service, session, request);
-                response.RequestId = request.RequestId;
-                response.ResponseId = 0;  // TODO
 
                 Span<byte> span = stackalloc byte[412];
 
                 // Send the acknowledge message
                 var acknowledgeBuffer = new GrowingSpanBuffer(span);
                 _messageWriter.WriteTo(
-                    acknowledgeBuffer,
+                    ref acknowledgeBuffer,
                     new AcknowledgeMessage()
                     {
                         RequestId = request.RequestId,
                         ResponseId = 0  // TODO
                     }
                 );
-                responseCallback(acknowledgeBuffer.Data, session);
+                responseCallback(acknowledgeBuffer.Data);
 
                 // Send the response
-                var responseBuffer = new GrowingSpanBuffer(span);
-                _messageWriter.WriteTo(responseBuffer, response);
-                responseCallback(responseBuffer.Data, session);
+                if (response != null)
+                {
+                    response.RequestId = request.RequestId;
+                    response.ResponseId = 0;  // TODO
+
+                    var responseBuffer = new GrowingSpanBuffer(span);
+                    _messageWriter.WriteTo(ref responseBuffer, response);
+                    responseCallback(responseBuffer.Data);
+                }
             });
 
         protected void AddReliableMessageHandler<TRequest, TResponse1, TResponse2>(Func<TService, Session, TRequest, (TResponse1, TResponse2)> messageHandler)
@@ -195,34 +209,42 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             => AddReliableMessageHandler<TRequest>((service, session, request, responseCallback) =>
             {
                 var (response1, response2) = messageHandler(service, session, request);
-                response1.RequestId = request.RequestId;
-                response1.ResponseId = 0;  // TODO
-                response2.RequestId = request.RequestId;
-                response1.ResponseId = 0; // TODO
 
                 Span<byte> span = stackalloc byte[412];
 
                 // Send the acknowledge message
                 var acknowledgeBuffer = new GrowingSpanBuffer(span);
                 _messageWriter.WriteTo(
-                    acknowledgeBuffer,
+                    ref acknowledgeBuffer,
                     new AcknowledgeMessage()
                     {
                         RequestId = request.RequestId,
                         ResponseId = 0  // TODO
                     }
                 );
-                responseCallback(acknowledgeBuffer.Data, session);
+                responseCallback(acknowledgeBuffer.Data);
 
                 // Send the first response
-                var response1Buffer = new GrowingSpanBuffer(span);
-                _messageWriter.WriteTo(response1Buffer, response1);
-                responseCallback(response1Buffer.Data, session);
+                if (response1 != null)
+                {
+                    response1.RequestId = request.RequestId;
+                    response1.ResponseId = 0;  // TODO
+
+                    var response1Buffer = new GrowingSpanBuffer(span);
+                    _messageWriter.WriteTo(ref response1Buffer, response1);
+                    responseCallback(response1Buffer.Data);
+                }
 
                 // Send the second response
-                var response2Buffer = new GrowingSpanBuffer(span);
-                _messageWriter.WriteTo(response2Buffer, response2);
-                responseCallback(response2Buffer.Data, session);
+                if (response2 != null)
+                {
+                    response2.RequestId = request.RequestId;
+                    response1.ResponseId = 0; // TODO
+
+                    var response2Buffer = new GrowingSpanBuffer(span);
+                    _messageWriter.WriteTo(ref response2Buffer, response2);
+                    responseCallback(response2Buffer.Data);
+                }
             });
 
         #endregion

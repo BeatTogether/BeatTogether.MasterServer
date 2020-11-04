@@ -16,14 +16,14 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Messages.User
 
         public bool Success => Result == ResultCode.Success;
 
-        public void WriteTo(GrowingSpanBuffer buffer)
+        public void WriteTo(ref GrowingSpanBuffer buffer)
         {
             buffer.WriteUInt8((byte)Result);
         }
 
-        public void ReadFrom(SpanBufferReader bufferReader)
+        public void ReadFrom(ref SpanBufferReader bufferReader)
         {
-            Result = (ResultCode)bufferReader.ReadUInt8();
+            Result = (ResultCode)bufferReader.ReadByte();
         }
     }
 }

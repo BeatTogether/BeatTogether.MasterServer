@@ -13,28 +13,28 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Messages.User
         public GameplayServerConfiguration Configuration { get; set; }
         public string Secret { get; set; }
 
-        public override void WriteTo(GrowingSpanBuffer buffer)
+        public override void WriteTo(ref GrowingSpanBuffer buffer)
         {
-            base.WriteTo(buffer);
+            base.WriteTo(ref buffer);
 
             buffer.WriteString(UserId);
             buffer.WriteString(UserName);
             buffer.WriteBytes(Random);
             buffer.WriteVarBytes(PublicKey);
-            Configuration.WriteTo(buffer);
+            Configuration.WriteTo(ref buffer);
             buffer.WriteString(Secret);
         }
 
-        public override void ReadFrom(SpanBufferReader bufferReader)
+        public override void ReadFrom(ref SpanBufferReader bufferReader)
         {
-            base.ReadFrom(bufferReader);
+            base.ReadFrom(ref bufferReader);
 
             UserId = bufferReader.ReadString();
             UserName = bufferReader.ReadString();
             Random = bufferReader.ReadBytes(32).ToArray();
             PublicKey = bufferReader.ReadVarBytes().ToArray();
             Configuration = new GameplayServerConfiguration();
-            Configuration.ReadFrom(bufferReader);
+            Configuration.ReadFrom(ref bufferReader);
             Secret = bufferReader.ReadString();
         }
     }

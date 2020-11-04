@@ -17,20 +17,23 @@ namespace BeatTogether.MasterServer.Messaging.Implementations
             _messageRegistry = messageRegistry;
         }
 
-        public void WriteTo<TMessage>(GrowingSpanBuffer buffer, TMessage message)
+        public void WriteTo<TMessage>(ref GrowingSpanBuffer buffer, TMessage message)
             where TMessage : class, IMessage
         {
             if (!_messageRegistry.TryGetMessageId<TMessage>(out var messageId))
                 throw new Exception($"Message of type '{nameof(TMessage)}' does not exist in the message registry");
 
-            buffer.WriteUInt64((ulong)_messageRegistry.MessageGroup);
+            buffer.WriteUInt16(2048);
+
+            buffer.WriteUInt32((uint)_messageRegistry.MessageGroup);
             buffer.WriteVarUInt(_messageRegistry.ProtocolVersion);
 
             var messageBuffer = new GrowingSpanBuffer(stackalloc byte[412]);
-            message.WriteTo(messageBuffer);
+            messageBuffer.WriteVarUInt((uint)messageId);
+            message.WriteTo(ref messageBuffer);
             buffer.WriteVarUInt((uint)messageBuffer.Size);
-            buffer.WriteVarUInt((uint)messageId);
-            buffer.WriteBytes(messageBuffer);
+            // TODO: Remove byte array allocation
+            buffer.WriteBytes(messageBuffer.Data.ToArray());
         }
     }
 }

@@ -4,7 +4,7 @@ namespace BeatTogether.MasterServer.Messaging.Abstractions.Messages
 {
     public interface IMessage
     {
-        void WriteTo(GrowingSpanBuffer buffer);
-        void ReadFrom(SpanBufferReader bufferReader);
+        void WriteTo(ref GrowingSpanBuffer buffer);
+        void ReadFrom(ref SpanBufferReader bufferReader);
     }
 }

@@ -5,6 +5,6 @@ namespace BeatTogether.MasterServer.Messaging.Abstractions
 {
     public interface IMessageReader
     {
-        IMessage ReadFrom(SpanBufferReader bufferReader);
+        IMessage ReadFrom(ref SpanBufferReader bufferReader);
     }
 }

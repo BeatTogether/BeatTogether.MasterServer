@@ -7,22 +7,22 @@ namespace BeatTogether.MasterServer.Messaging.Extensions
 {
     public static class BufferExtensions
     {
-        public static void WriteVarInt(this GrowingSpanBuffer buffer, int value)
+        public static void WriteVarInt(this ref GrowingSpanBuffer buffer, int value)
             => buffer.WriteVarLong(value);
 
-        public static int ReadVarInt(this SpanBufferReader bufferReader)
+        public static int ReadVarInt(this ref SpanBufferReader bufferReader)
             => (int)bufferReader.ReadVarLong();
 
-        public static void WriteVarUInt(this GrowingSpanBuffer buffer, uint value)
+        public static void WriteVarUInt(this ref GrowingSpanBuffer buffer, uint value)
             => buffer.WriteVarULong(value);
 
-        public static uint ReadVarUInt(this SpanBufferReader bufferReader)
+        public static uint ReadVarUInt(this ref SpanBufferReader bufferReader)
             => (uint)bufferReader.ReadVarULong();
 
-        public static void WriteVarLong(this GrowingSpanBuffer buffer, long value)
+        public static void WriteVarLong(this ref GrowingSpanBuffer buffer, long value)
             => buffer.WriteVarULong((value < 0L ? (ulong)((-value << 1) - 1L) : (ulong)(value << 1)));
 
-        public static long ReadVarLong(this SpanBufferReader bufferReader)
+        public static long ReadVarLong(this ref SpanBufferReader bufferReader)
         {
             var varULong = (long)bufferReader.ReadVarULong();
             if ((varULong & 1L) != 1L)
@@ -30,7 +30,7 @@ namespace BeatTogether.MasterServer.Messaging.Extensions
             return -(varULong >> 1) + 1L;
         }
 
-        public static void WriteVarULong(this GrowingSpanBuffer buffer, ulong value)
+        public static void WriteVarULong(this ref GrowingSpanBuffer buffer, ulong value)
         {
             do
             {
@@ -42,20 +42,21 @@ namespace BeatTogether.MasterServer.Messaging.Extensions
             } while (value != 0UL);
         }
 
-        public static ulong ReadVarULong(this SpanBufferReader bufferReader)
+        public static ulong ReadVarULong(this ref SpanBufferReader bufferReader)
         {
-            ulong num = 0UL;
-            int num2 = 0;
-            ulong num3;
-            while (((num3 = bufferReader.ReadUInt8()) & 128UL) != 0UL)
+            ulong value = 0UL;
+            int shift = 0;
+            ulong b = bufferReader.ReadByte();
+            while ((b & 128UL) != 0UL)
             {
-                num |= (num3 & 127UL) << num2;
-                num2 += 7;
+                value |= (b & 127UL) << shift;
+                shift += 7;
+                b = bufferReader.ReadByte();
             }
-            return num | num3 << num2;
+            return value | b << shift;
         }
 
-        public static bool TryReadVarUInt(this SpanBufferReader bufferReader, out uint value)
+        public static bool TryReadVarUInt(this ref SpanBufferReader bufferReader, out uint value)
         {
             ulong num;
             if (bufferReader.TryReadVarULong(out num) && (num >> 32) == 0UL)
@@ -67,13 +68,13 @@ namespace BeatTogether.MasterServer.Messaging.Extensions
             return false;
         }
 
-        public static bool TryReadVarULong(this SpanBufferReader bufferReader, out ulong value)
+        public static bool TryReadVarULong(this ref SpanBufferReader bufferReader, out ulong value)
         {
             value = 0UL;
             int num = 0;
             while (num <= 63 && bufferReader.RemainingSize >= 1)
             {
-                var b = bufferReader.ReadUInt8();
+                var b = bufferReader.ReadByte();
                 value |= (ulong)(b & 127) << num;
                 num += 7;
                 if ((b & 128) == 0)
@@ -83,28 +84,25 @@ namespace BeatTogether.MasterServer.Messaging.Extensions
             return false;
         }
 
-        public static void WriteBytes(this GrowingSpanBuffer buffer, GrowingSpanBuffer other)
-            => buffer.WriteBytes(other.Data);
-
-        public static void WriteVarBytes(this GrowingSpanBuffer buffer, ReadOnlySpan<byte> bytes)
+        public static void WriteVarBytes(this ref GrowingSpanBuffer buffer, ReadOnlySpan<byte> bytes)
         {
             buffer.WriteVarInt(bytes.Length);
             buffer.WriteBytes(bytes);
         }
 
-        public static ReadOnlySpan<byte> ReadVarBytes(this SpanBufferReader bufferReader)
+        public static ReadOnlySpan<byte> ReadVarBytes(this ref SpanBufferReader bufferReader)
         {
             var length = bufferReader.ReadVarUInt();
             return bufferReader.ReadBytes((int)length);
         }
 
-        public static void WriteString(this GrowingSpanBuffer buffer, string value)
+        public static void WriteString(this ref GrowingSpanBuffer buffer, string value)
         {
             buffer.WriteInt32(value.Length);
             buffer.WriteBytes(Encoding.UTF8.GetBytes(value));
         }
 
-        public static string ReadString(this SpanBufferReader bufferReader, int maxLength = 65535)
+        public static string ReadString(this ref SpanBufferReader bufferReader, int maxLength = 65535)
         {
             var length = bufferReader.ReadInt32();
             if (length <= 0 | length > maxLength)
@@ -112,13 +110,13 @@ namespace BeatTogether.MasterServer.Messaging.Extensions
             return Encoding.UTF8.GetString(bufferReader.ReadBytes(length));
         }
 
-        public static void WriteIPEndPoint(this GrowingSpanBuffer buffer, IPEndPoint ipEndPoint)
+        public static void WriteIPEndPoint(this ref GrowingSpanBuffer buffer, IPEndPoint ipEndPoint)
         {
             buffer.WriteString(ipEndPoint.Address.ToString());
             buffer.WriteInt32(ipEndPoint.Port);
         }
 
-        public static IPEndPoint ReadIPEndPoint(this SpanBufferReader bufferReader)
+        public static IPEndPoint ReadIPEndPoint(this ref SpanBufferReader bufferReader)
         {
             if (!IPAddress.TryParse(bufferReader.ReadString(512), out var address))
                 throw new ArgumentException("Failed to parse IP address");

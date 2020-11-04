@@ -12,7 +12,7 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Messages.Models
         public string UserName { get; set; }
         public byte[] SessionToken { get; set; }
 
-        public void WriteTo(GrowingSpanBuffer buffer)
+        public void WriteTo(ref GrowingSpanBuffer buffer)
         {
             buffer.WriteUInt8((byte)Platform);
             buffer.WriteString(UserId);
@@ -20,9 +20,9 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Messages.Models
             buffer.WriteVarBytes(SessionToken);
         }
 
-        public void ReadFrom(SpanBufferReader bufferReader)
+        public void ReadFrom(ref SpanBufferReader bufferReader)
         {
-            Platform = (Platform)bufferReader.ReadUInt8();
+            Platform = (Platform)bufferReader.ReadByte();
             UserId = bufferReader.ReadString();
             UserName = bufferReader.ReadString();
             SessionToken = bufferReader.ReadVarBytes().ToArray();

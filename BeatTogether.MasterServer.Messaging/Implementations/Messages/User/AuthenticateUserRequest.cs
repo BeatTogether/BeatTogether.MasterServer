@@ -9,19 +9,19 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Messages.User
     {
         public AuthenticationToken AuthenticationToken { get; set; }
 
-        public override void WriteTo(GrowingSpanBuffer buffer)
+        public override void WriteTo(ref GrowingSpanBuffer buffer)
         {
-            base.WriteTo(buffer);
+            base.WriteTo(ref buffer);
 
-            AuthenticationToken.WriteTo(buffer);
+            AuthenticationToken.WriteTo(ref buffer);
         }
 
-        public override void ReadFrom(SpanBufferReader bufferReader)
+        public override void ReadFrom(ref SpanBufferReader bufferReader)
         {
-            base.ReadFrom(bufferReader);
+            base.ReadFrom(ref bufferReader);
 
             AuthenticationToken = new AuthenticationToken();
-            AuthenticationToken.ReadFrom(bufferReader);
+            AuthenticationToken.ReadFrom(ref bufferReader);
         }
     }
 }

@@ -7,16 +7,16 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Messages.Handshake
     {
         public byte[] ClientPublicKey { get; set; }
 
-        public override void WriteTo(GrowingSpanBuffer buffer)
+        public override void WriteTo(ref GrowingSpanBuffer buffer)
         {
-            base.WriteTo(buffer);
+            base.WriteTo(ref buffer);
 
             buffer.WriteVarBytes(ClientPublicKey);
         }
 
-        public override void ReadFrom(SpanBufferReader bufferReader)
+        public override void ReadFrom(ref SpanBufferReader bufferReader)
         {
-            base.ReadFrom(bufferReader);
+            base.ReadFrom(ref bufferReader);
 
             ClientPublicKey = bufferReader.ReadVarBytes().ToArray();
         }
