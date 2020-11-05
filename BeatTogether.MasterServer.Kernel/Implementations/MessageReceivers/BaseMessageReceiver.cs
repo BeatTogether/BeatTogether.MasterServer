@@ -1,12 +1,12 @@
 ﻿using System;
-using System.Buffers;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 using BeatTogether.MasterServer.Kernel.Abstractions;
+using BeatTogether.MasterServer.Kernel.Abstractions.Providers;
+using BeatTogether.MasterServer.Kernel.Delegates;
 using BeatTogether.MasterServer.Kernel.Models;
+using BeatTogether.MasterServer.Messaging.Abstractions;
 using BeatTogether.MasterServer.Messaging.Abstractions.Messages;
-using BeatTogether.MasterServer.Messaging.Abstractions.Registries;
-using BeatTogether.MasterServer.Messaging.Implementations;
 using BeatTogether.MasterServer.Messaging.Implementations.Messages;
 using Krypton.Buffers;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,27 +14,29 @@ using Serilog;
 
 namespace BeatTogether.MasterServer.Kernel.Implementations
 {
-    public abstract class BaseMessageReceiver<TMessageRegistry, TService> : IMessageReceiver
-        where TMessageRegistry : class, IMessageRegistry
+    public abstract class BaseMessageReceiver<TService> : IMessageReceiver
     {
         private readonly IServiceProvider _serviceProvider;
-        private readonly MessageReader<TMessageRegistry> _messageReader;
-        private readonly MessageWriter<TMessageRegistry> _messageWriter;
+        private readonly IRequestIdProvider _requestIdProvider;
+        private readonly IMessageReader _messageReader;
+        private readonly IMessageWriter _messageWriter;
         private readonly ILogger _logger;
 
-        private readonly Dictionary<Type, Action<Session, IMessage, ResponseCallback>> _messageHandlerByTypeLookup;
+        private readonly Dictionary<Type, MessageHandler> _messageHandlerByTypeLookup;
 
         public BaseMessageReceiver(
             IServiceProvider serviceProvider,
-            MessageReader<TMessageRegistry> messageReader,
-            MessageWriter<TMessageRegistry> messageWriter)
+            IRequestIdProvider requestIdProvider,
+            IMessageReader messageReader,
+            IMessageWriter messageWriter)
         {
             _serviceProvider = serviceProvider;
+            _requestIdProvider = requestIdProvider;
             _messageReader = messageReader;
             _messageWriter = messageWriter;
-            _logger = Log.ForContext<BaseMessageReceiver<TMessageRegistry, TService>>();
+            _logger = Log.ForContext<BaseMessageReceiver<TService>>();
 
-            _messageHandlerByTypeLookup = new Dictionary<Type, Action<Session, IMessage, ResponseCallback>>();
+            _messageHandlerByTypeLookup = new Dictionary<Type, MessageHandler>();
         }
 
         #region Public Methods
@@ -143,7 +145,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 var service = scope.ServiceProvider.GetRequiredService<TService>();
                 var request = (TRequest)message;
                 if (request is BaseReliableResponse)
-                    request.ResponseId = 0;  // TODO
+                    request.ResponseId = request.RequestId;
                 // TODO: Determine if we should handle this now or later
                 messageHandler(service, session, request, responseCallback);
             };
@@ -162,8 +164,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     ref acknowledgeBuffer,
                     new AcknowledgeMessage()
                     {
-                        RequestId = request.RequestId,
-                        ResponseId = 0  // TODO
+                        ResponseId = request.RequestId,
+                        MessageHandled = true
                     }
                 );
                 responseCallback(acknowledgeBuffer.Data);
@@ -184,8 +186,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     ref acknowledgeBuffer,
                     new AcknowledgeMessage()
                     {
-                        RequestId = request.RequestId,
-                        ResponseId = 0  // TODO
+                        ResponseId = request.RequestId,
+                        MessageHandled = true
                     }
                 );
                 responseCallback(acknowledgeBuffer.Data);
@@ -193,8 +195,9 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 // Send the response
                 if (response != null)
                 {
-                    response.RequestId = request.RequestId;
-                    response.ResponseId = 0;  // TODO
+                    response.RequestId = _requestIdProvider.GetNextRequestId();
+                    if (response.ResponseId == 0)
+                        response.ResponseId = request.RequestId;
 
                     var responseBuffer = new GrowingSpanBuffer(span);
                     _messageWriter.WriteTo(ref responseBuffer, response);
@@ -218,8 +221,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     ref acknowledgeBuffer,
                     new AcknowledgeMessage()
                     {
-                        RequestId = request.RequestId,
-                        ResponseId = 0  // TODO
+                        ResponseId = request.RequestId,
+                        MessageHandled = true
                     }
                 );
                 responseCallback(acknowledgeBuffer.Data);
@@ -227,8 +230,9 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 // Send the first response
                 if (response1 != null)
                 {
-                    response1.RequestId = request.RequestId;
-                    response1.ResponseId = 0;  // TODO
+                    response1.RequestId = _requestIdProvider.GetNextRequestId();
+                    if (response1.ResponseId == 0)
+                        response1.ResponseId = request.RequestId;
 
                     var response1Buffer = new GrowingSpanBuffer(span);
                     _messageWriter.WriteTo(ref response1Buffer, response1);
@@ -238,8 +242,9 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 // Send the second response
                 if (response2 != null)
                 {
-                    response2.RequestId = request.RequestId;
-                    response1.ResponseId = 0; // TODO
+                    response2.RequestId = _requestIdProvider.GetNextRequestId();
+                    if (response1.ResponseId == 0)
+                        response1.ResponseId = request.RequestId;
 
                     var response2Buffer = new GrowingSpanBuffer(span);
                     _messageWriter.WriteTo(ref response2Buffer, response2);

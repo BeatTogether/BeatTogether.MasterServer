@@ -2,7 +2,7 @@
 
 namespace BeatTogether.MasterServer.Messaging.Implementations.Messages
 {
-    public class AcknowledgeMessage : BaseReliableResponse
+    public class AcknowledgeMessage : BaseResponse
     {
         public bool MessageHandled { get; set; }
 
