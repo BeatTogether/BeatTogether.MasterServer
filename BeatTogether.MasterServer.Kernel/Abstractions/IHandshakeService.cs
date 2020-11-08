@@ -1,12 +1,12 @@
-﻿using BeatTogether.MasterServer.Kernel.Models;
+﻿using System.Threading.Tasks;
 using BeatTogether.MasterServer.Messaging.Implementations.Messages.Handshake;
 
 namespace BeatTogether.MasterServer.Kernel.Abstractions
 {
     public interface IHandshakeService
     {
-        HelloVerifyRequest ClientHello(Session session, ClientHelloRequest request);
-        (ServerHelloRequest, ServerCertificateRequest) ClientHelloWithCookie(Session session, ClientHelloWithCookieRequest request);
-        ChangeCipherSpecRequest ClientKeyExchange(Session session, ClientKeyExchangeRequest request);
+        Task<HelloVerifyRequest> ClientHello(ISession session, ClientHelloRequest request);
+        Task<(ServerHelloRequest, ServerCertificateRequest)> ClientHelloWithCookie(ISession session, ClientHelloWithCookieRequest request);
+        Task<ChangeCipherSpecRequest> ClientKeyExchange(ISession session, ClientKeyExchangeRequest request);
     }
 }

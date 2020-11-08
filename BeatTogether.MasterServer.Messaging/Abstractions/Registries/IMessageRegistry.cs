@@ -7,7 +7,6 @@ namespace BeatTogether.MasterServer.Messaging.Abstractions.Registries
     public interface IMessageRegistry
     {
         MessageGroup MessageGroup { get; }
-        uint ProtocolVersion { get; }
 
         Type GetMessageType(object id);
         bool TryGetMessageType(object id, out Type type);

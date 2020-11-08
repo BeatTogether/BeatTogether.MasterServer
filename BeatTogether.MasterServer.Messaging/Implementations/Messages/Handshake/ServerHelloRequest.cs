@@ -5,7 +5,7 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Messages.Handshake
 {
     public class ServerHelloRequest : BaseReliableResponse
     {
-        public byte[] Cookie { get; set; }
+        public byte[] Random { get; set; }
         public byte[] PublicKey { get; set; }
         public byte[] Signature { get; set; }
 
@@ -13,7 +13,7 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Messages.Handshake
         {
             base.WriteTo(ref buffer);
 
-            buffer.WriteBytes(Cookie);
+            buffer.WriteBytes(Random);
             buffer.WriteVarBytes(PublicKey);
             buffer.WriteVarBytes(Signature);
         }
@@ -22,7 +22,7 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Messages.Handshake
         {
             base.ReadFrom(ref bufferReader);
 
-            Cookie = bufferReader.ReadBytes(32).ToArray();
+            Random = bufferReader.ReadBytes(32).ToArray();
             PublicKey = bufferReader.ReadVarBytes().ToArray();
             Signature = bufferReader.ReadVarBytes().ToArray();
         }

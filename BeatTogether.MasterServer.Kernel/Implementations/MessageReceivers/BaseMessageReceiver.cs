@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
+using System.Threading.Tasks;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions.Providers;
+using BeatTogether.MasterServer.Kernel.Abstractions.Security;
 using BeatTogether.MasterServer.Kernel.Delegates;
-using BeatTogether.MasterServer.Kernel.Models;
 using BeatTogether.MasterServer.Messaging.Abstractions;
 using BeatTogether.MasterServer.Messaging.Abstractions.Messages;
 using BeatTogether.MasterServer.Messaging.Implementations.Messages;
@@ -16,34 +17,75 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 {
     public abstract class BaseMessageReceiver<TService> : IMessageReceiver
     {
+        protected abstract bool UseEncryption { get; }
+
         private readonly IServiceProvider _serviceProvider;
         private readonly IRequestIdProvider _requestIdProvider;
+        private readonly IMultipartMessageService _multipartMessageService;
         private readonly IMessageReader _messageReader;
         private readonly IMessageWriter _messageWriter;
         private readonly ILogger _logger;
 
-        private readonly Dictionary<Type, MessageHandler> _messageHandlerByTypeLookup;
+        private readonly Dictionary<Type, MessageHandler<TService>> _messageHandlerByTypeLookup;
 
         public BaseMessageReceiver(
             IServiceProvider serviceProvider,
             IRequestIdProvider requestIdProvider,
+            IMultipartMessageService multipartMessageService,
             IMessageReader messageReader,
             IMessageWriter messageWriter)
         {
             _serviceProvider = serviceProvider;
             _requestIdProvider = requestIdProvider;
+            _multipartMessageService = multipartMessageService;
             _messageReader = messageReader;
             _messageWriter = messageWriter;
             _logger = Log.ForContext<BaseMessageReceiver<TService>>();
 
-            _messageHandlerByTypeLookup = new Dictionary<Type, MessageHandler>();
+            _messageHandlerByTypeLookup = new Dictionary<Type, MessageHandler<TService>>();
+
+            AddReliableMessageHandler<MultipartMessage>(
+                async (service, session, message) =>
+                {
+                    _logger.Verbose(
+                        $"Handling {nameof(MultipartMessage)} " +
+                        $"(MultipartMessageId={message.MultipartMessageId}, " +
+                        $"Offset={message.Offset}, " +
+                        $"Length={message.Length}, " +
+                        $"TotalLength={message.TotalLength}, " +
+                        $"Data='{BitConverter.ToString(message.Data)}')."
+                    );
+                    if (!_multipartMessageService.AddMultipartMessageWaiter(message.MultipartMessageId))
+                    {
+                        _multipartMessageService.OnReceived(message);
+                        return;
+                    }
+
+                    _multipartMessageService.OnReceived(message);
+                    var buffer = await _multipartMessageService.WaitForEntireMessage(message.MultipartMessageId);
+                    OnReceived(session, buffer);
+                }
+            );
+            AddMessageHandler<AcknowledgeMessage>(
+                (service, session, message) =>
+                {
+                    _logger.Verbose(
+                        $"Handling {nameof(AcknowledgeMessage)} " +
+                        $"(ResponseId={message.ResponseId}, " +
+                        $"MessageHandled={message.MessageHandled})."
+                    );
+                    // TODO: Properly acknowledge that requests were handled (and retry if they weren't)
+                    return Task.CompletedTask;
+                }
+            );
         }
 
         #region Public Methods
 
-        public void OnReceived(Session session, ReadOnlySpan<byte> buffer, ResponseCallback responseCallback)
+        public void OnReceived(ISession session, ReadOnlySpan<byte> buffer)
         {
             var bufferReader = new SpanBufferReader(buffer);
+
             IMessage message;
             try
             {
@@ -70,187 +112,117 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 return;
             }
 
-            messageHandler(session, message, responseCallback);
+            Task.Run(() =>
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var service = scope.ServiceProvider.GetRequiredService<TService>();
+                return messageHandler(service, session, message);
+            }).ConfigureAwait(false);
         }
 
         #endregion
 
         #region Protected Methods
 
-        protected void AddMessageHandler<TMessage>(Action<TService, Session, TMessage, ResponseCallback> messageHandler)
+        protected void AddMessageHandler<TMessage>(MessageHandler<TService, TMessage> messageHandler)
             where TMessage : class, IMessage
-            => _messageHandlerByTypeLookup[typeof(TMessage)] = (session, message, responseCallback) =>
-            {
-                using var scope = _serviceProvider.CreateScope();
-                var service = scope.ServiceProvider.GetRequiredService<TService>();
-                messageHandler(service, session, (TMessage)message, responseCallback);
-            };
+            => _messageHandlerByTypeLookup[typeof(TMessage)] =
+                    (service, session, message) => messageHandler(service, session, (TMessage)message);
 
-        protected void AddMessageHandler<TMessage>(Action<TService, Session, TMessage> messageHandler)
-            where TMessage : class, IMessage
-            => AddMessageHandler<TMessage>(
-                (service, session, message, responseCallback) => messageHandler(service, session, message)
-            );
-
-        protected void AddMessageHandler<TRequest, TResponse>(Func<TService, Session, TRequest, TResponse> messageHandler)
+        protected void AddMessageHandler<TRequest, TResponse>(MessageHandler<TService, TRequest, TResponse> messageHandler)
             where TRequest : class, IMessage
             where TResponse : class, IMessage
-            => AddMessageHandler<TRequest>((service, session, message, responseCallback) =>
+            => AddMessageHandler<TRequest>(async (service, session, message) =>
             {
-                var response = messageHandler(service, session, message);
-
-                Span<byte> span = stackalloc byte[412];
-
-                // Send the response
-                if (response != null)
-                {
-                    var responseBuffer = new GrowingSpanBuffer(span);
-                    _messageWriter.WriteTo(ref responseBuffer, response);
-                    responseCallback(responseBuffer.Data);
-                }
+                var response = await messageHandler(service, session, message);
+                SendResponse(session, response);
             });
 
-        protected void AddMessageHandler<TRequest, TResponse1, TResponse2>(Func<TService, Session, TRequest, (TResponse1, TResponse2)> messageHandler)
+        protected void AddMessageHandler<TRequest, TResponse1, TResponse2>(MessageHandler<TService, TRequest, TResponse1, TResponse2> messageHandler)
             where TRequest : class, IMessage
             where TResponse1 : class, IMessage
             where TResponse2 : class, IMessage
-            => AddMessageHandler<TRequest>((service, session, message, responseCallback) =>
+            => AddMessageHandler<TRequest>(async (service, session, message) =>
             {
-                var (response1, response2) = messageHandler(service, session, message);
-
-                Span<byte> span = stackalloc byte[412];
-
-                // Send the first response
-                if (response1 != null)
-                {
-                    var response1Buffer = new GrowingSpanBuffer(span);
-                    _messageWriter.WriteTo(ref response1Buffer, response1);
-                    responseCallback(response1Buffer.Data);
-                }
-
-                // Send the second response
-                if (response2 != null)
-                {
-                    var response2Buffer = new GrowingSpanBuffer(span);
-                    _messageWriter.WriteTo(ref response2Buffer, response2);
-                    responseCallback(response2Buffer.Data);
-                }
+                var (response1, response2) = await messageHandler(service, session, message);
+                SendResponse(session, response1);
+                SendResponse(session, response2);
             });
 
-        protected void AddReliableMessageHandler<TRequest>(Action<TService, Session, TRequest, ResponseCallback> messageHandler)
-            where TRequest : class, IReliableMessage
-            => _messageHandlerByTypeLookup[typeof(TRequest)] = (session, message, responseCallback) =>
+        protected void AddReliableMessageHandler<TMessage>(MessageHandler<TService, TMessage> messageHandler)
+            where TMessage : class, IReliableMessage
+            => AddMessageHandler<TMessage>((service, session, message) =>
             {
-                using var scope = _serviceProvider.CreateScope();
-                var service = scope.ServiceProvider.GetRequiredService<TService>();
-                var request = (TRequest)message;
-                if (request is BaseReliableResponse)
-                    request.ResponseId = request.RequestId;
-                // TODO: Determine if we should handle this now or later
-                messageHandler(service, session, request, responseCallback);
-            };
-
-        protected void AddReliableMessageHandler<TRequest>(Action<TService, Session, TRequest> messageHandler)
-            where TRequest : class, IReliableMessage
-            => AddReliableMessageHandler<TRequest>((service, session, request, responseCallback) =>
-            {
-                messageHandler(service, session, request);
-
-                Span<byte> span = stackalloc byte[412];
-
-                // Send the acknowledge message
-                var acknowledgeBuffer = new GrowingSpanBuffer(span);
-                _messageWriter.WriteTo(
-                    ref acknowledgeBuffer,
-                    new AcknowledgeMessage()
-                    {
-                        ResponseId = request.RequestId,
-                        MessageHandled = true
-                    }
-                );
-                responseCallback(acknowledgeBuffer.Data);
+                SendResponse(session, new AcknowledgeMessage()
+                {
+                    ResponseId = message.RequestId,
+                    MessageHandled = true
+                });
+                return messageHandler(service, session, message);
             });
 
-        protected void AddReliableMessageHandler<TRequest, TResponse>(Func<TService, Session, TRequest, TResponse> messageHandler)
+        protected void AddReliableMessageHandler<TRequest, TResponse>(MessageHandler<TService, TRequest, TResponse> messageHandler)
             where TRequest : class, IReliableMessage
             where TResponse : BaseReliableResponse
-            => AddReliableMessageHandler<TRequest>((service, session, request, responseCallback) =>
+            => AddMessageHandler<TRequest>(async (service, session, request) =>
             {
-                var response = messageHandler(service, session, request);
-
-                Span<byte> span = stackalloc byte[412];
-
-                // Send the acknowledge message
-                var acknowledgeBuffer = new GrowingSpanBuffer(span);
-                _messageWriter.WriteTo(
-                    ref acknowledgeBuffer,
-                    new AcknowledgeMessage()
-                    {
-                        ResponseId = request.RequestId,
-                        MessageHandled = true
-                    }
-                );
-                responseCallback(acknowledgeBuffer.Data);
-
-                // Send the response
-                if (response != null)
+                SendResponse(session, new AcknowledgeMessage()
                 {
-                    response.RequestId = _requestIdProvider.GetNextRequestId();
-                    if (response.ResponseId == 0)
-                        response.ResponseId = request.RequestId;
-
-                    var responseBuffer = new GrowingSpanBuffer(span);
-                    _messageWriter.WriteTo(ref responseBuffer, response);
-                    responseCallback(responseBuffer.Data);
-                }
+                    ResponseId = request.RequestId,
+                    MessageHandled = true
+                });
+                var response = await messageHandler(service, session, request);
+                if (response?.ResponseId == 0)
+                    response.ResponseId = request.RequestId;
+                SendReliableResponse(session, response);
             });
 
-        protected void AddReliableMessageHandler<TRequest, TResponse1, TResponse2>(Func<TService, Session, TRequest, (TResponse1, TResponse2)> messageHandler)
+        protected void AddReliableMessageHandler<TRequest, TResponse1, TResponse2>(MessageHandler<TService, TRequest, TResponse1, TResponse2> messageHandler)
             where TRequest : class, IReliableMessage
             where TResponse1 : BaseReliableResponse
             where TResponse2 : BaseReliableResponse
-            => AddReliableMessageHandler<TRequest>((service, session, request, responseCallback) =>
+            => AddMessageHandler<TRequest>(async (service, session, request) =>
             {
-                var (response1, response2) = messageHandler(service, session, request);
-
-                Span<byte> span = stackalloc byte[412];
-
-                // Send the acknowledge message
-                var acknowledgeBuffer = new GrowingSpanBuffer(span);
-                _messageWriter.WriteTo(
-                    ref acknowledgeBuffer,
-                    new AcknowledgeMessage()
-                    {
-                        ResponseId = request.RequestId,
-                        MessageHandled = true
-                    }
-                );
-                responseCallback(acknowledgeBuffer.Data);
-
-                // Send the first response
-                if (response1 != null)
+                SendResponse(session, new AcknowledgeMessage()
                 {
-                    response1.RequestId = _requestIdProvider.GetNextRequestId();
-                    if (response1.ResponseId == 0)
-                        response1.ResponseId = request.RequestId;
-
-                    var response1Buffer = new GrowingSpanBuffer(span);
-                    _messageWriter.WriteTo(ref response1Buffer, response1);
-                    responseCallback(response1Buffer.Data);
-                }
-
-                // Send the second response
-                if (response2 != null)
-                {
-                    response2.RequestId = _requestIdProvider.GetNextRequestId();
-                    if (response1.ResponseId == 0)
-                        response1.ResponseId = request.RequestId;
-
-                    var response2Buffer = new GrowingSpanBuffer(span);
-                    _messageWriter.WriteTo(ref response2Buffer, response2);
-                    responseCallback(response2Buffer.Data);
-                }
+                    ResponseId = request.RequestId,
+                    MessageHandled = true
+                });
+                var (response1, response2) = await messageHandler(service, session, request);
+                if (response1?.ResponseId == 0)
+                    response1.ResponseId = request.RequestId;
+                if (response2?.ResponseId == 0)
+                    response2.ResponseId = request.RequestId;
+                SendReliableResponse(session, response1);
+                SendReliableResponse(session, response2);
             });
+
+        #endregion
+
+        #region Private Methods
+
+        private void SendResponse<T>(ISession session, T response)
+            where T : class, IMessage
+        {
+            if (response == null)
+                return;
+
+            var buffer = new GrowingSpanBuffer(stackalloc byte[412]);
+            _messageWriter.WriteTo(ref buffer, response);
+            // TODO: Split into multipart messages if necessary
+            if (UseEncryption)
+                session.SendEncrypted(buffer.Data);
+            else
+                session.Send(buffer.Data);
+        }
+
+        private void SendReliableResponse<T>(ISession session, T response)
+            where T : class, IReliableMessage
+        {
+            if (response?.RequestId == 0)
+                response.RequestId = _requestIdProvider.GetNextRequestId();
+            SendResponse(session, response);
+        }
 
         #endregion
     }

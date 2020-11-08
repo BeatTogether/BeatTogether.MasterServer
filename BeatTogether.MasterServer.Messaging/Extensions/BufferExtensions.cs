@@ -44,16 +44,16 @@ namespace BeatTogether.MasterServer.Messaging.Extensions
 
         public static ulong ReadVarULong(this ref SpanBufferReader bufferReader)
         {
-            ulong value = 0UL;
-            int shift = 0;
-            ulong b = bufferReader.ReadByte();
+            var value = 0UL;
+            var shift = 0;
+            var b = bufferReader.ReadByte();
             while ((b & 128UL) != 0UL)
             {
                 value |= (b & 127UL) << shift;
                 shift += 7;
                 b = bufferReader.ReadByte();
             }
-            return value | b << shift;
+            return value | (ulong)b << shift;
         }
 
         public static bool TryReadVarUInt(this ref SpanBufferReader bufferReader, out uint value)
@@ -64,6 +64,7 @@ namespace BeatTogether.MasterServer.Messaging.Extensions
                 value = (uint)num;
                 return true;
             }
+
             value = 0U;
             return false;
         }
@@ -71,22 +72,23 @@ namespace BeatTogether.MasterServer.Messaging.Extensions
         public static bool TryReadVarULong(this ref SpanBufferReader bufferReader, out ulong value)
         {
             value = 0UL;
-            int num = 0;
-            while (num <= 63 && bufferReader.RemainingSize >= 1)
+            var shift = 0;
+            while (shift <= 63 && bufferReader.RemainingSize >= 1)
             {
                 var b = bufferReader.ReadByte();
-                value |= (ulong)(b & 127) << num;
-                num += 7;
+                value |= (ulong)(b & 127) << shift;
+                shift += 7;
                 if ((b & 128) == 0)
                     return true;
             }
+
             value = 0UL;
             return false;
         }
 
         public static void WriteVarBytes(this ref GrowingSpanBuffer buffer, ReadOnlySpan<byte> bytes)
         {
-            buffer.WriteVarInt(bytes.Length);
+            buffer.WriteVarUInt((uint)bytes.Length);
             buffer.WriteBytes(bytes);
         }
 

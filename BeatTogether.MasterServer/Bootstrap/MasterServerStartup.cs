@@ -3,10 +3,10 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using BeatTogether.MasterServer.Configuration;
 using BeatTogether.MasterServer.Data.Bootstrap;
 using BeatTogether.MasterServer.Data.Configuration;
 using BeatTogether.MasterServer.Kernel.Bootstrap;
+using BeatTogether.MasterServer.Kernel.Configuration;
 using BeatTogether.MasterServer.Messaging.Bootstrap;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -68,6 +68,7 @@ namespace BeatTogether.MasterServer
             configuration.GetSection("Data").Bind(serviceProvider.GetRequiredService<DataConfiguration>());
             configuration.GetSection("Data").GetSection("Redis").Bind(serviceProvider.GetRequiredService<RedisConfiguration>());
             configuration.GetSection("MasterServer").Bind(serviceProvider.GetRequiredService<MasterServerConfiguration>());
+            configuration.GetSection("Messaging").Bind(serviceProvider.GetRequiredService<MessagingConfiguration>());
         }
     }
 }

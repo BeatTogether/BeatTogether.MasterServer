@@ -9,12 +9,15 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 {
     public class HandshakeMessageReceiver : BaseMessageReceiver<IHandshakeService>
     {
+        protected override bool UseEncryption => false;
+
         public HandshakeMessageReceiver(
             IServiceProvider serviceProvider,
             IRequestIdProvider requestIdProvider,
+            IMultipartMessageService multipartMessageService,
             MessageReader<HandshakeMessageRegistry> messageReader,
             MessageWriter<HandshakeMessageRegistry> messageWriter)
-            : base(serviceProvider, requestIdProvider, messageReader, messageWriter)
+            : base(serviceProvider, requestIdProvider, multipartMessageService, messageReader, messageWriter)
         {
             AddReliableMessageHandler<ClientHelloRequest, HelloVerifyRequest>(
                 (service, session, request) => service.ClientHello(session, request)

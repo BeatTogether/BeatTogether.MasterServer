@@ -3,22 +3,22 @@ using BeatTogether.MasterServer.Kernel.Abstractions.Providers;
 
 namespace BeatTogether.MasterServer.Kernel.Implementations.Providers
 {
-    public class CookieProvider : ICookieProvider
+    public class RandomProvider : IRandomProvider
     {
-        private const int _cookieLength = 32;
+        private const int _randomLength = 32;
 
         private readonly RNGCryptoServiceProvider _rngCryptoServiceProvider;
 
-        public CookieProvider(RNGCryptoServiceProvider rngCryptoServiceProvider)
+        public RandomProvider(RNGCryptoServiceProvider rngCryptoServiceProvider)
         {
             _rngCryptoServiceProvider = rngCryptoServiceProvider;
         }
 
-        public byte[] GetCookie()
+        public byte[] GetRandom()
         {
-            var cookie = new byte[_cookieLength];
-            _rngCryptoServiceProvider.GetBytes(cookie);
-            return cookie;
+            var random = new byte[_randomLength];
+            _rngCryptoServiceProvider.GetBytes(random);
+            return random;
         }
     }
 }

@@ -10,6 +10,8 @@ namespace BeatTogether.MasterServer.Messaging.Implementations
     public class MessageWriter<TMessageRegistry> : IMessageWriter
         where TMessageRegistry : class, IMessageRegistry
     {
+        protected virtual uint ProtocolVersion => 1;
+
         private readonly TMessageRegistry _messageRegistry;
 
         public MessageWriter(TMessageRegistry messageRegistry)
@@ -21,12 +23,10 @@ namespace BeatTogether.MasterServer.Messaging.Implementations
             where TMessage : class, IMessage
         {
             if (!_messageRegistry.TryGetMessageId<TMessage>(out var messageId))
-                throw new Exception($"Message of type '{nameof(TMessage)}' does not exist in the message registry");
-
-            buffer.WriteUInt16(2048);
+                throw new Exception($"Message of type '{typeof(TMessage).Name}' does not exist in the message registry");
 
             buffer.WriteUInt32((uint)_messageRegistry.MessageGroup);
-            buffer.WriteVarUInt(_messageRegistry.ProtocolVersion);
+            buffer.WriteVarUInt(ProtocolVersion);
 
             var messageBuffer = new GrowingSpanBuffer(stackalloc byte[412]);
             messageBuffer.WriteVarUInt((uint)messageId);

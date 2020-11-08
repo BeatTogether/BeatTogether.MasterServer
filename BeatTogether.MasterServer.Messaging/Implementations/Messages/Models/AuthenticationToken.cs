@@ -1,4 +1,5 @@
-﻿using BeatTogether.MasterServer.Messaging.Abstractions.Messages;
+﻿using System;
+using BeatTogether.MasterServer.Messaging.Abstractions.Messages;
 using BeatTogether.MasterServer.Messaging.Enums;
 using BeatTogether.MasterServer.Messaging.Extensions;
 using Krypton.Buffers;

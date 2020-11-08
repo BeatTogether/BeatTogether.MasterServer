@@ -7,7 +7,6 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Registries
     public class HandshakeMessageRegistry : BaseMessageRegistry
     {
         public override MessageGroup MessageGroup => MessageGroup.Handshake;
-        public override uint ProtocolVersion => 1;
 
         public HandshakeMessageRegistry()
         {

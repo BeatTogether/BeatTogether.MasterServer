@@ -1,5 +1,4 @@
-﻿using System;
-using System.Runtime.Serialization;
+﻿using System.Runtime.Serialization;
 using BeatTogether.MasterServer.Messaging.Abstractions;
 using BeatTogether.MasterServer.Messaging.Abstractions.Messages;
 using BeatTogether.MasterServer.Messaging.Abstractions.Registries;
@@ -12,6 +11,8 @@ namespace BeatTogether.MasterServer.Messaging.Implementations
     public class MessageReader<TMessageRegistry> : IMessageReader
         where TMessageRegistry : class, IMessageRegistry
     {
+        protected virtual uint ProtocolVersion => 1;
+
         private readonly TMessageRegistry _messageRegistry;
 
         public MessageReader(TMessageRegistry messageRegistry)
@@ -21,8 +22,6 @@ namespace BeatTogether.MasterServer.Messaging.Implementations
 
         public IMessage ReadFrom(ref SpanBufferReader bufferReader)
         {
-            bufferReader.SkipBytes(2);
-
             var messageGroup = (MessageGroup)bufferReader.ReadUInt32();
             if (messageGroup != _messageRegistry.MessageGroup)
                 throw new InvalidDataContractException(
@@ -31,14 +30,14 @@ namespace BeatTogether.MasterServer.Messaging.Implementations
                     $"Expected={_messageRegistry.MessageGroup})."
                 );
             var protocolVersion = bufferReader.ReadVarUInt();
-            if (protocolVersion != _messageRegistry.ProtocolVersion)
+            if (protocolVersion != ProtocolVersion)
                 throw new InvalidDataContractException(
                     "Invalid message protocol version " +
                     $"(ProtocolVersion={protocolVersion}, " +
-                    $"Expected={_messageRegistry.ProtocolVersion})."
+                    $"Expected={ProtocolVersion})."
                 );
             var length = bufferReader.ReadVarUInt();
-            if (bufferReader.RemainingSize != length)
+            if (bufferReader.RemainingSize < length)
                 throw new InvalidDataContractException(
                     "Invalid message length " +
                     $"(Length={length}, Expected={bufferReader.RemainingSize})."
@@ -49,7 +48,6 @@ namespace BeatTogether.MasterServer.Messaging.Implementations
                     "Invalid message id " +
                     $"(MessageId={messageId})."
                 );
-
             message.ReadFrom(ref bufferReader);
             return message;
         }

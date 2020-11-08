@@ -9,7 +9,6 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Registries
     public abstract class BaseMessageRegistry : IMessageRegistry
     {
         public abstract MessageGroup MessageGroup { get; }
-        public abstract uint ProtocolVersion { get; }
 
         private readonly Dictionary<int, Type> _typeByIdLookup;
         private readonly Dictionary<Type, int> _idByTypeLookup;
