@@ -156,14 +156,14 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         protected void AddReliableMessageHandler<TMessage>(MessageHandler<TService, TMessage> messageHandler)
             where TMessage : class, IReliableMessage
-            => AddMessageHandler<TMessage>((service, session, message) =>
+            => AddMessageHandler<TMessage>(async (service, session, message) =>
             {
+                await messageHandler(service, session, message);
                 SendResponse(session, new AcknowledgeMessage()
                 {
                     ResponseId = message.RequestId,
                     MessageHandled = true
                 });
-                return messageHandler(service, session, message);
             });
 
         protected void AddReliableMessageHandler<TRequest, TResponse>(MessageHandler<TService, TRequest, TResponse> messageHandler)
@@ -171,15 +171,15 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             where TResponse : BaseReliableResponse
             => AddMessageHandler<TRequest>(async (service, session, request) =>
             {
+                var response = await messageHandler(service, session, request);
+                if (response?.ResponseId == 0)
+                    response.ResponseId = request.RequestId;
+                SendReliableResponse(session, response);
                 SendResponse(session, new AcknowledgeMessage()
                 {
                     ResponseId = request.RequestId,
                     MessageHandled = true
                 });
-                var response = await messageHandler(service, session, request);
-                if (response?.ResponseId == 0)
-                    response.ResponseId = request.RequestId;
-                SendReliableResponse(session, response);
             });
 
         protected void AddReliableMessageHandler<TRequest, TResponse1, TResponse2>(MessageHandler<TService, TRequest, TResponse1, TResponse2> messageHandler)
@@ -188,11 +188,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             where TResponse2 : BaseReliableResponse
             => AddMessageHandler<TRequest>(async (service, session, request) =>
             {
-                SendResponse(session, new AcknowledgeMessage()
-                {
-                    ResponseId = request.RequestId,
-                    MessageHandled = true
-                });
                 var (response1, response2) = await messageHandler(service, session, request);
                 if (response1?.ResponseId == 0)
                     response1.ResponseId = request.RequestId;
@@ -200,6 +195,11 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     response2.ResponseId = request.RequestId;
                 SendReliableResponse(session, response1);
                 SendReliableResponse(session, response2);
+                SendResponse(session, new AcknowledgeMessage()
+                {
+                    ResponseId = request.RequestId,
+                    MessageHandled = true
+                });
             });
 
         #endregion
