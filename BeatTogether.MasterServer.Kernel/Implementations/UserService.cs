@@ -1,18 +1,42 @@
 ﻿using System;
 using System.Net;
 using System.Threading.Tasks;
+using BeatTogether.MasterServer.Data.Abstractions.Repositories;
+using BeatTogether.MasterServer.Data.Entities;
 using BeatTogether.MasterServer.Kernel.Abstractions;
+using BeatTogether.MasterServer.Kernel.Abstractions.Providers;
+using BeatTogether.MasterServer.Messaging.Abstractions;
+using BeatTogether.MasterServer.Messaging.Enums;
+using BeatTogether.MasterServer.Messaging.Implementations;
+using BeatTogether.MasterServer.Messaging.Implementations.Messages.Models;
 using BeatTogether.MasterServer.Messaging.Implementations.Messages.User;
+using BeatTogether.MasterServer.Messaging.Implementations.Registries;
+using Krypton.Buffers;
 using Serilog;
 
 namespace BeatTogether.MasterServer.Kernel.Implementations
 {
     public class UserService : IUserService
     {
+        private readonly ISessionRepository _sessionRepository;
+        private readonly IServerRepository _serverRepository;
+        private readonly ISessionService _sessionService;
+        private readonly IServerCodeProvider _serverCodeProvider;
+        private readonly IMessageDispatcher _messageDispatcher;
         private readonly ILogger _logger;
 
-        public UserService()
+        public UserService(
+            ISessionRepository sessionRepository,
+            IServerRepository serverRepository,
+            ISessionService sessionService,
+            IServerCodeProvider serverCodeProvider,
+            MessageDispatcher<UserMessageRegistry> messageDispatcher)
         {
+            _sessionRepository = sessionRepository;
+            _serverRepository = serverRepository;
+            _sessionService = sessionService;
+            _serverCodeProvider = serverCodeProvider;
+            _messageDispatcher = messageDispatcher;
             _logger = Log.ForContext<UserService>();
         }
 
@@ -26,7 +50,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             );
             // TODO: Verify that there aren't any other sessions with the same user ID
             // TODO: Validate session token?
-            session.Platform = (Enums.Platform)request.AuthenticationToken.Platform;
+            session.Platform = request.AuthenticationToken.Platform;
             session.UserId = request.AuthenticationToken.UserId;
             session.UserName = request.AuthenticationToken.UserName;
             return Task.FromResult(new AuthenticateUserResponse()
@@ -35,14 +59,211 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             });
         }
 
-        public Task<BroadcastServerStatusResponse> BroadcastServerStatus(ISession session, BroadcastServerStatusRequest request)
+        public async Task<BroadcastServerStatusResponse> BroadcastServerStatus(ISession session, BroadcastServerStatusRequest request)
         {
-            return Task.FromResult(new BroadcastServerStatusResponse()
+            _logger.Verbose(
+                $"Handling {nameof(BroadcastServerStatusRequest)} " +
+                $"(ServerName='{request.ServerName}', " +
+                $"UserId='{request.UserId}', " +
+                $"UserName='{request.UserName}', " +
+                $"CurrentPlayerCount={request.CurrentPlayerCount}, " +
+                $"MaximumPlayerCount={request.MaximumPlayerCount}, " +
+                $"DiscoveryPolicy={request.DiscoveryPolicy}, " +
+                $"InvitePolicy={request.InvitePolicy}, " +
+                $"BeatmapDifficultyMask={request.Configuration.BeatmapDifficultyMask}, " +
+                $"GameplayModifiersMask={request.Configuration.GameplayModifiersMask}, " +
+                $"Random={BitConverter.ToString(request.Random)}, " +
+                $"PublicKey={BitConverter.ToString(request.PublicKey)})."
+            );
+
+            // TODO: We should probably retry in the event that a duplicate
+            // code is ever generated (pretty unlikely to happen though)
+            var serverCode = _serverCodeProvider.Generate();
+            var successfullyAddedServer = await _serverRepository.AddServer(new Server()
+            {
+                Host = new Player()
+                {
+                    UserId = session.UserId,
+                    UserName = session.UserName,
+                    CurrentServerCode = serverCode
+                },
+                RemoteEndPoint = (IPEndPoint)session.EndPoint,
+                Secret = request.Secret,
+                Code = serverCode,
+                IsPublic = request.DiscoveryPolicy == DiscoveryPolicy.Public,
+                CurrentPlayerCount = request.CurrentPlayerCount,
+                MaximumPlayerCount = request.MaximumPlayerCount,
+                Random = request.Random,
+                PublicKey = request.PublicKey
+            });
+            if (!successfullyAddedServer)
+            {
+                _logger.Information(
+                    "Failed to create server " +
+                    $"(ServerName='{request.ServerName}', " +
+                    $"UserId='{request.UserId}', " +
+                    $"UserName='{request.UserName}', " +
+                    $"CurrentPlayerCount={request.CurrentPlayerCount}, " +
+                    $"MaximumPlayerCount={request.MaximumPlayerCount}, " +
+                    $"DiscoveryPolicy={request.DiscoveryPolicy}, " +
+                    $"InvitePolicy={request.InvitePolicy}, " +
+                    $"BeatmapDifficultyMask={request.Configuration.BeatmapDifficultyMask}, " +
+                    $"GameplayModifiersMask={request.Configuration.GameplayModifiersMask}, " +
+                    $"Random={BitConverter.ToString(request.Random)}, " +
+                    $"PublicKey={BitConverter.ToString(request.PublicKey)})."
+                );
+                return new BroadcastServerStatusResponse()
+                {
+                    Result = BroadcastServerStatusResponse.ResultCode.UnknownError
+                };
+            }
+
+            _logger.Information(
+                "Successfully created server " +
+                $"(ServerName='{request.ServerName}', " +
+                $"UserId='{request.UserId}', " +
+                $"UserName='{request.UserName}', " +
+                $"CurrentPlayerCount={request.CurrentPlayerCount}, " +
+                $"MaximumPlayerCount={request.MaximumPlayerCount}, " +
+                $"DiscoveryPolicy={request.DiscoveryPolicy}, " +
+                $"InvitePolicy={request.InvitePolicy}, " +
+                $"BeatmapDifficultyMask={request.Configuration.BeatmapDifficultyMask}, " +
+                $"GameplayModifiersMask={request.Configuration.GameplayModifiersMask}, " +
+                $"Random={BitConverter.ToString(request.Random)}, " +
+                $"PublicKey={BitConverter.ToString(request.PublicKey)})."
+            );
+            return new BroadcastServerStatusResponse()
             {
                 Result = BroadcastServerStatusResponse.ResultCode.Success,
-                Code = "00000",
+                Code = serverCode,
                 RemoteEndPoint = (IPEndPoint)session.EndPoint
+            };
+        }
+
+        public async Task<BroadcastServerHeartbeatResponse> BroadcastServerHeartbeat(ISession session, BroadcastServerHeartbeatRequest request)
+        {
+            _logger.Verbose(
+                $"Handling {nameof(BroadcastServerHeartbeatRequest)} " +
+                $"(UserId='{request.UserId}', " +
+                $"UserName='{request.UserName}', " +
+                $"Secret='{request.Secret}', " +
+                $"CurrentPlayerCount={request.CurrentPlayerCount})."
+            );
+            var server = await _serverRepository.GetServerByHostUserId(session.UserId);
+            if (server == null)
+                return new BroadcastServerHeartbeatResponse()
+                {
+                    Result = BroadcastServerHeartbeatResponse.ResultCode.ServerDoesNotExist
+                };
+
+            _serverRepository.UpdateSecret(server.Code, request.Secret);
+            _serverRepository.UpdateCurrentPlayerCount(server.Code, (int)request.CurrentPlayerCount);
+            return new BroadcastServerHeartbeatResponse()
+            {
+                Result = BroadcastServerHeartbeatResponse.ResultCode.Success
+            };
+        }
+
+        public async Task BroadcastServerRemove(ISession session, BroadcastServerRemoveRequest request)
+        {
+            _logger.Verbose(
+                $"Handling {nameof(BroadcastServerRemoveRequest)} " +
+                $"(UserId='{request.UserId}', " +
+                $"UserName='{request.UserName}', " +
+                $"Secret='{request.Secret}')."
+            );
+            var server = await _serverRepository.GetServerByHostUserId(session.UserId);
+            if (server == null)
+                return;
+            await _serverRepository.RemoveServer(server.Code);
+        }
+
+        public Task<ConnectToServerResponse> ConnectToMatchmaking(ISession session, ConnectToMatchmakingRequest request)
+        {
+            _logger.Verbose(
+                $"Handling {nameof(ConnectToMatchmakingRequest)} " +
+                $"(UserId='{request.UserId}', " +
+                $"UserName='{request.UserName}', " +
+                $"Random='{BitConverter.ToString(request.Random)}', " +
+                $"PublicKey='{BitConverter.ToString(request.PublicKey)}', " +
+                $"BeatmapDifficultyMask={request.Configuration.BeatmapDifficultyMask}, " +
+                $"GameplayModifiersMask={request.Configuration.GameplayModifiersMask}, " +
+                $"Secret='{request.Secret}')."
+            );
+            return Task.FromResult(new ConnectToServerResponse()
+            {
+                Result = ConnectToServerResponse.ResultCode.UnknownError
             });
+        }
+
+        public async Task<ConnectToServerResponse> ConnectToServer(ISession session, ConnectToServerRequest request)
+        {
+            _logger.Verbose(
+                $"Handling {nameof(ConnectToServerRequest)} " +
+                $"(UserId='{request.UserId}', " +
+                $"UserName='{request.UserName}', " +
+                $"Random='{BitConverter.ToString(request.Random)}', " +
+                $"PublicKey='{BitConverter.ToString(request.PublicKey)}', " +
+                $"Secret='{request.Secret}', " +
+                $"Code='{request.Code}', " +
+                $"Password='{request.Password}', " +
+                $"UseRelay={request.UseRelay})."
+            );
+            var server = await _serverRepository.GetServer(request.Code);
+            if (server == null)
+                return new ConnectToServerResponse()
+                {
+                    Result = ConnectToServerResponse.ResultCode.InvalidCode
+                };
+
+            if (server.CurrentPlayerCount >= server.MaximumPlayerCount)
+                return new ConnectToServerResponse()
+                {
+                    Result = ConnectToServerResponse.ResultCode.ServerAtCapacity
+                };
+
+            if (!_sessionService.TryGetSession(server.RemoteEndPoint, out var hostSession))
+            {
+                _logger.Warning(
+                    "Failed to retrieve server host session while handling " +
+                    $"{nameof(ConnectToServerRequest)} " +
+                    $"(EndPoint='{server.RemoteEndPoint}')."
+                );
+                return new ConnectToServerResponse()
+                {
+                    Result = ConnectToServerResponse.ResultCode.UnknownError
+                };
+            }
+
+            // Let the host know that someone is about to connect (hole-punch)
+            _messageDispatcher.Send(hostSession, new PrepareForConnectionRequest()
+            {
+                UserId = request.UserId,
+                UserName = request.UserName,
+                RemoteEndPoint = (IPEndPoint)session.EndPoint,
+                Random = request.Random,
+                PublicKey = request.PublicKey,
+                IsConnectionOwner = false,
+                IsDedicatedServer = false
+            });
+
+            return new ConnectToServerResponse()
+            {
+                Result = ConnectToServerResponse.ResultCode.Success,
+                UserId = server.Host.UserId,
+                UserName = server.Host.UserName,
+                Secret = server.Secret,
+                DiscoveryPolicy = (DiscoveryPolicy)server.DiscoveryPolicy,
+                InvitePolicy = (InvitePolicy)server.InvitePolicy,
+                MaximumPlayerCount = server.MaximumPlayerCount,
+                Configuration = new GameplayServerConfiguration()
+                {
+                    BeatmapDifficultyMask = (BeatmapDifficultyMask)server.BeatmapDifficultyMask,
+                    GameplayModifiersMask = (GameplayModifiersMask)server.GameplayModifiersMask,
+                    SongPackBloomFilterTop = server.SongPackBloomFilterTop,
+                    SongPackBloomFilterBottom = server.SongPackBloomFilterBottom
+                }
+            };
         }
 
         public Task SessionKeepalive(ISession session, SessionKeepaliveMessage message)
@@ -50,31 +271,12 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             _logger.Verbose(
                 $"Handling {nameof(SessionKeepalive)} " +
                 $"(EndPoint='{session.EndPoint}', " +
+                $"Platform={session.Platform}, " +
                 $"UserId='{session.UserId}', " +
                 $"UserName='{session.UserName}')."
             );
-            // TODO: Keep the session alive
+            _sessionRepository.UpdateLastKeepAlive(session.UserId, DateTimeOffset.UtcNow);
             return Task.CompletedTask;
-        }
-
-        public Task<BroadcastServerHeartbeatResponse> BroadcastServerHeartbeat(ISession session, BroadcastServerHeartbeatRequest request)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task BroadcastServerRemove(ISession session, BroadcastServerRemoveRequest request)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<ConnectToServerResponse> ConnectToMatchmaking(ISession session, ConnectToMatchmakingRequest request)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<ConnectToServerResponse> ConnectToServer(ISession session, ConnectToServerRequest request)
-        {
-            throw new NotImplementedException();
         }
     }
 }

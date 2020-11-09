@@ -3,6 +3,7 @@ using System.Net;
 using System.Security.Cryptography;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Enums;
+using BeatTogether.MasterServer.Messaging.Enums;
 using Org.BouncyCastle.Crypto.Parameters;
 
 namespace BeatTogether.MasterServer.Kernel.Implementations
@@ -41,8 +42,5 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         public void SendEncrypted(ReadOnlySpan<byte> buffer)
             => _masterServer.SendEncryptedAsync(this, buffer);
-
-        public override string ToString()
-            => $"{{EndPoint='{EndPoint}', UserId='{UserId}', UserName='{UserName}'}}";
     }
 }

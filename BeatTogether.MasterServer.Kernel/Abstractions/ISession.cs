@@ -2,6 +2,7 @@
 using System.Net;
 using System.Security.Cryptography;
 using BeatTogether.MasterServer.Kernel.Enums;
+using BeatTogether.MasterServer.Messaging.Enums;
 using Org.BouncyCastle.Crypto.Parameters;
 
 namespace BeatTogether.MasterServer.Kernel.Abstractions

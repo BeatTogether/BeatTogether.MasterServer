@@ -112,12 +112,17 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 return;
             }
 
-            Task.Run(() =>
-            {
-                using var scope = _serviceProvider.CreateScope();
-                var service = scope.ServiceProvider.GetRequiredService<TService>();
-                return messageHandler(service, session, message);
-            }).ConfigureAwait(false);
+            Task.Run(
+                () =>
+                {
+                    using var scope = _serviceProvider.CreateScope();
+                    var service = scope.ServiceProvider.GetRequiredService<TService>();
+                    return messageHandler(service, session, message);
+                }
+            ).ContinueWith(
+                task => _logger.Error(task.Exception, "Exception thrown during message handler."),
+                TaskContinuationOptions.OnlyOnFaulted
+            ).ConfigureAwait(false);
         }
 
         #endregion

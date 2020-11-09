@@ -7,6 +7,7 @@ using BeatTogether.MasterServer.Kernel.Implementations;
 using BeatTogether.MasterServer.Kernel.Implementations.MessageReceivers;
 using BeatTogether.MasterServer.Kernel.Implementations.Providers;
 using BeatTogether.MasterServer.Kernel.Implementations.Security;
+using BeatTogether.MasterServer.Messaging.Implementations.Registries;
 using Microsoft.Extensions.DependencyInjection;
 using Org.BouncyCastle.Security;
 
@@ -33,6 +34,10 @@ namespace BeatTogether.MasterServer.Kernel.Bootstrap
             services.AddSingleton<ICookieProvider, CookieProvider>();
             services.AddSingleton<IRandomProvider, RandomProvider>();
             services.AddSingleton<ICertificateProvider, CertificateProvider>();
+            services.AddSingleton<IServerCodeProvider, ServerCodeProvider>();
+
+            services.AddSingleton<MessageDispatcher<HandshakeMessageRegistry>>();
+            services.AddSingleton<MessageDispatcher<UserMessageRegistry>>();
 
             services.AddSingleton<HandshakeMessageReceiver>();
             services.AddSingleton<UserMessageReceiver>();

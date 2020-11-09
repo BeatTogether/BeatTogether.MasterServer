@@ -13,6 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\BeatTogether.MasterServer.Data\BeatTogether.MasterServer.Data.csproj" />
     <ProjectReference Include="..\BeatTogether.MasterServer.Messaging\BeatTogether.MasterServer.Messaging.csproj" />
 	<ProjectReference Include="..\dependencies\NetCoreServer\source\NetCoreServer\NetCoreServer.csproj" />
   </ItemGroup>

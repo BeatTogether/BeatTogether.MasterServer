@@ -12,6 +12,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Scripts\UpdateCurrentPlayerCount.lua">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Scripts\UpdateSecret.lua">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Scripts\AddServer.lua">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

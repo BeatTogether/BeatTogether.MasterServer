@@ -20,7 +20,8 @@ namespace BeatTogether.MasterServer.Data.Bootstrap
                     .GetRequiredService<IConnectionMultiplexerPool>()
                     .GetConnection()
             );
-            services.AddSingleton<IServerRepository, ServerRepository>();
+            services.AddScoped<ISessionRepository, SessionRepository>();
+            services.AddScoped<IServerRepository, ServerRepository>();
         }
     }
 }

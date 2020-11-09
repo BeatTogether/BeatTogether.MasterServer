@@ -101,7 +101,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     return;
                 }
             }
-            catch (IndexOutOfRangeException e)
+            catch (Exception e)
             {
                 _logger.Warning(e,
                     "Failed to read message " +
