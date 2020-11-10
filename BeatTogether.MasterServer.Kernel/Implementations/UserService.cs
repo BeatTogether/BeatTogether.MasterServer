@@ -303,7 +303,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     SongPackBloomFilterTop = server.SongPackBloomFilterTop,
                     SongPackBloomFilterBottom = server.SongPackBloomFilterBottom
                 },
-                IsConnectionOwner = false,
+                IsConnectionOwner = true,
                 IsDedicatedServer = false,
                 RemoteEndPoint = server.RemoteEndPoint,
                 Random = server.Random,
