@@ -97,8 +97,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             {
                 Host = new Player()
                 {
-                    UserId = session.UserId,
-                    UserName = session.UserName
+                    UserId = request.UserId,
+                    UserName = request.UserName
                 },
                 RemoteEndPoint = (IPEndPoint)session.EndPoint,
                 Secret = request.Secret,
