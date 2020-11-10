@@ -302,7 +302,12 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     GameplayModifiersMask = (GameplayModifiersMask)server.GameplayModifiersMask,
                     SongPackBloomFilterTop = server.SongPackBloomFilterTop,
                     SongPackBloomFilterBottom = server.SongPackBloomFilterBottom
-                }
+                },
+                IsConnectionOwner = false,
+                IsDedicatedServer = false,
+                RemoteEndPoint = server.RemoteEndPoint,
+                Random = server.Random,
+                PublicKey = server.PublicKey
             };
         }
 
