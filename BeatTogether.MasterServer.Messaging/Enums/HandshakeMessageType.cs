@@ -1,6 +1,6 @@
 ﻿namespace BeatTogether.MasterServer.Messaging.Enums
 {
-	public enum HandshakeMessageType
+	public enum HandshakeMessageType : uint
 	{
 		ClientHelloRequest,
 		HelloVerifyRequest,

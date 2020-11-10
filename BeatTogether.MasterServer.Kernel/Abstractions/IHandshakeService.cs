@@ -6,7 +6,7 @@ namespace BeatTogether.MasterServer.Kernel.Abstractions
     public interface IHandshakeService
     {
         Task<HelloVerifyRequest> ClientHello(ISession session, ClientHelloRequest request);
-        Task<(ServerHelloRequest, ServerCertificateRequest)> ClientHelloWithCookie(ISession session, ClientHelloWithCookieRequest request);
+        Task<ServerHelloRequest> ClientHelloWithCookie(ISession session, ClientHelloWithCookieRequest request);
         Task<ChangeCipherSpecRequest> ClientKeyExchange(ISession session, ClientKeyExchangeRequest request);
     }
 }

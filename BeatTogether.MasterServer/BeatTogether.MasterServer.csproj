@@ -36,4 +36,13 @@
     <ProjectReference Include="..\BeatTogether.MasterServer.Kernel\BeatTogether.MasterServer.Kernel.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="cert.pem">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="key.pem">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

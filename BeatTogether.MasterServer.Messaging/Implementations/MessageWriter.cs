@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using BeatTogether.MasterServer.Messaging.Abstractions;
 using BeatTogether.MasterServer.Messaging.Abstractions.Messages;
 using BeatTogether.MasterServer.Messaging.Abstractions.Registries;
@@ -7,29 +9,50 @@ using Krypton.Buffers;
 
 namespace BeatTogether.MasterServer.Messaging.Implementations
 {
-    public class MessageWriter<TMessageRegistry> : IMessageWriter
-        where TMessageRegistry : class, IMessageRegistry
+    public class MessageWriter : IMessageWriter
     {
         protected virtual uint ProtocolVersion => 1;
 
-        private readonly TMessageRegistry _messageRegistry;
+        private readonly Dictionary<uint, IMessageRegistry> _messageRegistries;
 
-        public MessageWriter(TMessageRegistry messageRegistry)
+        public MessageWriter(IEnumerable<IMessageRegistry> messageRegistries)
         {
-            _messageRegistry = messageRegistry;
+            _messageRegistries = messageRegistries.ToDictionary(
+                messageRegistry => messageRegistry.MessageGroup
+            );
         }
 
-        public void WriteTo<TMessage>(ref GrowingSpanBuffer buffer, TMessage message)
-            where TMessage : class, IMessage
+        /// <inheritdoc cref="IMessageWriter.WriteTo"/>
+        public void WriteTo<T>(ref GrowingSpanBuffer buffer, T message, byte packetProperty)
+            where T : class, IMessage
         {
-            if (!_messageRegistry.TryGetMessageId<TMessage>(out var messageId))
-                throw new Exception($"Message of type '{typeof(TMessage).Name}' does not exist in the message registry");
+            var messageGroup = 0U;
+            var messageId = 0U;
+            try
+            {
+                messageGroup = _messageRegistries
+                    .First(kvp => kvp.Value.TryGetMessageId<T>(out messageId))
+                    .Key;
+            }
+            catch (InvalidOperationException)
+            {
+                throw new Exception(
+                    "Failed to retrieve identifier for message of type " +
+                    $"'{typeof(T).Name}'."
+                );
+            }
 
-            buffer.WriteUInt32((uint)_messageRegistry.MessageGroup);
+            if (packetProperty != 0x00)
+                buffer.WriteUInt8(packetProperty);
+            buffer.WriteUInt32(messageGroup);
             buffer.WriteVarUInt(ProtocolVersion);
 
             var messageBuffer = new GrowingSpanBuffer(stackalloc byte[412]);
-            messageBuffer.WriteVarUInt((uint)messageId);
+            messageBuffer.WriteVarUInt(messageId);
+            if (message is IReliableRequest)
+                messageBuffer.WriteUInt32(((IReliableRequest)message).RequestId);
+            if (message is IReliableResponse)
+                messageBuffer.WriteUInt32(((IReliableResponse)message).ResponseId);
             message.WriteTo(ref messageBuffer);
             buffer.WriteVarUInt((uint)messageBuffer.Size);
             // TODO: Remove byte array allocation

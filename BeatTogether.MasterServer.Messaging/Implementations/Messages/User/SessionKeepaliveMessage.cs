@@ -3,13 +3,15 @@ using Krypton.Buffers;
 
 namespace BeatTogether.MasterServer.Messaging.Implementations.Messages.User
 {
-    public class SessionKeepaliveMessage : IMessage
+    public class SessionKeepaliveMessage : BaseMessage, IEncryptedMessage
     {
-        public void ReadFrom(ref SpanBufferReader bufferReader)
+        public uint SequenceId { get; set; }
+
+        public override void ReadFrom(ref SpanBufferReader bufferReader)
         {
         }
 
-        public void WriteTo(ref GrowingSpanBuffer buffer)
+        public override void WriteTo(ref GrowingSpanBuffer buffer)
         {
         }
     }

@@ -1,24 +1,25 @@
 ﻿using System.Runtime.Serialization;
+using BeatTogether.MasterServer.Messaging.Abstractions.Messages;
 using BeatTogether.MasterServer.Messaging.Extensions;
 using Krypton.Buffers;
 
 namespace BeatTogether.MasterServer.Messaging.Implementations.Messages
 {
-    public class MultipartMessage : BaseReliableRequest
+    public class MultipartMessage : BaseMessage, IReliableRequest, IEncryptedMessage
     {
-        private const uint _maximumLength = 384;
-        private const uint _maximumTotalLength = 0x7FFF;
-
+        public uint SequenceId { get; set; }
+        public uint RequestId { get; set; }
         public uint MultipartMessageId { get; set; }
         public uint Offset { get; set; }
         public uint Length { get; set; }
         public uint TotalLength { get; set; }
         public byte[] Data { get; set; }
 
+        private const uint _maximumLength = 384;
+        private const uint _maximumTotalLength = 0x7FFF;
+
         public override void WriteTo(ref GrowingSpanBuffer buffer)
         {
-            base.WriteTo(ref buffer);
-
             buffer.WriteUInt32(MultipartMessageId);
             buffer.WriteVarUInt(Offset);
             buffer.WriteVarUInt(Length);
@@ -28,8 +29,6 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Messages
 
         public override void ReadFrom(ref SpanBufferReader bufferReader)
         {
-            base.ReadFrom(ref bufferReader);
-
             MultipartMessageId = bufferReader.ReadUInt32();
             Offset = bufferReader.ReadVarUInt();
             Length = bufferReader.ReadVarUInt();

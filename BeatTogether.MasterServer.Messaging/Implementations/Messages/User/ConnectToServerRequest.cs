@@ -1,10 +1,13 @@
-﻿using BeatTogether.MasterServer.Messaging.Extensions;
+﻿using BeatTogether.MasterServer.Messaging.Abstractions.Messages;
+using BeatTogether.MasterServer.Messaging.Extensions;
 using Krypton.Buffers;
 
 namespace BeatTogether.MasterServer.Messaging.Implementations.Messages.User
 {
-    public class ConnectToServerRequest : BaseReliableRequest
+    public class ConnectToServerRequest : BaseMessage, IReliableRequest, IEncryptedMessage
     {
+        public uint SequenceId { get; set; }
+        public uint RequestId { get; set; }
         public string UserId { get; set; }
         public string UserName { get; set; }
         public byte[] Random { get; set; }
@@ -16,8 +19,6 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Messages.User
 
         public override void WriteTo(ref GrowingSpanBuffer buffer)
         {
-            base.WriteTo(ref buffer);
-
             buffer.WriteString(UserId);
             buffer.WriteString(UserName);
             buffer.WriteBytes(Random);
@@ -30,8 +31,6 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Messages.User
 
         public override void ReadFrom(ref SpanBufferReader bufferReader)
         {
-            base.ReadFrom(ref bufferReader);
-
             UserId = bufferReader.ReadString();
             UserName = bufferReader.ReadString();
             Random = bufferReader.ReadBytes(32).ToArray();

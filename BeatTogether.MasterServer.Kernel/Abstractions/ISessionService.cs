@@ -4,8 +4,8 @@ namespace BeatTogether.MasterServer.Kernel.Abstractions
 {
     public interface ISessionService
     {
-        bool AddSession(ISession session);
-        bool RemoveSession(ISession session);
+        ISession OpenSession(Implementations.MasterServer masterServer, EndPoint endPoint);
+        bool CloseSession(ISession session);
 
         ISession GetSession(EndPoint endPoint);
         bool TryGetSession(EndPoint endPoint, out ISession session);

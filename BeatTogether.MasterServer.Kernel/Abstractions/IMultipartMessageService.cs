@@ -5,8 +5,6 @@ namespace BeatTogether.MasterServer.Kernel.Abstractions
 {
     public interface IMultipartMessageService
     {
-        Task<byte[]> WaitForEntireMessage(uint multipartMessageId);
-        bool AddMultipartMessageWaiter(uint multipartMessageId);
-        void OnReceived(MultipartMessage multipartMessage);
+        Task HandleMultipartMessage(ISession session, MultipartMessage multipartMessage);
     }
 }

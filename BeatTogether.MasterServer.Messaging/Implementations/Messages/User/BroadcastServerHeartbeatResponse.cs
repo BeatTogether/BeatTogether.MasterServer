@@ -3,7 +3,7 @@ using Krypton.Buffers;
 
 namespace BeatTogether.MasterServer.Messaging.Implementations.Messages.User
 {
-    public class BroadcastServerHeartbeatResponse : IMessage
+    public class BroadcastServerHeartbeatResponse : BaseMessage, IEncryptedMessage
     {
         public enum ResultCode
         {
@@ -12,16 +12,17 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Messages.User
             UnknownError
         }
 
+        public uint SequenceId { get; set; }
         public ResultCode Result { get; set; }
 
         public bool Success => Result == ResultCode.Success;
 
-        public void WriteTo(ref GrowingSpanBuffer buffer)
+        public override void WriteTo(ref GrowingSpanBuffer buffer)
         {
             buffer.WriteUInt8((byte)Result);
         }
 
-        public void ReadFrom(ref SpanBufferReader bufferReader)
+        public override void ReadFrom(ref SpanBufferReader bufferReader)
         {
             Result = (ResultCode)bufferReader.ReadByte();
         }

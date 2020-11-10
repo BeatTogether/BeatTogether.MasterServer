@@ -1,6 +1,6 @@
 ﻿namespace BeatTogether.MasterServer.Messaging.Enums
 {
-	public enum UserMessageType
+	public enum UserMessageType : uint
 	{
 		AuthenticateUserRequest,
 		AuthenticateUserResponse,

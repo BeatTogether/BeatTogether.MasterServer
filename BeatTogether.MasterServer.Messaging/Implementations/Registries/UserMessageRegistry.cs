@@ -6,7 +6,7 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Registries
 {
     public class UserMessageRegistry : BaseMessageRegistry
     {
-        public override MessageGroup MessageGroup => MessageGroup.User;
+        public override uint MessageGroup => (uint)Enums.MessageGroup.User;
 
         public UserMessageRegistry()
         {
@@ -21,8 +21,8 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Registries
             Register<ConnectToServerResponse>(UserMessageType.ConnectToServerResponse);
             Register<ConnectToMatchmakingRequest>(UserMessageType.ConnectToMatchmakingRequest);
             Register<PrepareForConnectionRequest>(UserMessageType.PrepareForConnectionRequest);
-            // Register<GetPublicServersRequest>(UserMessageType.GetPublicServersRequest);
-            // Register<GetPublicServersResponse>(UserMessageType.GetPublicServersResponse);
+            // Register<GetPublicServersRequest>(UserMessageType.GetPublicServersRequest); -- unused?
+            // Register<GetPublicServersResponse>(UserMessageType.GetPublicServersResponse); -- unused?
             Register<AcknowledgeMessage>(UserMessageType.MessageReceivedAcknowledge);
             Register<MultipartMessage>(UserMessageType.MultipartMessage);
             Register<SessionKeepaliveMessage>(UserMessageType.SessionKeepaliveMessage);

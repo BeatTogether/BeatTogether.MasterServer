@@ -1,8 +1,9 @@
-﻿using Krypton.Buffers;
+﻿using BeatTogether.MasterServer.Messaging.Abstractions.Messages;
+using Krypton.Buffers;
 
 namespace BeatTogether.MasterServer.Messaging.Implementations.Messages.User
 {
-    public class AuthenticateUserResponse : BaseReliableResponse
+    public class AuthenticateUserResponse : BaseMessage, IReliableRequest, IReliableResponse, IEncryptedMessage
     {
         public enum ResultCode : byte
         {
@@ -11,21 +12,20 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Messages.User
             UnknownError
         }
 
+        public uint SequenceId { get; set; }
+        public uint RequestId { get; set; }
+        public uint ResponseId { get; set; }
         public ResultCode Result { get; set; }
 
         public bool Success => Result == ResultCode.Success;
 
         public override void WriteTo(ref GrowingSpanBuffer buffer)
         {
-            base.WriteTo(ref buffer);
-
             buffer.WriteUInt8((byte)Result);
         }
 
         public override void ReadFrom(ref SpanBufferReader bufferReader)
         {
-            base.ReadFrom(ref bufferReader);
-
             Result = (ResultCode)bufferReader.ReadByte();
         }
     }

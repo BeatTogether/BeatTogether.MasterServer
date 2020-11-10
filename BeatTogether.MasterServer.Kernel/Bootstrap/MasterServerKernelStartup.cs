@@ -7,7 +7,6 @@ using BeatTogether.MasterServer.Kernel.Implementations;
 using BeatTogether.MasterServer.Kernel.Implementations.MessageReceivers;
 using BeatTogether.MasterServer.Kernel.Implementations.Providers;
 using BeatTogether.MasterServer.Kernel.Implementations.Security;
-using BeatTogether.MasterServer.Messaging.Implementations.Registries;
 using Microsoft.Extensions.DependencyInjection;
 using Org.BouncyCastle.Security;
 
@@ -22,13 +21,6 @@ namespace BeatTogether.MasterServer.Kernel.Bootstrap
 
             services.AddTransient<SecureRandom>();
             services.AddTransient<RNGCryptoServiceProvider>();
-            services.AddTransient(serviceProvider =>
-                new AesCryptoServiceProvider()
-                {
-                    Mode = CipherMode.CBC,
-                    Padding = PaddingMode.None
-                }
-            );
 
             services.AddSingleton<IRequestIdProvider, RequestIdProvider>();
             services.AddSingleton<ICookieProvider, CookieProvider>();
@@ -36,8 +28,7 @@ namespace BeatTogether.MasterServer.Kernel.Bootstrap
             services.AddSingleton<ICertificateProvider, CertificateProvider>();
             services.AddSingleton<IServerCodeProvider, ServerCodeProvider>();
 
-            services.AddSingleton<MessageDispatcher<HandshakeMessageRegistry>>();
-            services.AddSingleton<MessageDispatcher<UserMessageRegistry>>();
+            services.AddSingleton<IMessageDispatcher, MessageDispatcher>();
 
             services.AddSingleton<HandshakeMessageReceiver>();
             services.AddSingleton<UserMessageReceiver>();
@@ -47,7 +38,6 @@ namespace BeatTogether.MasterServer.Kernel.Bootstrap
 
             services.AddSingleton<IDiffieHellmanService, DiffieHellmanService>();
             services.AddSingleton<ICertificateSigningService, CertificateSigningService>();
-            services.AddSingleton<ICryptoService, CryptoService>();
             services.AddSingleton<ISessionService, SessionService>();
             services.AddSingleton<IMultipartMessageService, MultipartMessageService>();
 

@@ -193,7 +193,7 @@ namespace BeatTogether.MasterServer.Data.Implementations
             // Build the connection pool
             _logger.Debug(
                 "Initializing Redis connection pool " +
-                $"(Endpoint={configuration.Endpoint}, " +
+                $"(EndPoint='{configuration.Endpoint}', " +
                 $"ConnectionPoolSize={configuration.ConnectionPoolSize})."
             );
             _connectionQueue = new ConcurrentQueue<Lazy<Task<PooledConnectionMultiplexer>>>();

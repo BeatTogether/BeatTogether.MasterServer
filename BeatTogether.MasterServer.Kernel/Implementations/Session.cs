@@ -1,8 +1,9 @@
-﻿using System;
-using System.Net;
+﻿using System.Net;
 using System.Security.Cryptography;
+using System.Threading.Channels;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Enums;
+using BeatTogether.MasterServer.Messaging.Abstractions.Messages;
 using BeatTogether.MasterServer.Messaging.Enums;
 using Org.BouncyCastle.Crypto.Parameters;
 
@@ -10,11 +11,15 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 {
     public class Session : ISession
     {
+        public MasterServer MasterServer { get; }
+
         public EndPoint EndPoint { get; }
         public SessionState State { get; set; }
+
         public Platform Platform { get; set; }
         public string UserId { get; set; }
         public string UserName { get; set; }
+
         public byte[] Cookie { get; set; }
         public byte[] ClientRandom { get; set; }
         public byte[] ServerRandom { get; set; }
@@ -23,24 +28,24 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         public byte[] PreMasterSecret { get; set; }
         public byte[] ReceiveKey { get; set; }
         public byte[] SendKey { get; set; }
-        public HMACSHA256 SendMac { get; set; }
         public HMACSHA256 ReceiveMac { get; set; }
+        public HMACSHA256 SendMac { get; set; }
         public uint LastSentSequenceId { get; set; }
 
-        private readonly MasterServer _masterServer;
+        public Channel<IMessage> MessageReceiveChannel { get; }
 
         public Session(MasterServer masterServer, EndPoint endPoint)
         {
-            _masterServer = masterServer;
-
+            MasterServer = masterServer;
             EndPoint = endPoint;
+            MessageReceiveChannel = Channel.CreateBounded<IMessage>(
+                new BoundedChannelOptions(64)
+                {
+                    SingleReader = true,
+                    SingleWriter = false
+                }
+            );
             State = SessionState.New;
         }
-
-        public void Send(ReadOnlySpan<byte> buffer)
-            => _masterServer.SendAsync(this, buffer);
-
-        public void SendEncrypted(ReadOnlySpan<byte> buffer)
-            => _masterServer.SendEncryptedAsync(this, buffer);
     }
 }

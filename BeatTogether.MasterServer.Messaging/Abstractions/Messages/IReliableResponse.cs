@@ -1,8 +1,7 @@
 ﻿namespace BeatTogether.MasterServer.Messaging.Abstractions.Messages
 {
-    public interface IReliableMessage : IMessage
+    public interface IReliableResponse : IMessage
     {
-        uint RequestId { get; set; }
         uint ResponseId { get; set; }
     }
 }

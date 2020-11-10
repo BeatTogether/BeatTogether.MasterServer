@@ -6,7 +6,5 @@ namespace BeatTogether.MasterServer.Kernel.Abstractions
     {
         public void Send<T>(ISession session, T message)
             where T : class, IMessage;
-        void SendEncrypted<T>(ISession session, T message)
-            where T : class, IMessage;
     }
 }

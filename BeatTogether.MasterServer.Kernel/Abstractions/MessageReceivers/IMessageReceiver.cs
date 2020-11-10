@@ -1,9 +1,10 @@
-﻿using System;
+﻿using System.Threading.Tasks;
+using BeatTogether.MasterServer.Messaging.Abstractions.Messages;
 
 namespace BeatTogether.MasterServer.Kernel.Abstractions
 {
     public interface IMessageReceiver
     {
-        void OnReceived(ISession session, ReadOnlySpan<byte> buffer);
+        Task OnReceived(ISession session, IMessage message);
     }
 }

@@ -1,11 +1,14 @@
 ﻿using System.Net;
+using BeatTogether.MasterServer.Messaging.Abstractions.Messages;
 using BeatTogether.MasterServer.Messaging.Extensions;
 using Krypton.Buffers;
 
 namespace BeatTogether.MasterServer.Messaging.Implementations.Messages.User
 {
-    public class PrepareForConnectionRequest : BaseReliableRequest
+    public class PrepareForConnectionRequest : BaseMessage, IReliableRequest, IEncryptedMessage
     {
+        public uint SequenceId { get; set; }
+        public uint RequestId { get; set; }
         public string UserId { get; set; }
         public string UserName { get; set; }
         public IPEndPoint RemoteEndPoint { get; set; }
@@ -16,8 +19,6 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Messages.User
 
         public override void WriteTo(ref GrowingSpanBuffer buffer)
         {
-            base.WriteTo(ref buffer);
-
             buffer.WriteString(UserId);
             buffer.WriteString(UserName);
             buffer.WriteIPEndPoint(RemoteEndPoint);
@@ -28,8 +29,6 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Messages.User
 
         public override void ReadFrom(ref SpanBufferReader bufferReader)
         {
-            base.ReadFrom(ref bufferReader);
-
             UserId = bufferReader.ReadString();
             UserName = bufferReader.ReadString();
             RemoteEndPoint = bufferReader.ReadIPEndPoint();

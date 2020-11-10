@@ -1,15 +1,11 @@
 ﻿if redis.call("EXISTS", @serverKey) == 1 then
     return false
 end
-if redis.call("EXISTS", @playerKey) == 1 then
-    return false
-end
 redis.call(
     "HSET", @serverKey,
     "HostUserId", @hostUserId,
     "HostUserName", @hostUserName,
     "RemoteEndPoint", @remoteEndPoint,
-    "Secret", @secret,
     "Code", @code,
     "IsPublic", @isPublic,
     "DiscoveryPolicy", @discoveryPolicy,
@@ -23,12 +19,7 @@ redis.call(
     "Random", @random,
     "PublicKey", @publicKey
 )
-redis.call(
-    "HSET", @playerKey,
-    "UserId", @hostUserId,
-    "UserName", @hostUserName,
-    "CurrentServerCode", @code
-)
-redis.call("HSET", @serversByHostUserIdKey, @hostUserId, @code)
-redis.call("ZADD", @serversByPlayerCountKey, @currentPlayerCount, @code)
+redis.call("HSET", @serversByHostUserIdKey, @hostUserId, @secret)
+redis.call("HSET", @serversByCodeKey, @code, @secret)
+redis.call("ZADD", @serversByPlayerCountKey, @currentPlayerCount, @secret)
 return true

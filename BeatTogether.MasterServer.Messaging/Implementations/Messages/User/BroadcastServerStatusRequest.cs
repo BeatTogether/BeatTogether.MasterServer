@@ -1,12 +1,15 @@
-﻿using BeatTogether.MasterServer.Messaging.Enums;
+﻿using BeatTogether.MasterServer.Messaging.Abstractions.Messages;
+using BeatTogether.MasterServer.Messaging.Enums;
 using BeatTogether.MasterServer.Messaging.Extensions;
 using BeatTogether.MasterServer.Messaging.Implementations.Messages.Models;
 using Krypton.Buffers;
 
 namespace BeatTogether.MasterServer.Messaging.Implementations.Messages.User
 {
-    public class BroadcastServerStatusRequest : BaseReliableRequest
+    public class BroadcastServerStatusRequest : BaseMessage, IReliableRequest, IEncryptedMessage
     {
+        public uint SequenceId { get; set; }
+        public uint RequestId { get; set; }
         public string ServerName { get; set; }
         public string UserId { get; set; }
         public string UserName { get; set; }
@@ -22,8 +25,6 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Messages.User
 
         public override void WriteTo(ref GrowingSpanBuffer buffer)
         {
-            base.WriteTo(ref buffer);
-
             buffer.WriteString(ServerName);
             buffer.WriteString(UserId);
             buffer.WriteString(UserName);
@@ -40,8 +41,6 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Messages.User
 
         public override void ReadFrom(ref SpanBufferReader bufferReader)
         {
-            base.ReadFrom(ref bufferReader);
-
             ServerName = bufferReader.ReadString();
             UserId = bufferReader.ReadString();
             UserName = bufferReader.ReadString();

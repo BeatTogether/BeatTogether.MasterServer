@@ -6,7 +6,7 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Registries
 {
     public class HandshakeMessageRegistry : BaseMessageRegistry
     {
-        public override MessageGroup MessageGroup => MessageGroup.Handshake;
+        public override uint MessageGroup => (uint)Enums.MessageGroup.Handshake;
 
         public HandshakeMessageRegistry()
         {
@@ -15,7 +15,7 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Registries
             Register<ClientHelloWithCookieRequest>(HandshakeMessageType.ClientHelloWithCookieRequest);
             Register<ServerHelloRequest>(HandshakeMessageType.ServerHelloRequest);
             Register<ServerCertificateRequest>(HandshakeMessageType.ServerCertificateRequest);
-            // Register<ServerCertificateResponse>(HandshakeMessageType.ServerCertificateResponse);
+            // Register<ServerCertificateResponse>(HandshakeMessageType.ServerCertificateResponse); -- unused?
             Register<ClientKeyExchangeRequest>(HandshakeMessageType.ClientKeyExchangeRequest);
             Register<ChangeCipherSpecRequest>(HandshakeMessageType.ChangeCipherSpecRequest);
             Register<AcknowledgeMessage>(HandshakeMessageType.MessageReceivedAcknowledge);

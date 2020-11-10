@@ -1,10 +1,11 @@
 ﻿using System.Net;
+using BeatTogether.MasterServer.Messaging.Abstractions.Messages;
 using BeatTogether.MasterServer.Messaging.Extensions;
 using Krypton.Buffers;
 
 namespace BeatTogether.MasterServer.Messaging.Implementations.Messages.User
 {
-    public class BroadcastServerStatusResponse : BaseReliableResponse
+    public class BroadcastServerStatusResponse : BaseMessage, IReliableRequest, IReliableResponse, IEncryptedMessage
     {
         public enum ResultCode : byte
         {
@@ -13,6 +14,9 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Messages.User
             UnknownError
         }
 
+        public uint SequenceId { get; set; }
+        public uint RequestId { get; set; }
+        public uint ResponseId { get; set; }
         public ResultCode Result { get; set; }
         public IPEndPoint RemoteEndPoint { get; set; }
         public string Code { get; set; }
@@ -21,8 +25,6 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Messages.User
 
         public override void WriteTo(ref GrowingSpanBuffer buffer)
         {
-            base.WriteTo(ref buffer);
-
             buffer.WriteUInt8((byte)Result);
             if (!Success)
                 return;
@@ -33,8 +35,6 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Messages.User
 
         public override void ReadFrom(ref SpanBufferReader bufferReader)
         {
-            base.ReadFrom(ref bufferReader);
-
             Result = (ResultCode)bufferReader.ReadByte();
             if (!Success)
                 return;

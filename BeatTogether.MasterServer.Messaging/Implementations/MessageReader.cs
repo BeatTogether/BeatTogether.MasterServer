@@ -1,53 +1,55 @@
-﻿using System.Runtime.Serialization;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.Serialization;
 using BeatTogether.MasterServer.Messaging.Abstractions;
 using BeatTogether.MasterServer.Messaging.Abstractions.Messages;
 using BeatTogether.MasterServer.Messaging.Abstractions.Registries;
-using BeatTogether.MasterServer.Messaging.Enums;
 using BeatTogether.MasterServer.Messaging.Extensions;
 using Krypton.Buffers;
 
 namespace BeatTogether.MasterServer.Messaging.Implementations
 {
-    public class MessageReader<TMessageRegistry> : IMessageReader
-        where TMessageRegistry : class, IMessageRegistry
+    public class MessageReader : IMessageReader
     {
         protected virtual uint ProtocolVersion => 1;
 
-        private readonly TMessageRegistry _messageRegistry;
+        private readonly Dictionary<uint, IMessageRegistry> _messageRegistries;
 
-        public MessageReader(TMessageRegistry messageRegistry)
+        public MessageReader(IEnumerable<IMessageRegistry> messageRegistries)
         {
-            _messageRegistry = messageRegistry;
+            _messageRegistries = messageRegistries.ToDictionary(
+                messageRegistry => messageRegistry.MessageGroup
+            );
         }
 
-        public IMessage ReadFrom(ref SpanBufferReader bufferReader)
+        /// <inheritdoc cref="IMessageReader.ReadFrom"/>
+        public IMessage ReadFrom(ref SpanBufferReader bufferReader, byte packetProperty)
         {
-            var messageGroup = (MessageGroup)bufferReader.ReadUInt32();
-            if (messageGroup != _messageRegistry.MessageGroup)
-                throw new InvalidDataContractException(
-                    "Invalid message group " +
-                    $"(MessageGroup={messageGroup}, " +
-                    $"Expected={_messageRegistry.MessageGroup})."
-                );
+            if (packetProperty != 0x00)
+            {
+                var readPacketProperty = bufferReader.ReadUInt8();
+                if (readPacketProperty != packetProperty)
+                    throw new InvalidDataContractException(
+                        "Invalid packet property " +
+                        $"(PacketProperty={readPacketProperty}, Expected={packetProperty})."
+                    );
+            }
+            var messageGroup = bufferReader.ReadUInt32();
+            if (!_messageRegistries.TryGetValue(messageGroup, out var messageRegistry))
+                throw new InvalidDataContractException($"Invalid message group (MessageGroup={messageGroup}).");
             var protocolVersion = bufferReader.ReadVarUInt();
             if (protocolVersion != ProtocolVersion)
-                throw new InvalidDataContractException(
-                    "Invalid message protocol version " +
-                    $"(ProtocolVersion={protocolVersion}, " +
-                    $"Expected={ProtocolVersion})."
-                );
+                throw new InvalidDataContractException($"Invalid message protocol version (ProtocolVersion={protocolVersion}).");
             var length = bufferReader.ReadVarUInt();
             if (bufferReader.RemainingSize < length)
-                throw new InvalidDataContractException(
-                    "Invalid message length " +
-                    $"(Length={length}, Expected={bufferReader.RemainingSize})."
-                );
-            var messageId = (int)bufferReader.ReadVarUInt();
-            if (!_messageRegistry.TryGetMessage(messageId, out var message))
-                throw new InvalidDataContractException(
-                    "Invalid message id " +
-                    $"(MessageId={messageId})."
-                );
+                throw new InvalidDataContractException($"Message truncated (RemainingSize={bufferReader.RemainingSize}, Expected={length}).");
+            var messageId = bufferReader.ReadVarUInt();
+            if (!messageRegistry.TryCreateMessage(messageId, out var message))
+                throw new InvalidDataContractException($"Invalid message identifier (MessageId={messageId}).");
+            if (message is IReliableRequest)
+                ((IReliableRequest)message).RequestId = bufferReader.ReadUInt32();
+            if (message is IReliableResponse)
+                ((IReliableResponse)message).ResponseId = bufferReader.ReadUInt32();
             message.ReadFrom(ref bufferReader);
             return message;
         }
