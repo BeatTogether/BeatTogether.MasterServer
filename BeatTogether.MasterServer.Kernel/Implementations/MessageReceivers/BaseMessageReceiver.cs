@@ -58,23 +58,13 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     "Failed to retrieve message handler for message of type " +
                     $"'{messageType.Name}'."
                 );
-                if (message is IReliableRequest)
-                    _messageDispatcher.Send(session, new AcknowledgeMessage()
-                    {
-                        MessageHandled = false
-                    });
                 return;
             }
 
-            if (message is IReliableRequest)
-                _messageDispatcher.Send(session, new AcknowledgeMessage()
-                {
-                    MessageHandled = true
-                });
-
             using var scope = _serviceProvider.CreateScope();
             var service = scope.ServiceProvider.GetRequiredService<TService>();
-            await messageHandler(service, session, message);
+            await messageHandler(service, session, message)
+                .ConfigureAwait(false);
         }
 
         #endregion

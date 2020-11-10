@@ -7,6 +7,7 @@ using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Configuration;
 using BeatTogether.MasterServer.Messaging.Abstractions;
 using BeatTogether.MasterServer.Messaging.Abstractions.Messages;
+using BeatTogether.MasterServer.Messaging.Implementations.Messages;
 using Krypton.Buffers;
 using Microsoft.Extensions.Hosting;
 using NetCoreServer;
@@ -20,19 +21,22 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         private readonly ISessionService _sessionService;
         private readonly IMessageReader _messageReader;
         private readonly IEncryptedMessageReader _encryptedMessageReader;
+        private readonly IMessageDispatcher _messageDispatcher;
         private readonly ILogger _logger;
 
         public MasterServer(
             MasterServerConfiguration configuration,
             ISessionService sessionService,
             IMessageReader messageReader,
-            IEncryptedMessageReader encryptedMessageReader)
+            IEncryptedMessageReader encryptedMessageReader,
+            IMessageDispatcher messageDispatcher)
             : base(IPEndPoint.Parse(configuration.EndPoint))
         {
             _configuration = configuration;
             _sessionService = sessionService;
             _messageReader = messageReader;
             _encryptedMessageReader = encryptedMessageReader;
+            _messageDispatcher = messageDispatcher;
             _logger = Log.ForContext<MasterServer>();
         }
 
@@ -75,7 +79,16 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             }
 
             // Publish it to the session's receive channel
-            session.MessageReceiveChannel.Writer.TryWrite(message);
+            if (session.MessageReceiveChannel.Writer.TryWrite(message))
+            {
+                if (message is IReliableRequest reliableRequest)
+                    _messageDispatcher.Send(session, new AcknowledgeMessage()
+                    {
+                        ResponseId = reliableRequest.RequestId,
+                        MessageHandled = true
+                    });
+            }
+
             ReceiveAsync();
         }
 

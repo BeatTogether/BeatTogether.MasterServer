@@ -8,35 +8,22 @@ namespace BeatTogether.MasterServer.Kernel.Implementations.Providers
     {
         private static readonly string _alphanumeric = "ABCDEFGHIJKLMNPQRSTUVWXYZ1245789";
 
-        private readonly RNGCryptoServiceProvider _cryptoServiceProvider;
+        private readonly RNGCryptoServiceProvider _rngCryptoServiceProvider;
 
         public ServerCodeProvider(RNGCryptoServiceProvider rngCryptoServiceProvider)
         {
-            _cryptoServiceProvider = rngCryptoServiceProvider;
+            _rngCryptoServiceProvider = rngCryptoServiceProvider;
         }
-
-        #region Public Methods
 
         public string Generate(int length = 5)
         {
-            byte[] randomBytes = GenerateRandomBytes(length);
-            return new string(randomBytes
-                .Select(b => _alphanumeric[b % _alphanumeric.Length])
-                .ToArray()
+            var randomBytes = new byte[length];
+            _rngCryptoServiceProvider.GetBytes(randomBytes);
+            return new string(
+                randomBytes
+                    .Select(b => _alphanumeric[b % _alphanumeric.Length])
+                    .ToArray()
             );
         }
-
-        #endregion
-
-        #region Private Methods
-
-        private byte[] GenerateRandomBytes(int length)
-        {
-            var randomBytes = new byte[length];
-            _cryptoServiceProvider.GetBytes(randomBytes);
-            return randomBytes;
-        }
-
-        #endregion
     }
 }
