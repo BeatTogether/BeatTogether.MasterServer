@@ -6,7 +6,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations.Providers
 {
     public class ServerCodeProvider : IServerCodeProvider
     {
-        private static readonly string _alphanumeric = "ABCDEFGHIJKLMNOPQRSTUVWXYZ124578";
+        private static readonly string _alphanumeric = "ABCDEFGHIJKLMNPQRSTUVWXYZ1245789";
 
         private readonly RNGCryptoServiceProvider _cryptoServiceProvider;
 

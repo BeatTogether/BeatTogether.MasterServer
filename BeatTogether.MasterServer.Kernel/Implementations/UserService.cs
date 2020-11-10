@@ -68,6 +68,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 $"(ServerName='{request.ServerName}', " +
                 $"UserId='{request.UserId}', " +
                 $"UserName='{request.UserName}', " +
+                $"Secret='{request.Secret}', " +
                 $"CurrentPlayerCount={request.CurrentPlayerCount}, " +
                 $"MaximumPlayerCount={request.MaximumPlayerCount}, " +
                 $"DiscoveryPolicy={request.DiscoveryPolicy}, " +
@@ -122,6 +123,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     $"(ServerName='{request.ServerName}', " +
                     $"UserId='{request.UserId}', " +
                     $"UserName='{request.UserName}', " +
+                    $"Secret='{request.Secret}', " +
                     $"CurrentPlayerCount={request.CurrentPlayerCount}, " +
                     $"MaximumPlayerCount={request.MaximumPlayerCount}, " +
                     $"DiscoveryPolicy={request.DiscoveryPolicy}, " +
@@ -142,6 +144,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 $"(ServerName='{request.ServerName}', " +
                 $"UserId='{request.UserId}', " +
                 $"UserName='{request.UserName}', " +
+                $"Secret='{request.Secret}', " +
                 $"CurrentPlayerCount={request.CurrentPlayerCount}, " +
                 $"MaximumPlayerCount={request.MaximumPlayerCount}, " +
                 $"DiscoveryPolicy={request.DiscoveryPolicy}, " +
