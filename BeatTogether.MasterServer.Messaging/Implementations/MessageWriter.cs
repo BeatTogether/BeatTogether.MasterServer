@@ -49,10 +49,10 @@ namespace BeatTogether.MasterServer.Messaging.Implementations
 
             var messageBuffer = new GrowingSpanBuffer(stackalloc byte[412]);
             messageBuffer.WriteVarUInt(messageId);
-            if (message is IReliableRequest)
-                messageBuffer.WriteUInt32(((IReliableRequest)message).RequestId);
-            if (message is IReliableResponse)
-                messageBuffer.WriteUInt32(((IReliableResponse)message).ResponseId);
+            if (message is IReliableRequest reliableRequest)
+                messageBuffer.WriteUInt32(reliableRequest.RequestId);
+            if (message is IReliableResponse reliableResponse)
+                messageBuffer.WriteUInt32(reliableResponse.ResponseId);
             message.WriteTo(ref messageBuffer);
             buffer.WriteVarUInt((uint)messageBuffer.Size);
             // TODO: Remove byte array allocation
