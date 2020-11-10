@@ -1,6 +1,5 @@
 ﻿using System;
 using BeatTogether.MasterServer.Kernel.Abstractions;
-using BeatTogether.MasterServer.Kernel.Abstractions.Providers;
 using BeatTogether.MasterServer.Messaging.Implementations.Messages.Handshake;
 
 namespace BeatTogether.MasterServer.Kernel.Implementations
@@ -9,10 +8,9 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
     {
         public HandshakeMessageReceiver(
             IServiceProvider serviceProvider,
-            IRequestIdProvider requestIdProvider,
             IMultipartMessageService multipartMessageService,
             IMessageDispatcher messageDispatcher)
-            : base(serviceProvider, requestIdProvider, multipartMessageService, messageDispatcher)
+            : base(serviceProvider, multipartMessageService, messageDispatcher)
         {
             AddReliableMessageHandler<ClientHelloRequest, HelloVerifyRequest>(
                 (service, session, request) => service.ClientHello(session, request)

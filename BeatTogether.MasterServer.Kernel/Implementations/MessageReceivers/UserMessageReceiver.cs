@@ -1,6 +1,5 @@
 ﻿using System;
 using BeatTogether.MasterServer.Kernel.Abstractions;
-using BeatTogether.MasterServer.Kernel.Abstractions.Providers;
 using BeatTogether.MasterServer.Messaging.Implementations.Messages.User;
 
 namespace BeatTogether.MasterServer.Kernel.Implementations.MessageReceivers
@@ -9,10 +8,9 @@ namespace BeatTogether.MasterServer.Kernel.Implementations.MessageReceivers
     {
         public UserMessageReceiver(
             IServiceProvider serviceProvider,
-            IRequestIdProvider requestIdProvider,
             IMultipartMessageService multipartMessageService,
             IMessageDispatcher messageDispatcher)
-            : base(serviceProvider, requestIdProvider, multipartMessageService, messageDispatcher)
+            : base(serviceProvider, multipartMessageService, messageDispatcher)
         {
             AddReliableMessageHandler<AuthenticateUserRequest, AuthenticateUserResponse>(
                 (service, session, message) => service.AuthenticateUser(session, message)

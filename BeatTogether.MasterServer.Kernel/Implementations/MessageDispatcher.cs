@@ -1,5 +1,6 @@
 ﻿using System;
 using BeatTogether.MasterServer.Kernel.Abstractions;
+using BeatTogether.MasterServer.Kernel.Abstractions.Providers;
 using BeatTogether.MasterServer.Kernel.Enums;
 using BeatTogether.MasterServer.Messaging.Abstractions;
 using BeatTogether.MasterServer.Messaging.Abstractions.Messages;
@@ -12,20 +13,29 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
     {
         private readonly IMessageWriter _messageWriter;
         private readonly IEncryptedMessageWriter _encryptedMessageWriter;
+        private readonly IRequestIdProvider _requestIdProvider;
         private readonly ILogger _logger;
 
         public MessageDispatcher(
             IMessageWriter messageWriter,
-            IEncryptedMessageWriter encryptedMessageWriter)
+            IEncryptedMessageWriter encryptedMessageWriter,
+            IRequestIdProvider requestIdProvider)
         {
             _messageWriter = messageWriter;
             _encryptedMessageWriter = encryptedMessageWriter;
+            _requestIdProvider = requestIdProvider;
             _logger = Log.ForContext<MessageDispatcher>();
         }
 
         public void Send<T>(ISession session, T message)
             where T : class, IMessage
         {
+            if (message is IReliableRequest reliableRequest)
+            {
+                if (reliableRequest.RequestId == 0)
+                    reliableRequest.RequestId = _requestIdProvider.GetNextRequestId();
+            }
+
             var buffer = new GrowingSpanBuffer(stackalloc byte[1024]);
             if (session.State != SessionState.New && message is IEncryptedMessage encryptedMessage)
             {

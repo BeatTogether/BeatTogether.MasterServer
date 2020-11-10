@@ -120,7 +120,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 $"TotalLength={message.TotalLength}, " +
                 $"Data='{BitConverter.ToString(message.Data)}')."
             );
-            var multipartMessageReceiver = _multipartMessageAggregators.GetOrAdd(
+            var multipartMessageAggregator = _multipartMessageAggregators.GetOrAdd(
                 message.MultipartMessageId,
                 key => new MultipartMessageAggregator(
                     this,
@@ -130,7 +130,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     message.MultipartMessageId
                 )
             );
-            multipartMessageReceiver.AddMultipartMessage(message);
+            multipartMessageAggregator.AddMultipartMessage(message);
             return Task.CompletedTask;
         }
     }

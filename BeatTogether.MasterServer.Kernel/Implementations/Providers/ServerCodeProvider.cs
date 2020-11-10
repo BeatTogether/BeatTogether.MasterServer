@@ -1,12 +1,11 @@
-﻿using System.Linq;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using BeatTogether.MasterServer.Kernel.Abstractions.Providers;
 
 namespace BeatTogether.MasterServer.Kernel.Implementations.Providers
 {
     public class ServerCodeProvider : IServerCodeProvider
     {
-        private static readonly string _alphanumeric = "ABCDEFGHIJKLMNPQRSTUVWXYZ1245789";
+        private static readonly string _alphanumeric = "ABCDEFGHJKLMNPQRSTUVWXYZ12345789";
 
         private readonly RNGCryptoServiceProvider _rngCryptoServiceProvider;
 
@@ -19,11 +18,12 @@ namespace BeatTogether.MasterServer.Kernel.Implementations.Providers
         {
             var randomBytes = new byte[length];
             _rngCryptoServiceProvider.GetBytes(randomBytes);
-            return new string(
-                randomBytes
-                    .Select(b => _alphanumeric[b % _alphanumeric.Length])
-                    .ToArray()
-            );
+            return string.Create(length, randomBytes, (str, randomBytes) => {
+                for (var i = 0; i < str.Length; i++)
+                {
+                    str[i] = _alphanumeric[randomBytes[i] % _alphanumeric.Length];
+                }
+            });
         }
     }
 }

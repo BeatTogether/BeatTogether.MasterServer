@@ -2,10 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using BeatTogether.MasterServer.Kernel.Abstractions;
-using BeatTogether.MasterServer.Kernel.Abstractions.Providers;
-using BeatTogether.MasterServer.Kernel.Configuration;
 using BeatTogether.MasterServer.Kernel.Delegates;
-using BeatTogether.MasterServer.Messaging.Abstractions;
 using BeatTogether.MasterServer.Messaging.Abstractions.Messages;
 using BeatTogether.MasterServer.Messaging.Implementations.Messages;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,11 +12,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 {
     public abstract class BaseMessageReceiver<TService> : IMessageReceiver
     {
-        private readonly MessagingConfiguration _messagingConfiguration;
         private readonly IServiceProvider _serviceProvider;
-        private readonly IRequestIdProvider _requestIdProvider;
         private readonly IMultipartMessageService _multipartMessageService;
-        private readonly IMessageReader _messageReader;
         private readonly IMessageDispatcher _messageDispatcher;
         private readonly ILogger _logger;
 
@@ -27,12 +21,10 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         public BaseMessageReceiver(
             IServiceProvider serviceProvider,
-            IRequestIdProvider requestIdProvider,
             IMultipartMessageService multipartMessageService,
             IMessageDispatcher messageDispatcher)
         {
             _serviceProvider = serviceProvider;
-            _requestIdProvider = requestIdProvider;
             _multipartMessageService = multipartMessageService;
             _messageDispatcher = messageDispatcher;
             _logger = Log.ForContext<BaseMessageReceiver<TService>>();
@@ -100,8 +92,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     return;
                 if (response.ResponseId == 0)
                     response.ResponseId = request.RequestId;
-                if (response is IReliableRequest)
-                    ((IReliableRequest)response).RequestId = _requestIdProvider.GetNextRequestId();
                 _messageDispatcher.Send(session, response);
             });
 
