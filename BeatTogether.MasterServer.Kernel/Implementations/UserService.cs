@@ -175,11 +175,12 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     Result = BroadcastServerHeartbeatResponse.ResultCode.ServerDoesNotExist
                 };
 
+            /*
             if (server.Host.UserId != session.UserId)
                 return new BroadcastServerHeartbeatResponse()
                 {
                     Result = BroadcastServerHeartbeatResponse.ResultCode.UnknownError
-                };
+                };*/
 
             _serverRepository.UpdateCurrentPlayerCount(request.Secret, (int)request.CurrentPlayerCount);
             return new BroadcastServerHeartbeatResponse()
