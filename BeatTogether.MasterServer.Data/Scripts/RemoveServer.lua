@@ -12,11 +12,6 @@ for i, j in ipairs(hashEntries) do
 	end
 end
 redis.call("DEL", @serverKey);
-redis.call("HDEL", @serversByHostUserIdKey, hashEntryTable["HostUserId"])
 redis.call("HDEL", @serversByCodeKey, hashEntryTable["Code"])
-if tonumber(hashEntryTable["IsPublic"]) == 1 then
-    redis.call("ZREM", @publicServersByPlayerCountKey, @secret)
-else
-    redis.call("ZREM", @privateServersByPlayerCountKey, @secret)
-end
+redis.call("ZREM", @publicServersByPlayerCountKey, @secret)
 return true

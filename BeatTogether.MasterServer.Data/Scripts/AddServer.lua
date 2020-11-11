@@ -19,7 +19,8 @@ redis.call(
     "Random", @random,
     "PublicKey", @publicKey
 )
-redis.call("HSET", @serversByHostUserIdKey, @hostUserId, @secret)
 redis.call("HSET", @serversByCodeKey, @code, @secret)
-redis.call("ZADD", @serversByPlayerCountKey, @currentPlayerCount, @secret)
+if tonumber(@isPublic) == 1 then
+    redis.call("ZADD", @publicServersByPlayerCountKey, @currentPlayerCount, @secret)
+end
 return true

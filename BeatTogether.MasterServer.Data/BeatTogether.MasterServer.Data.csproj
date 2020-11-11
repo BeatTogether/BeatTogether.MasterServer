@@ -21,9 +21,6 @@
     <None Update="Scripts\GetAvailablePublicServerAndAddPlayer.lua">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Scripts\GetServerWithCodeAndAddPlayer.lua">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="Scripts\RemoveServer.lua">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

@@ -14,10 +14,8 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
         public static class RedisKeys
         {
             public static RedisKey Servers(string secret) => $"Servers:{secret}";
-            public static RedisKey ServersByHostUserId = "ServersByHostUserId";
             public static RedisKey ServersByCode = "ServersByCode";
             public static RedisKey PublicServersByPlayerCount = "PublicServersByPlayerCount";
-            public static RedisKey PrivateServersByPlayerCount = "PrivateServersByPlayerCount";
         };
 
         private readonly IConnectionMultiplexer _connectionMultiplexer;
@@ -40,15 +38,6 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
             return server;
         }
 
-        public async Task<Server> GetServerByHostUserId(string userId)
-        {
-            var database = _connectionMultiplexer.GetDatabase();
-            var secret = await database.HashGetAsync(RedisKeys.ServersByHostUserId, userId);
-            if (secret.IsNull)
-                return null;
-            return await GetServer(secret);
-        }
-
         public async Task<Server> GetServerByCode(string code)
         {
             var database = _connectionMultiplexer.GetDatabase();
@@ -66,11 +55,8 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
                 parameters: new
                 {
                     serverKey = RedisKeys.Servers(server.Secret),
-                    serversByHostUserIdKey = RedisKeys.ServersByHostUserId,
                     serversByCodeKey = RedisKeys.ServersByCode,
-                    serversByPlayerCountKey = server.IsPublic
-                        ? RedisKeys.PublicServersByPlayerCount
-                        : RedisKeys.PrivateServersByPlayerCount,
+                    publicServersByPlayerCountKey = RedisKeys.PublicServersByPlayerCount,
                     hostUserId = (RedisValue)server.Host.UserId,
                     hostUserName = (RedisValue)server.Host.UserName,
                     remoteEndPoint = (RedisValue)server.RemoteEndPoint.ToString(),
@@ -101,10 +87,8 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
                 parameters: new
                 {
                     serverKey = RedisKeys.Servers(secret),
-                    serversByHostUserIdKey = RedisKeys.ServersByHostUserId,
                     serversByCodeKey = RedisKeys.ServersByCode,
                     publicServersByPlayerCountKey = RedisKeys.PublicServersByPlayerCount,
-                    privateServersByPlayerCountKey = RedisKeys.PrivateServersByPlayerCount,
                     secret = (RedisValue)secret
                 },
                 flags: CommandFlags.DemandMaster
@@ -128,24 +112,6 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
             return await GetServer((string)redisResult);
         }
 
-        public async Task<Server> GetServerWithCodeAndAddPlayer(string code)
-        {
-            var database = _connectionMultiplexer.GetDatabase();
-            var redisResult = await database.ScriptEvaluateAsync(
-                _getServerWithCodeAndAddPlayerScript,
-                parameters: new
-                {
-                    publicServersByPlayerCountKey = RedisKeys.PublicServersByPlayerCount,
-                    privateServersByPlayerCountKey = RedisKeys.PrivateServersByPlayerCount,
-                    code = (RedisValue)code
-                },
-                flags: CommandFlags.DemandMaster
-            );
-            if (redisResult.IsNull)
-                return null;
-            return await GetServer((string)redisResult);
-        }
-
         public async Task<bool> IncrementCurrentPlayerCount(string secret)
         {
             var database = _connectionMultiplexer.GetDatabase();
@@ -154,8 +120,6 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
                 return false;
             if (server.IsPublic)
                 database.SortedSetIncrement(RedisKeys.PublicServersByPlayerCount, secret, 1.0);
-            else
-                database.SortedSetIncrement(RedisKeys.PrivateServersByPlayerCount, secret, 1.0);
             return true;
         }
 
@@ -217,10 +181,6 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
 
         private static readonly LuaScript _getAvailablePublicServerAndAddPlayerScript = LuaScript.Prepare(
             File.ReadAllText("Scripts/GetAvailablePublicServerAndAddPlayer.lua")
-        );
-
-        private static readonly LuaScript _getServerWithCodeAndAddPlayerScript = LuaScript.Prepare(
-            File.ReadAllText("Scripts/GetServerWithCodeAndAddPlayer.lua")
         );
 
         private static readonly LuaScript _updateCurrentPlayerCountScript = LuaScript.Prepare(
