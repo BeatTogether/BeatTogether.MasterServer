@@ -7,4 +7,4 @@ If you are looking to just play BeatTogether you can download it for your respec
 
 PC: [here](https://github.com/pythonology/BeatTogether#installation).
 
-Quest: [here](https://github.com/pythonology/BeatTogether.Quest).
+Quest: [here](https://github.com/pythonology/BeatTogether.Quest#installation).
