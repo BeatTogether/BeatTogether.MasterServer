@@ -12,13 +12,13 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             IMessageDispatcher messageDispatcher)
             : base(serviceProvider, multipartMessageService, messageDispatcher)
         {
-            AddReliableMessageHandler<ClientHelloRequest, HelloVerifyRequest>(
+            AddMessageHandler<ClientHelloRequest, HelloVerifyRequest>(
                 (service, session, request) => service.ClientHello(session, request)
             );
-            AddReliableMessageHandler<ClientHelloWithCookieRequest, ServerHelloRequest>(
+            AddMessageHandler<ClientHelloWithCookieRequest, ServerHelloRequest>(
                 (service, session, request) => service.ClientHelloWithCookie(session, request)
             );
-            AddReliableMessageHandler<ClientKeyExchangeRequest, ChangeCipherSpecRequest>(
+            AddMessageHandler<ClientKeyExchangeRequest, ChangeCipherSpecRequest>(
                 (service, session, request) => service.ClientKeyExchange(session, request)
             );
         }

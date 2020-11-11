@@ -13,6 +13,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations.Providers
             _x509Certificate = new X509Certificate2(configuration.CertificatePath);
         }
 
-        public X509Certificate2 GetCertificate() => _x509Certificate;
+        public X509Certificate2 GetCertificate()
+            => _x509Certificate;
     }
 }

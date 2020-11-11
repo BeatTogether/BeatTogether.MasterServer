@@ -18,6 +18,7 @@ namespace BeatTogether.MasterServer.Kernel.Abstractions
         Platform Platform { get; set; }
         string UserId { get; set; }
         string UserName { get; set; }
+        string Secret { get; set; }
 
         byte[] Cookie { get; set; }
         byte[] ClientRandom { get; set; }

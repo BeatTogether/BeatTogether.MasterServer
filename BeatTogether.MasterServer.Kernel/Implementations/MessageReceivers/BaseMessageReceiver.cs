@@ -17,7 +17,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         private readonly IMessageDispatcher _messageDispatcher;
         private readonly ILogger _logger;
 
-        private readonly Dictionary<Type, MessageHandler<TService>> _messageHandlerByTypeLookup;
+        private readonly Dictionary<Type, MessageHandler<TService>> _messageHandlers;
 
         public BaseMessageReceiver(
             IServiceProvider serviceProvider,
@@ -29,9 +29,9 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             _messageDispatcher = messageDispatcher;
             _logger = Log.ForContext<BaseMessageReceiver<TService>>();
 
-            _messageHandlerByTypeLookup = new Dictionary<Type, MessageHandler<TService>>();
+            _messageHandlers = new Dictionary<Type, MessageHandler<TService>>();
 
-            AddReliableMessageHandler<MultipartMessage>(
+            AddMessageHandler<MultipartMessage>(
                 (service, session, message) => _multipartMessageService.HandleMultipartMessage(session, message)
             );
             AddMessageHandler<AcknowledgeMessage>(
@@ -44,7 +44,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         public async Task OnReceived(ISession session, IMessage message)
         {
             var messageType = message.GetType();
-            if (!_messageHandlerByTypeLookup.TryGetValue(messageType, out var messageHandler))
+            if (!_messageHandlers.TryGetValue(messageType, out var messageHandler))
             {
                 _logger.Warning(
                     "Failed to retrieve message handler for message of type " +
@@ -65,33 +65,23 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         protected void AddMessageHandler<TMessage>(MessageHandler<TService, TMessage> messageHandler)
             where TMessage : class, IMessage
-            => _messageHandlerByTypeLookup[typeof(TMessage)] =
+            => _messageHandlers[typeof(TMessage)] =
                     (service, session, message) => messageHandler(service, session, (TMessage)message);
 
         protected void AddMessageHandler<TRequest, TResponse>(MessageHandler<TService, TRequest, TResponse> messageHandler)
             where TRequest : class, IMessage
             where TResponse : class, IMessage
-            => AddMessageHandler<TRequest>(async (service, session, message) =>
-            {
-                var response = await messageHandler(service, session, message);
-                _messageDispatcher.Send(session, response);
-            });
-
-        protected void AddReliableMessageHandler<TMessage>(MessageHandler<TService, TMessage> messageHandler)
-            where TMessage : class, IReliableRequest
-            => _messageHandlerByTypeLookup[typeof(TMessage)] =
-                    (service, session, message) => messageHandler(service, session, (TMessage)message);
-
-        protected void AddReliableMessageHandler<TRequest, TResponse>(MessageHandler<TService, TRequest, TResponse> messageHandler)
-            where TRequest : class, IReliableRequest
-            where TResponse : class, IReliableResponse
             => AddMessageHandler<TRequest>(async (service, session, request) =>
             {
                 var response = await messageHandler(service, session, request);
                 if (response == null)
                     return;
-                if (response.ResponseId == 0)
-                    response.ResponseId = request.RequestId;
+                if (request is IReliableRequest reliableRequest &&
+                    response is IReliableResponse reliableResponse)
+                {
+                    if (reliableResponse.ResponseId == 0)
+                        reliableResponse.ResponseId = reliableRequest.RequestId;
+                }
                 _messageDispatcher.Send(session, response);
             });
 

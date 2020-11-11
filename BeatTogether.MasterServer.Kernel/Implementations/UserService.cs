@@ -78,22 +78,16 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 $"Random={BitConverter.ToString(request.Random)}, " +
                 $"PublicKey={BitConverter.ToString(request.PublicKey)})."
             );
-            var server = await _serverRepository.GetServerByHostUserId(session.UserId);
+            var server = await _serverRepository.GetServer(request.Secret);
             if (server != null)
                 return new BroadcastServerStatusResponse()
                 {
-                    Result = BroadcastServerStatusResponse.ResultCode.UnknownError
-                };
-
-            server = await _serverRepository.GetServer(request.Secret);
-            if (server != null)
-                return new BroadcastServerStatusResponse()
-                {
-                    Result = BroadcastServerStatusResponse.ResultCode.UnknownError
+                    Result = BroadcastServerStatusResponse.ResultCode.SecretNotUnique
                 };
 
             // TODO: We should probably retry in the event that a duplicate
             // code is ever generated (pretty unlikely to happen though)
+            session.Secret = request.Secret;
             server = new Server()
             {
                 Host = new Player()
@@ -171,19 +165,28 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 $"Secret='{request.Secret}', " +
                 $"CurrentPlayerCount={request.CurrentPlayerCount})."
             );
+            if (session.Secret != request.Secret)
+            {
+                _logger.Warning(
+                    $"User sent {nameof(BroadcastServerHeartbeatRequest)} " +
+                    "with an invalid secret " +
+                    $"(UserId='{request.UserId}', " +
+                    $"UserName='{request.UserName}', " +
+                    $"Secret='{request.Secret}', " +
+                    $"Expected='{session.Secret}')."
+                );
+                return new BroadcastServerHeartbeatResponse()
+                {
+                    Result = BroadcastServerHeartbeatResponse.ResultCode.UnknownError
+                };
+            }
+
             var server = await _serverRepository.GetServer(request.Secret);
             if (server == null)
                 return new BroadcastServerHeartbeatResponse()
                 {
                     Result = BroadcastServerHeartbeatResponse.ResultCode.ServerDoesNotExist
                 };
-
-            /*
-            if (server.Host.UserId != session.UserId)
-                return new BroadcastServerHeartbeatResponse()
-                {
-                    Result = BroadcastServerHeartbeatResponse.ResultCode.UnknownError
-                };*/
 
             _serverRepository.UpdateCurrentPlayerCount(request.Secret, (int)request.CurrentPlayerCount);
             return new BroadcastServerHeartbeatResponse()
@@ -200,11 +203,21 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 $"UserName='{request.UserName}', " +
                 $"Secret='{request.Secret}')."
             );
+            if (session.Secret != request.Secret)
+            {
+                _logger.Warning(
+                    $"User sent {nameof(BroadcastServerRemoveRequest)} " +
+                    "with an invalid secret " +
+                    $"(UserId='{request.UserId}', " +
+                    $"UserName='{request.UserName}', " +
+                    $"Secret='{request.Secret}', " +
+                    $"Expected='{session.Secret}')."
+                );
+                return;
+            }
+
             var server = await _serverRepository.GetServer(request.Secret);
             if (server == null)
-                return;
-
-            if (server.Host.UserId != session.UserId)
                 return;
 
             await _serverRepository.RemoveServer(server.Secret);
@@ -290,6 +303,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     Result = ConnectToServerResponse.ResultCode.UnknownError
                 };
             }
+
+            session.Secret = request.Secret;
 
             return new ConnectToServerResponse()
             {
