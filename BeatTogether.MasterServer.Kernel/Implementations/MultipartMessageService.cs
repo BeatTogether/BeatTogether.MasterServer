@@ -29,18 +29,17 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             private uint _receivedLength;
 
             public MultipartMessageWaiter(
-                MultipartMessage message,
+                uint multipartMessageId,
+                uint totalLength,
                 MultipartMessageService service)
             {
                 _service = service;
                 _logger = Log.ForContext<MultipartMessageService>();
 
-                _multipartMessageId = message.MultipartMessageId;
-                _totalLength = message.TotalLength;
-                _receivedLength = message.Length;
+                _multipartMessageId = multipartMessageId;
+                _totalLength = totalLength;
 
                 _messages = new ConcurrentDictionary<uint, MultipartMessage>();
-                _messages.TryAdd(message.RequestId, message);
 
                 _taskCompletionSource = new TaskCompletionSource<IMessage>();
                 if (_service._messagingConfiguration.RequestTimeout > 0)
@@ -86,8 +85,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     return;
                 if (!_messages.TryAdd(message.Offset, message))
                     return;
-                Interlocked.Add(ref _receivedLength, message.Length);
-                if (_receivedLength >= _totalLength)
+                if (Interlocked.Add(ref _receivedLength, message.Length) >= _totalLength)
                 {
                     var buffer = new GrowingSpanBuffer(stackalloc byte[(int)_totalLength]);
                     foreach (var kvp in _messages.OrderBy(kvp => kvp.Key))
@@ -130,11 +128,15 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             var multipartMessageWaiter = _multipartMessageWaiters.GetOrAdd(message.MultipartMessageId, key =>
             {
                 isNewMultipartMessageWaiter = true;
-                return new MultipartMessageWaiter(message, this);
+                return new MultipartMessageWaiter(
+                    message.MultipartMessageId,
+                    message.TotalLength,
+                    this
+                );
             });
+            multipartMessageWaiter.AddMessage(message);
             if (isNewMultipartMessageWaiter)
                 return multipartMessageWaiter.Wait();
-            multipartMessageWaiter.AddMessage(message);
             return Task.FromResult<IMessage>(null);
         }
     }
