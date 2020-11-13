@@ -1,9 +1,8 @@
 ﻿using System.Net;
 using System.Security.Cryptography;
-using System.Threading.Channels;
+using System.Threading;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Enums;
-using BeatTogether.MasterServer.Messaging.Abstractions.Messages;
 using BeatTogether.MasterServer.Messaging.Enums;
 using Org.BouncyCastle.Crypto.Parameters;
 
@@ -21,6 +20,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         public string UserName { get; set; }
         public string Secret { get; set; }
 
+        public uint Epoch { get; set; }
         public byte[] Cookie { get; set; }
         public byte[] ClientRandom { get; set; }
         public byte[] ServerRandom { get; set; }
@@ -33,20 +33,15 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         public HMACSHA256 SendMac { get; set; }
         public uint LastSentSequenceId { get; set; }
 
-        public Channel<IMessage> MessageReceiveChannel { get; }
+        private uint _lastRequestId = 0;
 
         public Session(MasterServer masterServer, EndPoint endPoint)
         {
             MasterServer = masterServer;
             EndPoint = endPoint;
-            MessageReceiveChannel = Channel.CreateBounded<IMessage>(
-                new BoundedChannelOptions(64)
-                {
-                    SingleReader = true,
-                    SingleWriter = false
-                }
-            );
-            State = SessionState.New;
         }
+
+        public uint GetNextRequestId()
+            => (unchecked(Interlocked.Increment(ref _lastRequestId)) % 16777216) | Epoch;
     }
 }

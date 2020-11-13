@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Delegates;
+using BeatTogether.MasterServer.Kernel.Enums;
 using BeatTogether.MasterServer.Messaging.Abstractions.Messages;
 using BeatTogether.MasterServer.Messaging.Implementations.Messages;
 using Microsoft.Extensions.DependencyInjection;
@@ -32,10 +34,19 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             _messageHandlers = new Dictionary<Type, MessageHandler<TService>>();
 
             AddMessageHandler<MultipartMessage>(
-                (service, session, message) => _multipartMessageService.HandleMultipartMessage(session, message)
+                async (service, session, message) =>
+                {
+                    var fullMessage = await _multipartMessageService.HandleMultipartMessage(session, message);
+                    if (fullMessage != null)
+                        await OnReceived(session, fullMessage);
+                }
             );
             AddMessageHandler<AcknowledgeMessage>(
-                (service, session, message) => HandleAcknowledgeMessage(session, message)
+                (service, session, message) =>
+                {
+                    _messageDispatcher.AcknowledgeMessage(message.ResponseId, message.MessageHandled);
+                    return Task.CompletedTask;
+                }
             );
         }
 
@@ -43,20 +54,31 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         public async Task OnReceived(ISession session, IMessage message)
         {
-            var messageType = message.GetType();
-            if (!_messageHandlers.TryGetValue(messageType, out var messageHandler))
+            try
             {
-                _logger.Warning(
-                    "Failed to retrieve message handler for message of type " +
-                    $"'{messageType.Name}'."
-                );
-                return;
-            }
+                var messageType = message.GetType();
+                if (!_messageHandlers.TryGetValue(messageType, out var messageHandler))
+                {
+                    _logger.Warning(
+                        $"'{GetType().Name}' failed to retrieve handler for message of type " +
+                        $"'{messageType.Name}'."
+                    );
+                    if (message is IReliableRequest)
+                        await SendAcknowledgeMessage(session, (IReliableRequest)message, false).ConfigureAwait(false);
+                    return;
+                }
 
-            using var scope = _serviceProvider.CreateScope();
-            var service = scope.ServiceProvider.GetRequiredService<TService>();
-            await messageHandler(service, session, message)
-                .ConfigureAwait(false);
+                if (message is IReliableRequest)
+                    await SendAcknowledgeMessage(session, (IReliableRequest)message, true).ConfigureAwait(false);
+
+                using var scope = _serviceProvider.CreateScope();
+                var service = scope.ServiceProvider.GetRequiredService<TService>();
+                await messageHandler(service, session, message).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                LogError(session, e);
+            }
         }
 
         #endregion
@@ -68,7 +90,9 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             => _messageHandlers[typeof(TMessage)] =
                     (service, session, message) => messageHandler(service, session, (TMessage)message);
 
-        protected void AddMessageHandler<TRequest, TResponse>(MessageHandler<TService, TRequest, TResponse> messageHandler)
+        protected void AddMessageHandler<TRequest, TResponse>(
+            MessageHandler<TService, TRequest, TResponse> messageHandler,
+            bool requireAcknowledgement = true)
             where TRequest : class, IMessage
             where TResponse : class, IMessage
             => AddMessageHandler<TRequest>(async (service, session, request) =>
@@ -82,22 +106,48 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     if (reliableResponse.ResponseId == 0)
                         reliableResponse.ResponseId = reliableRequest.RequestId;
                 }
-                _messageDispatcher.Send(session, response);
+                await _messageDispatcher.Send(session, response, requireAcknowledgement);
             });
 
         #endregion
 
         #region Private Methods
 
-        private Task HandleAcknowledgeMessage(ISession session, AcknowledgeMessage message)
+        private Task SendAcknowledgeMessage<TRequest>(ISession session, TRequest request, bool messageHandled)
+            where TRequest : class, IReliableRequest
         {
+            var acknowledgeMessage = new AcknowledgeMessage()
+            {
+                ResponseId = request.RequestId,
+                MessageHandled = messageHandled
+            };
             _logger.Verbose(
-                $"Handling {nameof(AcknowledgeMessage)} " +
-                $"(ResponseId={message.ResponseId}, " +
-                $"MessageHandled={message.MessageHandled})."
+                $"Sending acknowledgement for request of type '{request.GetType().Name}' " +
+                $"(ResponseId={acknowledgeMessage.ResponseId}, " +
+                $"MessageHandled={acknowledgeMessage.MessageHandled})."
             );
-            // TODO: Properly acknowledge that requests were handled (and retry if they weren't)
-            return Task.CompletedTask;
+            return _messageDispatcher.Send(session, acknowledgeMessage);
+        }
+
+        private void LogError(
+            ISession session,
+            Exception e,
+            [CallerMemberName] string callerMemberName = "")
+        {
+            if (session.State == SessionState.Authenticated)
+                _logger.Error(e,
+                    $"Error during {callerMemberName} " +
+                    $"(EndPoint={session.EndPoint}, " +
+                    $"Platform={session.Platform}, " +
+                    $"UserId='{session.UserId}', " +
+                    $"UserName='{session.UserName}', " +
+                    $"Secret='{session.Secret}')."
+                );
+            else
+                _logger.Error(e,
+                    $"Error during {callerMemberName} " +
+                    $"(EndPoint={session.EndPoint})."
+                );
         }
 
         #endregion

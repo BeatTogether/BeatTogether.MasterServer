@@ -30,8 +30,9 @@ namespace BeatTogether.MasterServer.Messaging.Implementations
             var messageId = 0U;
             try
             {
+                var messageType = message.GetType();
                 messageGroup = _messageRegistries
-                    .First(kvp => kvp.Value.TryGetMessageId<T>(out messageId))
+                    .First(kvp => kvp.Value.TryGetMessageId(messageType, out messageId))
                     .Key;
             }
             catch (InvalidOperationException)

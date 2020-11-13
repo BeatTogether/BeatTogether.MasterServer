@@ -281,7 +281,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             }
 
             // Let the host know that someone is about to connect (hole-punch)
-            _messageDispatcher.Send(hostSession, new PrepareForConnectionRequest()
+            await _messageDispatcher.Send(hostSession, new PrepareForConnectionRequest()
             {
                 UserId = request.UserId,
                 UserName = request.UserName,

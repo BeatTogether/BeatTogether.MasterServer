@@ -13,7 +13,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             : base(serviceProvider, multipartMessageService, messageDispatcher)
         {
             AddMessageHandler<ClientHelloRequest, HelloVerifyRequest>(
-                (service, session, request) => service.ClientHello(session, request)
+                (service, session, request) => service.ClientHello(session, request),
+                requireAcknowledgement: false
             );
             AddMessageHandler<ClientHelloWithCookieRequest, ServerHelloRequest>(
                 (service, session, request) => service.ClientHelloWithCookie(session, request)

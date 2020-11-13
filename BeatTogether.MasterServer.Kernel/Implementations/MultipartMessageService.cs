@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Configuration;
 using BeatTogether.MasterServer.Messaging.Abstractions;
+using BeatTogether.MasterServer.Messaging.Abstractions.Messages;
 using BeatTogether.MasterServer.Messaging.Implementations.Messages;
 using Krypton.Buffers;
 using Serilog;
@@ -14,82 +15,87 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 {
     public class MultipartMessageService : IMultipartMessageService
     {
-        private class MultipartMessageAggregator : IDisposable
+        private class MultipartMessageWaiter
         {
-            private readonly MultipartMessageService _multipartMessageService;
-            private readonly MessagingConfiguration _messagingConfiguration;
-            private readonly IMessageReader _messageReader;
-            private readonly ISession _session;
+            private readonly MultipartMessageService _service;
             private readonly ILogger _logger;
 
-            private readonly ConcurrentDictionary<uint, MultipartMessage> _receivedMultipartMessages;
+            private readonly ConcurrentDictionary<uint, MultipartMessage> _messages;
+            private TaskCompletionSource<IMessage> _taskCompletionSource;
             private CancellationTokenSource _cancellationTokenSource;
 
             private uint _multipartMessageId;
-            private int _receivedLength;
+            private uint _totalLength;
+            private uint _receivedLength;
 
-            public MultipartMessageAggregator(
-                MultipartMessageService multipartMessageService,
-                MessagingConfiguration messagingConfiguration,
-                IMessageReader messageReader,
-                ISession session,
-                uint multipartMessageId)
+            public MultipartMessageWaiter(
+                MultipartMessage message,
+                MultipartMessageService service)
             {
-                _multipartMessageService = multipartMessageService;
-                _messagingConfiguration = messagingConfiguration;
-                _messageReader = messageReader;
-                _session = session;
+                _service = service;
                 _logger = Log.ForContext<MultipartMessageService>();
 
-                _multipartMessageId = multipartMessageId;
-                _receivedMultipartMessages = new ConcurrentDictionary<uint, MultipartMessage>();
-                if (_messagingConfiguration.RequestTimeout > 0)
+                _multipartMessageId = message.MultipartMessageId;
+                _totalLength = message.TotalLength;
+                _receivedLength = message.Length;
+
+                _messages = new ConcurrentDictionary<uint, MultipartMessage>();
+                _messages.TryAdd(message.RequestId, message);
+
+                _taskCompletionSource = new TaskCompletionSource<IMessage>();
+                if (_service._messagingConfiguration.RequestTimeout > 0)
                 {
                     _cancellationTokenSource = new CancellationTokenSource();
-                    _cancellationTokenSource.CancelAfter(_messagingConfiguration.RequestTimeout);
+                    _cancellationTokenSource.CancelAfter(_service._messagingConfiguration.RequestTimeout);
                     _cancellationTokenSource.Token.Register(() =>
                     {
-                        _logger.Error(new TimeoutException(),
-                            "Failed to read entire multipart message " +
-                            $"(MultipartMessageId={_multipartMessageId})."
-                        );
-                        Dispose();
+                        if (_taskCompletionSource != null)
+                            _taskCompletionSource.TrySetException(new TimeoutException());
+
+                        if (_cancellationTokenSource != null)
+                        {
+                            _cancellationTokenSource.Dispose();
+                            _cancellationTokenSource = null;
+                        }
+
+                        _service._multipartMessageWaiters.TryRemove(_multipartMessageId, out _);
                     });
                 }
             }
 
-            public bool AddMultipartMessage(MultipartMessage multipartMessage)
-            {
-                if (_receivedLength >= multipartMessage.TotalLength)
-                    return false;
-                if (!_receivedMultipartMessages.TryAdd(multipartMessage.Offset, multipartMessage))
-                    return false;
-                Interlocked.Add(ref _receivedLength, (int)multipartMessage.Length);
-                if (_receivedLength >= multipartMessage.TotalLength)
-                    Finish();
-                return true;
-            }
+            public Task<IMessage> Wait()
+                => _taskCompletionSource.Task;
 
-            public void Finish()
+            public void Complete(IMessage message)
             {
-                Dispose();
-                var buffer = new GrowingSpanBuffer(stackalloc byte[412]);
-                var multipartMessages = _receivedMultipartMessages.OrderBy(kvp => kvp.Key);
-                foreach (var kvp in multipartMessages)
-                    buffer.WriteBytes(kvp.Value.Data);
-                var bufferReader = new SpanBufferReader(buffer.Data);
-                var message = _messageReader.ReadFrom(ref bufferReader, 0x00);
-                _session.MessageReceiveChannel.Writer.TryWrite(message);
-            }
+                if (_taskCompletionSource != null)
+                    _taskCompletionSource.TrySetResult(message);
 
-            public void Dispose()
-            {
                 if (_cancellationTokenSource != null)
                 {
                     _cancellationTokenSource.Dispose();
                     _cancellationTokenSource = null;
                 }
-                _multipartMessageService._multipartMessageAggregators.TryRemove(_multipartMessageId, out _);
+            }
+
+            public void AddMessage(MultipartMessage message)
+            {
+                if (message.MultipartMessageId != _multipartMessageId)
+                    return;
+                if (_receivedLength >= _totalLength)
+                    return;
+                if (!_messages.TryAdd(message.Offset, message))
+                    return;
+                Interlocked.Add(ref _receivedLength, message.Length);
+                if (_receivedLength >= _totalLength)
+                {
+                    var buffer = new GrowingSpanBuffer(stackalloc byte[(int)_totalLength]);
+                    foreach (var kvp in _messages.OrderBy(kvp => kvp.Key))
+                        buffer.WriteBytes(kvp.Value.Data);
+                    var bufferReader = new SpanBufferReader(buffer.Data);
+                    var fullMessage = _service._messageReader.ReadFrom(ref bufferReader, 0x00);
+                    Complete(fullMessage);
+                }
             }
         }
 
@@ -97,7 +103,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         private readonly IMessageReader _messageReader;
         private readonly ILogger _logger;
 
-        private readonly ConcurrentDictionary<uint, MultipartMessageAggregator> _multipartMessageAggregators;
+        private readonly ConcurrentDictionary<uint, MultipartMessageWaiter> _multipartMessageWaiters;
 
         public MultipartMessageService(
             MessagingConfiguration messagingConfiguration,
@@ -107,10 +113,10 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             _messageReader = messageReader;
             _logger = Log.ForContext<MultipartMessageService>();
 
-            _multipartMessageAggregators = new ConcurrentDictionary<uint, MultipartMessageAggregator>();
+            _multipartMessageWaiters = new ConcurrentDictionary<uint, MultipartMessageWaiter>();
         }
 
-        public Task HandleMultipartMessage(ISession session, MultipartMessage message)
+        public Task<IMessage> HandleMultipartMessage(ISession session, MultipartMessage message)
         {
             _logger.Verbose(
                 $"Handling {nameof(MultipartMessage)} " +
@@ -120,18 +126,16 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 $"TotalLength={message.TotalLength}, " +
                 $"Data='{BitConverter.ToString(message.Data)}')."
             );
-            var multipartMessageAggregator = _multipartMessageAggregators.GetOrAdd(
-                message.MultipartMessageId,
-                key => new MultipartMessageAggregator(
-                    this,
-                    _messagingConfiguration,
-                    _messageReader,
-                    session,
-                    message.MultipartMessageId
-                )
-            );
-            multipartMessageAggregator.AddMultipartMessage(message);
-            return Task.CompletedTask;
+            bool isNewMultipartMessageWaiter = false;
+            var multipartMessageWaiter = _multipartMessageWaiters.GetOrAdd(message.MultipartMessageId, key =>
+            {
+                isNewMultipartMessageWaiter = true;
+                return new MultipartMessageWaiter(message, this);
+            });
+            if (isNewMultipartMessageWaiter)
+                return multipartMessageWaiter.Wait();
+            multipartMessageWaiter.AddMessage(message);
+            return Task.FromResult<IMessage>(null);
         }
     }
 }

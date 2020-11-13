@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using BeatTogether.MasterServer.Data.Abstractions;
 using BeatTogether.MasterServer.Data.Bootstrap;
 using BeatTogether.MasterServer.Data.Configuration;
 using BeatTogether.MasterServer.Kernel.Bootstrap;
@@ -21,7 +22,7 @@ namespace BeatTogether.MasterServer
         {
             var configurationBuilder = new ConfigurationBuilder();
             configurationBuilder
-                .SetBasePath(Environment.GetEnvironmentVariable("BEAT_TOGETHER_CONFIGURATION_BASE_PATH") ?? Directory.GetCurrentDirectory())
+                .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile($"appsettings.json")
                 .AddEnvironmentVariables();
             var configuration = configurationBuilder.Build();
@@ -37,6 +38,9 @@ namespace BeatTogether.MasterServer
 
             var serviceProvider = services.BuildServiceProvider();
             ConfigureAppConfiguration(serviceProvider, configuration);
+
+            // Warmup the Redis connection pool
+            serviceProvider.GetRequiredService<IConnectionMultiplexerPool>();
 
             var cancellationTokenSource = new CancellationTokenSource();
             var cancellationToken = cancellationTokenSource.Token;

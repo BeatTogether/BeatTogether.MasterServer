@@ -8,6 +8,7 @@ using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions.Providers;
 using BeatTogether.MasterServer.Kernel.Abstractions.Security;
 using BeatTogether.MasterServer.Kernel.Enums;
+using BeatTogether.MasterServer.Messaging.Implementations.Messages;
 using BeatTogether.MasterServer.Messaging.Implementations.Messages.Handshake;
 using Krypton.Buffers;
 using Serilog;
@@ -17,7 +18,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
     public class HandshakeService : IHandshakeService
     {
         private readonly IMessageDispatcher _messageDispatcher;
-        private readonly IRequestIdProvider _requestIdProvider;
         private readonly ICookieProvider _cookieProvider;
         private readonly IRandomProvider _randomProvider;
         private readonly ICertificateProvider _certificateProvider;
@@ -28,9 +28,10 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         private static byte[] _masterSecretSeed = Encoding.UTF8.GetBytes("master secret");
         private static byte[] _keyExpansionSeed = Encoding.UTF8.GetBytes("key expansion");
 
+        private const uint _epochMask = 0xff000000;
+
         public HandshakeService(
             IMessageDispatcher messageDispatcher,
-            IRequestIdProvider requestIdProvider,
             ICookieProvider cookieProvider,
             IRandomProvider randomProvider,
             ICertificateProvider certificateProvider,
@@ -38,7 +39,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             IDiffieHellmanService diffieHellmanService)
         {
             _messageDispatcher = messageDispatcher;
-            _requestIdProvider = requestIdProvider;
             _cookieProvider = cookieProvider;
             _randomProvider = randomProvider;
             _certificateProvider = certificateProvider;
@@ -55,6 +55,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 $"Handling {nameof(ClientHelloRequest)} " +
                 $"(Random='{BitConverter.ToString(request.Random)}')."
             );
+            session.Epoch = request.RequestId & _epochMask;
             session.State = SessionState.New;
             session.Cookie = _cookieProvider.GetCookie();
             session.ClientRandom = request.Random;
@@ -64,7 +65,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             });
         }
 
-        public Task<ServerHelloRequest> ClientHelloWithCookie(ISession session, ClientHelloWithCookieRequest request)
+        public async Task<ServerHelloRequest> ClientHelloWithCookie(ISession session, ClientHelloWithCookieRequest request)
         {
             _logger.Verbose(
                 $"Handling {nameof(ClientHelloWithCookieRequest)} " +
@@ -79,7 +80,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     $"(Cookie='{BitConverter.ToString(request.Cookie)}', " +
                     $"Expected='{BitConverter.ToString(session.Cookie ?? new byte[0])}')."
                 );
-                return Task.FromResult<ServerHelloRequest>(null);
+                return null;
             }
             if (!request.Random.SequenceEqual(session.ClientRandom))
             {
@@ -88,7 +89,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     $"(Random='{BitConverter.ToString(request.Random)}', " +
                     $"Expected='{BitConverter.ToString(session.ClientRandom ?? new byte[0])}')."
                 );
-                return Task.FromResult<ServerHelloRequest>(null);
+                return null;
             }
 
             // Generate a server random
@@ -100,24 +101,20 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
             // Generate a signature
             var certificate = _certificateProvider.GetCertificate();
-            var buffer = new GrowingSpanBuffer(stackalloc byte[512]);
-            buffer.WriteBytes(session.ClientRandom);
-            buffer.WriteBytes(session.ServerRandom);
-            buffer.WriteBytes(keyPair.PublicKey);
-            var signature = _certificateSigningService.Sign(buffer.Data.ToArray());
+            var signature = MakeSignature(session.ClientRandom, session.ServerRandom, keyPair.PublicKey);
 
-            _messageDispatcher.Send(session, new ServerCertificateRequest()
+            await _messageDispatcher.Send(session, new ServerCertificateRequest()
             {
-                RequestId = _requestIdProvider.GetNextRequestId(),
+                RequestId = session.GetNextRequestId(),
                 ResponseId = request.CertificateResponseId,
                 Certificates = new List<byte[]>() { certificate.RawData }
             });
-            return Task.FromResult(new ServerHelloRequest()
+            return new ServerHelloRequest()
             {
                 Random = session.ServerRandom,
                 PublicKey = keyPair.PublicKey,
                 Signature = signature
-            });
+            };
         }
 
         public Task<ChangeCipherSpecRequest> ClientKeyExchange(ISession session, ClientKeyExchangeRequest request)
@@ -156,6 +153,16 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         #endregion
 
         #region Private Methods
+
+        private byte[] MakeSignature(byte[] clientRandom, byte[] serverRandom, byte[] publicKey)
+        {
+            var certificate = _certificateProvider.GetCertificate();
+            var buffer = new GrowingSpanBuffer(stackalloc byte[512]);
+            buffer.WriteBytes(clientRandom);
+            buffer.WriteBytes(serverRandom);
+            buffer.WriteBytes(publicKey);
+            return _certificateSigningService.Sign(buffer.Data.ToArray());
+        }
 
         private byte[] MakeSeed(byte[] baseSeed, byte[] serverSeed, byte[] clientSeed)
         {

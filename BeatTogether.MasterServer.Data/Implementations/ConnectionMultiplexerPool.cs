@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Threading;
@@ -174,13 +174,12 @@ namespace BeatTogether.MasterServer.Data.Implementations
                 => new PooledConnectionMultiplexer(await ConnectionMultiplexer.ConnectAsync(options, log));
         }
 
-        private long _getConnectionFailureCount;
-        public long GetConnectionFailureCount => _getConnectionFailureCount;
-
         private readonly RedisConfiguration _configuration;
         private readonly ILogger _logger;
 
-        private readonly ConcurrentQueue<Lazy<Task<PooledConnectionMultiplexer>>> _connectionQueue;
+        private readonly List<Task<PooledConnectionMultiplexer>> _connections;
+
+        private int _connectionCounter = -1;
 
         public ConnectionMultiplexerPool(RedisConfiguration configuration)
         {
@@ -190,35 +189,28 @@ namespace BeatTogether.MasterServer.Data.Implementations
             if (configuration.ConnectionPoolSize <= 0)
                 throw new Exception("Redis connection pool size must be greater than 0");
 
-            // Build the connection pool
-            _logger.Debug(
-                "Initializing Redis connection pool " +
-                $"(EndPoint='{configuration.Endpoint}', " +
-                $"ConnectionPoolSize={configuration.ConnectionPoolSize})."
-            );
-            _connectionQueue = new ConcurrentQueue<Lazy<Task<PooledConnectionMultiplexer>>>();
+            _connections = new List<Task<PooledConnectionMultiplexer>>();
 
+            _logger.Information(
+                "Initializing Redis connection pool " +
+                $"(EndPoint='{_configuration.Endpoint}', " +
+                $"Size={_configuration.ConnectionPoolSize})."
+            );
             var connectionMultiplexerConfiguration = new ConfigurationOptions()
             {
                 AbortOnConnectFail = false
             };
-            connectionMultiplexerConfiguration.EndPoints.Add(configuration.Endpoint);
-
-            while (_connectionQueue.Count < _configuration.ConnectionPoolSize)
-                _connectionQueue.Enqueue(new Lazy<Task<PooledConnectionMultiplexer>>(
-                    () => PooledConnectionMultiplexer.ConnectAsync(connectionMultiplexerConfiguration)
-                ));
+            connectionMultiplexerConfiguration.EndPoints.Add(_configuration.Endpoint);
+            while (_connections.Count < _configuration.ConnectionPoolSize)
+                _connections.Add(PooledConnectionMultiplexer.ConnectAsync(connectionMultiplexerConfiguration));
         }
 
         #region Public Methods
 
         public IConnectionMultiplexer GetConnection()
         {
-            Lazy<Task<PooledConnectionMultiplexer>> connection;
-            while (!_connectionQueue.TryDequeue(out connection))
-                Interlocked.Increment(ref _getConnectionFailureCount);
-            _connectionQueue.Enqueue(connection);
-            return connection.Value.Result;
+            var index = (int)(unchecked((uint)Interlocked.Increment(ref _connectionCounter)) % _connections.Count);
+            return _connections[index].Result;
         }
 
         #endregion
@@ -228,12 +220,7 @@ namespace BeatTogether.MasterServer.Data.Implementations
         public void Dispose()
         {
             for (var i = 0; i < _configuration.ConnectionPoolSize; i++)
-            {
-                Lazy<Task<PooledConnectionMultiplexer>> connection;
-                while (!_connectionQueue.TryDequeue(out connection))
-                    Interlocked.Increment(ref _getConnectionFailureCount);
-                connection.Value.Result.Dispose();
-            }
+                _connections[i].Dispose();
         }
 
         #endregion

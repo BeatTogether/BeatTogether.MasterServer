@@ -1,10 +1,17 @@
-﻿using BeatTogether.MasterServer.Messaging.Abstractions.Messages;
+﻿using System.Threading;
+using System.Threading.Tasks;
+using BeatTogether.MasterServer.Messaging.Abstractions.Messages;
 
 namespace BeatTogether.MasterServer.Kernel.Abstractions
 {
     public interface IMessageDispatcher
     {
-        public void Send<T>(ISession session, T message)
+        public Task Send<T>(
+            ISession session,
+            T message,
+            bool requireAcknowledgement = true,
+            CancellationToken cancellationToken = default)
             where T : class, IMessage;
+        public void AcknowledgeMessage(uint requestId, bool handled);
     }
 }

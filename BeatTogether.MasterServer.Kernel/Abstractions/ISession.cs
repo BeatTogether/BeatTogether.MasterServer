@@ -1,8 +1,6 @@
 ﻿using System.Net;
 using System.Security.Cryptography;
-using System.Threading.Channels;
 using BeatTogether.MasterServer.Kernel.Enums;
-using BeatTogether.MasterServer.Messaging.Abstractions.Messages;
 using BeatTogether.MasterServer.Messaging.Enums;
 using Org.BouncyCastle.Crypto.Parameters;
 
@@ -20,6 +18,7 @@ namespace BeatTogether.MasterServer.Kernel.Abstractions
         string UserName { get; set; }
         string Secret { get; set; }
 
+        uint Epoch { get; set; }
         byte[] Cookie { get; set; }
         byte[] ClientRandom { get; set; }
         byte[] ServerRandom { get; set; }
@@ -32,6 +31,6 @@ namespace BeatTogether.MasterServer.Kernel.Abstractions
         HMACSHA256 SendMac { get; set; }
         uint LastSentSequenceId { get; set; }
 
-        Channel<IMessage> MessageReceiveChannel { get; }
+        uint GetNextRequestId();
     }
 }

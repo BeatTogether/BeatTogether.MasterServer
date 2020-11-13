@@ -22,7 +22,6 @@ namespace BeatTogether.MasterServer.Kernel.Bootstrap
             services.AddTransient<SecureRandom>();
             services.AddTransient<RNGCryptoServiceProvider>();
 
-            services.AddSingleton<IRequestIdProvider, RequestIdProvider>();
             services.AddSingleton<ICookieProvider, CookieProvider>();
             services.AddSingleton<IRandomProvider, RandomProvider>();
             services.AddSingleton<ICertificateProvider, CertificateProvider>();

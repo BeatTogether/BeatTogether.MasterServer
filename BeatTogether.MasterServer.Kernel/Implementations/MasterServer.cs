@@ -3,11 +3,12 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using BeatTogether.MasterServer.Data.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Configuration;
+using BeatTogether.MasterServer.Kernel.Implementations.MessageReceivers;
 using BeatTogether.MasterServer.Messaging.Abstractions;
 using BeatTogether.MasterServer.Messaging.Abstractions.Messages;
-using BeatTogether.MasterServer.Messaging.Implementations.Messages;
 using Krypton.Buffers;
 using Microsoft.Extensions.Hosting;
 using NetCoreServer;
@@ -21,7 +22,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         private readonly ISessionService _sessionService;
         private readonly IMessageReader _messageReader;
         private readonly IEncryptedMessageReader _encryptedMessageReader;
-        private readonly IMessageDispatcher _messageDispatcher;
+        private readonly HandshakeMessageReceiver _handshakeMessageReceiver;
+        private readonly UserMessageReceiver _userMessageReceiver;
         private readonly ILogger _logger;
 
         public MasterServer(
@@ -29,14 +31,16 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             ISessionService sessionService,
             IMessageReader messageReader,
             IEncryptedMessageReader encryptedMessageReader,
-            IMessageDispatcher messageDispatcher)
+            HandshakeMessageReceiver handshakeMessageReceiver,
+            UserMessageReceiver userMessageReceiver)
             : base(IPEndPoint.Parse(configuration.EndPoint))
         {
             _configuration = configuration;
             _sessionService = sessionService;
             _messageReader = messageReader;
             _encryptedMessageReader = encryptedMessageReader;
-            _messageDispatcher = messageDispatcher;
+            _handshakeMessageReceiver = handshakeMessageReceiver;
+            _userMessageReceiver = userMessageReceiver;
             _logger = Log.ForContext<MasterServer>();
         }
 
@@ -45,15 +49,13 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         protected override void OnReceived(EndPoint endPoint, ReadOnlySpan<byte> buffer)
         {
             _logger.Verbose($"Handling OnReceived (EndPoint='{endPoint}', Size={buffer.Length}).");
-
-            // Drop empty packets
             if (buffer.Length <= 0)
             {
                 ReceiveAsync();
                 return;
             }
 
-            // Retrieve their session
+            // Retrieve the session
             if (!_sessionService.TryGetSession(endPoint, out var session))
                 session = _sessionService.OpenSession(this, endPoint);
 
@@ -78,16 +80,16 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 return;
             }
 
-            // Publish it to the session's receive channel
-            if (session.MessageReceiveChannel.Writer.TryWrite(message))
+            // Pass it off to a message receiver
+            Task.Run(async () =>
             {
-                if (message is IReliableRequest reliableRequest)
-                    _messageDispatcher.Send(session, new AcknowledgeMessage()
-                    {
-                        ResponseId = reliableRequest.RequestId,
-                        MessageHandled = true
-                    });
-            }
+                // TODO: This logic should probably be expanded in case of other
+                // message receivers being added (i.e. dedicated servers)
+                if (message is not IEncryptedMessage)
+                    await _handshakeMessageReceiver.OnReceived(session, message).ConfigureAwait(false);
+                else
+                    await _userMessageReceiver.OnReceived(session, message).ConfigureAwait(false);
+            });
 
             ReceiveAsync();
         }
