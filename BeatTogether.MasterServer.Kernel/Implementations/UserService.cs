@@ -189,6 +189,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     Result = BroadcastServerHeartbeatResponse.ResultCode.ServerDoesNotExist
                 };
 
+            _sessionRepository.UpdateLastKeepAlive(session.EndPoint, DateTimeOffset.UtcNow);
             _serverRepository.UpdateCurrentPlayerCount(request.Secret, (int)request.CurrentPlayerCount);
             return new BroadcastServerHeartbeatResponse()
             {
