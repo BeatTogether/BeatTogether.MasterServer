@@ -49,7 +49,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             // TODO: Validate session token?
             _logger.Information(
                 "Session authenticated " +
-                $"(Platform={request.AuthenticationToken.Platform}, " +
+                $"(EndPoint='{session.EndPoint}', " +
+                $"Platform={request.AuthenticationToken.Platform}, " +
                 $"UserId='{request.AuthenticationToken.UserId}', " +
                 $"UserName='{request.AuthenticationToken.UserName}')."
             );
@@ -113,7 +114,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             };
             if (!await _serverRepository.AddServer(server))
             {
-                _logger.Information(
+                _logger.Warning(
                     "Failed to create server " +
                     $"(ServerName='{request.ServerName}', " +
                     $"UserId='{request.UserId}', " +
@@ -146,8 +147,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 $"InvitePolicy={request.InvitePolicy}, " +
                 $"BeatmapDifficultyMask={request.Configuration.BeatmapDifficultyMask}, " +
                 $"GameplayModifiersMask={request.Configuration.GameplayModifiersMask}, " +
-                $"Random={BitConverter.ToString(request.Random)}, " +
-                $"PublicKey={BitConverter.ToString(request.PublicKey)})."
+                $"Random='{BitConverter.ToString(request.Random)}', " +
+                $"PublicKey='{BitConverter.ToString(request.PublicKey)}')."
             );
             return new BroadcastServerStatusResponse()
             {
@@ -222,7 +223,15 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             if (server == null)
                 return;
 
-            await _serverRepository.RemoveServer(server.Secret);
+            if (!await _serverRepository.RemoveServer(server.Secret))
+                return;
+
+            _logger.Information(
+                "Successfully removed server " +
+                $"(UserId='{request.UserId}', " +
+                $"UserName='{request.UserName}', " +
+                $"Secret='{server.Secret}')."
+            );
         }
 
         public Task<ConnectToServerResponse> ConnectToMatchmaking(ISession session, ConnectToMatchmakingRequest request)
