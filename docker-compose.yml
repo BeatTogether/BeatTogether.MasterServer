@@ -1,0 +1,16 @@
+version: "3"
+services:
+  beat-together:
+    image: ghcr.io/pythonology/beat-together-master-server:edge
+    build: .
+    ports:
+      - 2328:2328/udp
+    restart: unless-stopped
+    environment:
+      - CERT_GEN=1
+      - REDIS_ADDR=redis:6379
+      - HOST_NAME
+      - PORT
+
+  redis:
+    image: redis:5-alpine
