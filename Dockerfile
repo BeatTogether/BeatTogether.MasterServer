@@ -12,5 +12,4 @@ RUN dotnet publish BeatTogether.MasterServer -c Release -p:PublishReadyToRun=tru
 FROM mcr.microsoft.com/dotnet/runtime:5.0
 WORKDIR /app
 COPY --from=build-env /app/out .
-COPY setup.sh entrypoint.sh ./
-CMD ["/app/entrypoint.sh"]
+CMD ["dotnet", "BeatTogether.MasterServer.dll"]

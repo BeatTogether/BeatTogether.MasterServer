@@ -58,5 +58,5 @@ run: require-dotnet ## Run locally
 	cp BeatTogether.MasterServer/appsettings.json run/
 	cp -n BeatTogether.MasterServer/cert.pem BeatTogether.MasterServer/key.pem run/ || true
 
-	cd run && ../setup.sh
+	cd run && ../local_setup.sh
 	cd run && dotnet run -p ../BeatTogether.MasterServer -c Debug $(ARGS)
