@@ -2,8 +2,6 @@
 .DEFAULT_GOAL := help
 SHELL := /bin/bash
 
-export CERT_GEN=1
-
 $(VERBOSE).SILENT:
 
 ifeq ($(OS),Windows_NT)
