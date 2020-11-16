@@ -2,6 +2,6 @@
 {
     public class SessionLifetimeConfiguration
     {
-        public int TimeToLive { get; set; } = 10;
+        public int TimeToLive { get; set; } = 180;
     }
 }
