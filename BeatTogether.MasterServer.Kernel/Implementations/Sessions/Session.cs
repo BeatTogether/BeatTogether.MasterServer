@@ -36,7 +36,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations.Sessions
         public HMACSHA256 SendMac { get; set; }
 
         private uint _lastSentSequenceId = 0;
-        private uint _sentRequestCount = 0;
+        private uint _lastSentRequestId = 0;
         private HashSet<uint> _handledRequests { get; set; } = new HashSet<uint>();
         private object _handledRequestsLock { get; set; } = new object();
         private uint _lastHandledRequestId = 0;
@@ -51,7 +51,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations.Sessions
             => unchecked(Interlocked.Increment(ref _lastSentSequenceId));
 
         public uint GetNextRequestId()
-            => (unchecked(Interlocked.Increment(ref _sentRequestCount)) % 16777216) | Epoch;
+            => (unchecked(Interlocked.Increment(ref _lastSentRequestId)) % 16777216) | Epoch;
 
         public bool ShouldHandleRequest(uint requestId)
         {
@@ -61,6 +61,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations.Sessions
                 {
                     if (_handledRequests.Count > 64)
                         _handledRequests.Remove(_lastHandledRequestId);
+                    _lastHandledRequestId = requestId;
                     return true;
                 }
             }
