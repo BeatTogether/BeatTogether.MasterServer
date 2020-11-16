@@ -5,6 +5,7 @@ using BeatTogether.MasterServer.Data.Abstractions.Repositories;
 using BeatTogether.MasterServer.Data.Entities;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions.Providers;
+using BeatTogether.MasterServer.Kernel.Abstractions.Sessions;
 using BeatTogether.MasterServer.Messaging.Enums;
 using BeatTogether.MasterServer.Messaging.Implementations.Messages.Models;
 using BeatTogether.MasterServer.Messaging.Implementations.Messages.User;
@@ -254,12 +255,26 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 $"Password='{request.Password}', " +
                 $"UseRelay={request.UseRelay})."
             );
-            var server = await _serverRepository.GetServerByCode(request.Code);
-            if (server == null)
-                return new ConnectToServerResponse()
-                {
-                    Result = ConnectToServerResponse.ResultCode.InvalidCode
-                };
+
+            Server server = null;
+            if (!string.IsNullOrEmpty(request.Code))
+            {
+                server = await _serverRepository.GetServerByCode(request.Code);
+                if (server == null)
+                    return new ConnectToServerResponse()
+                    {
+                        Result = ConnectToServerResponse.ResultCode.InvalidCode
+                    };
+            }
+            else if (!string.IsNullOrEmpty(request.Secret))
+            {
+                server = await _serverRepository.GetServer(request.Secret);
+                if (server == null)
+                    return new ConnectToServerResponse()
+                    {
+                        Result = ConnectToServerResponse.ResultCode.InvalidSecret
+                    };
+            }
 
             if (server.CurrentPlayerCount >= server.MaximumPlayerCount)
                 return new ConnectToServerResponse()
@@ -339,7 +354,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 $"UserId='{session.UserId}', " +
                 $"UserName='{session.UserName}')."
             );
-            _sessionRepository.UpdateLastKeepAlive(session.UserId, DateTimeOffset.UtcNow);
+            _sessionRepository.UpdateLastKeepAlive(session.EndPoint, DateTimeOffset.UtcNow);
             return Task.CompletedTask;
         }
     }

@@ -4,7 +4,7 @@ using BeatTogether.MasterServer.Kernel.Enums;
 using BeatTogether.MasterServer.Messaging.Enums;
 using Org.BouncyCastle.Crypto.Parameters;
 
-namespace BeatTogether.MasterServer.Kernel.Abstractions
+namespace BeatTogether.MasterServer.Kernel.Abstractions.Sessions
 {
     public interface ISession
     {
@@ -29,8 +29,9 @@ namespace BeatTogether.MasterServer.Kernel.Abstractions
         byte[] SendKey { get; set; }
         HMACSHA256 ReceiveMac { get; set; }
         HMACSHA256 SendMac { get; set; }
-        uint LastSentSequenceId { get; set; }
 
+        uint GetNextSequenceId();
         uint GetNextRequestId();
+        bool ShouldHandleRequest(uint requestId);
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using BeatTogether.MasterServer.Kernel.Abstractions;
+using BeatTogether.MasterServer.Kernel.Abstractions.Sessions;
 using BeatTogether.MasterServer.Kernel.Delegates;
 using BeatTogether.MasterServer.Kernel.Enums;
 using BeatTogether.MasterServer.Messaging.Abstractions.Messages;
@@ -68,8 +69,13 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     return;
                 }
 
-                if (message is IReliableRequest)
-                    await SendAcknowledgeMessage(session, (IReliableRequest)message, true).ConfigureAwait(false);
+                if (message is IReliableRequest request)
+                {
+                    // Ensure that we haven't processed a request with the same ID recently
+                    if (!session.ShouldHandleRequest(request.RequestId))
+                        return;
+                    await SendAcknowledgeMessage(session, request, true).ConfigureAwait(false);
+                }
 
                 using var scope = _serviceProvider.CreateScope();
                 var service = scope.ServiceProvider.GetRequiredService<TService>();
@@ -137,7 +143,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             if (session.State == SessionState.Authenticated)
                 _logger.Error(e,
                     $"Error during {callerMemberName} " +
-                    $"(EndPoint={session.EndPoint}, " +
+                    $"(EndPoint='{session.EndPoint}', " +
                     $"Platform={session.Platform}, " +
                     $"UserId='{session.UserId}', " +
                     $"UserName='{session.UserName}', " +
@@ -146,7 +152,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             else
                 _logger.Error(e,
                     $"Error during {callerMemberName} " +
-                    $"(EndPoint={session.EndPoint})."
+                    $"(EndPoint='{session.EndPoint}')."
                 );
         }
 

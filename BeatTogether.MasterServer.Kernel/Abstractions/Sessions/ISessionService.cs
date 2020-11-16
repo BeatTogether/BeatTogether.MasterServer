@@ -1,6 +1,6 @@
 ﻿using System.Net;
 
-namespace BeatTogether.MasterServer.Kernel.Abstractions
+namespace BeatTogether.MasterServer.Kernel.Abstractions.Sessions
 {
     public interface ISessionService
     {

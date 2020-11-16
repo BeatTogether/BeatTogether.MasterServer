@@ -38,8 +38,8 @@ namespace BeatTogether.MasterServer
 
             var serviceProvider = services.BuildServiceProvider();
             ConfigureAppConfiguration(serviceProvider, configuration);
-
-            // Warmup the Redis connection pool
+            
+            // Warm up the Redis connection pool
             serviceProvider.GetRequiredService<IConnectionMultiplexerPool>();
 
             var cancellationTokenSource = new CancellationTokenSource();
@@ -73,6 +73,7 @@ namespace BeatTogether.MasterServer
             configuration.GetSection("Data").GetSection("Redis").Bind(serviceProvider.GetRequiredService<RedisConfiguration>());
             configuration.GetSection("MasterServer").Bind(serviceProvider.GetRequiredService<MasterServerConfiguration>());
             configuration.GetSection("Messaging").Bind(serviceProvider.GetRequiredService<MessagingConfiguration>());
+            configuration.GetSection("SessionLifetime").Bind(serviceProvider.GetRequiredService<SessionLifetimeConfiguration>());
         }
     }
 }

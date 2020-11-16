@@ -1,19 +1,23 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Net;
-using BeatTogether.MasterServer.Kernel.Abstractions;
+using BeatTogether.MasterServer.Data.Abstractions.Repositories;
+using BeatTogether.MasterServer.Kernel.Abstractions.Sessions;
 using BeatTogether.MasterServer.Kernel.Enums;
 using Serilog;
 
-namespace BeatTogether.MasterServer.Kernel.Implementations
+namespace BeatTogether.MasterServer.Kernel.Implementations.Sessions
 {
     public class SessionService : ISessionService
     {
+        private readonly ISessionRepository _sessionRepository;
         private readonly ILogger _logger;
 
         private readonly ConcurrentDictionary<EndPoint, ISession> _sessions;
 
-        public SessionService()
+        public SessionService(ISessionRepository sessionRepository)
         {
+            _sessionRepository = sessionRepository;
             _logger = Log.ForContext<SessionService>();
 
             _sessions = new ConcurrentDictionary<EndPoint, ISession>();
@@ -33,6 +37,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 return session;
 
             _logger.Information($"Opening session (EndPoint='{session.EndPoint}').");
+            _sessionRepository.AddSession(endPoint);
             session.State = SessionState.New;
             return session;
         }
@@ -52,6 +57,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 );
             else
                 _logger.Information($"Closing session (EndPoint='{session.EndPoint}').");
+            _sessionRepository.RemoveSession(session.EndPoint);
             session.State = SessionState.None;
             return true;
         }

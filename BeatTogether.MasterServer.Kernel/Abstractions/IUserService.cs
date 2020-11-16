@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using BeatTogether.MasterServer.Kernel.Abstractions.Sessions;
 using BeatTogether.MasterServer.Messaging.Implementations.Messages.User;
 
 namespace BeatTogether.MasterServer.Kernel.Abstractions

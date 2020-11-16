@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions.Providers;
 using BeatTogether.MasterServer.Kernel.Abstractions.Security;
+using BeatTogether.MasterServer.Kernel.Abstractions.Sessions;
 using BeatTogether.MasterServer.Kernel.Enums;
-using BeatTogether.MasterServer.Messaging.Implementations.Messages;
 using BeatTogether.MasterServer.Messaging.Implementations.Messages.Handshake;
 using Krypton.Buffers;
 using Serilog;
@@ -77,7 +77,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             {
                 _logger.Warning(
                     $"Session sent {nameof(ClientHelloWithCookieRequest)} with a mismatching cookie " +
-                    $"(Cookie='{BitConverter.ToString(request.Cookie)}', " +
+                    $"(EndPoint='{session.EndPoint}', " +
+                    $"Cookie='{BitConverter.ToString(request.Cookie)}', " +
                     $"Expected='{BitConverter.ToString(session.Cookie ?? new byte[0])}')."
                 );
                 return null;
@@ -86,7 +87,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             {
                 _logger.Warning(
                     $"Session sent {nameof(ClientHelloWithCookieRequest)} with a mismatching client random " +
-                    $"(Random='{BitConverter.ToString(request.Random)}', " +
+                    $"(EndPoint='{session.EndPoint}', " +
+                    $"Random='{BitConverter.ToString(request.Random)}', " +
                     $"Expected='{BitConverter.ToString(session.ClientRandom ?? new byte[0])}')."
                 );
                 return null;
@@ -146,7 +148,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             Array.Copy(sourceArray, 128, receiveMacSourceArray, 0, 64);
             session.SendMac = new HMACSHA256(sendMacSourceArray);
             session.ReceiveMac = new HMACSHA256(receiveMacSourceArray);
-            _logger.Information($"Session established (EndPoint={session.EndPoint}).");
+            _logger.Information($"Session established (EndPoint='{session.EndPoint}').");
             return Task.FromResult(new ChangeCipherSpecRequest());
         }
 

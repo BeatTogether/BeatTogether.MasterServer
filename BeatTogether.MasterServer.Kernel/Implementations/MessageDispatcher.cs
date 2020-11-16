@@ -4,12 +4,11 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using BeatTogether.MasterServer.Kernel.Abstractions;
-using BeatTogether.MasterServer.Kernel.Abstractions.Providers;
+using BeatTogether.MasterServer.Kernel.Abstractions.Sessions;
 using BeatTogether.MasterServer.Kernel.Configuration;
 using BeatTogether.MasterServer.Kernel.Enums;
 using BeatTogether.MasterServer.Messaging.Abstractions;
 using BeatTogether.MasterServer.Messaging.Abstractions.Messages;
-using BeatTogether.MasterServer.Messaging.Implementations.Messages.Handshake;
 using Krypton.Buffers;
 using Serilog;
 
@@ -81,15 +80,18 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             CancellationToken cancellationToken = default)
             where T : class, IMessage
         {
-            if (message is not IReliableRequest || !requireAcknowledgement)
+            var request = message as IReliableRequest;
+            if (request is not null)
+            {
+                if (request.RequestId == 0)
+                    request.RequestId = session.GetNextRequestId();
+            }
+
+            if (request is null || !requireAcknowledgement)
             {
                 SendInternal(session, message);
                 return;
             }
-
-            var request = (IReliableRequest)message;
-            if (request.RequestId == 0)
-                request.RequestId = session.GetNextRequestId();
 
             var requestAcknowledgementWaiter = new RequestAcknowledgementWaiter(request.GetType());
             if (!_requestAcknowledgementWaiters.TryAdd(request.RequestId, requestAcknowledgementWaiter))
@@ -130,12 +132,12 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 if (session.State == SessionState.Authenticated)
                     _logger.Debug(
                         "Timed out while waiting for acknowledgement " +
-                        $"(EndPoint={session.EndPoint})."
+                        $"(EndPoint='{session.EndPoint}')."
                     );
                 else
                     _logger.Debug(
                         "Timed out while waiting for acknowledgement " +
-                        $"(EndPoint={session.EndPoint}, " +
+                        $"(EndPoint='{session.EndPoint}', " +
                         $"Platform={session.Platform}, " +
                         $"UserId='{session.UserId}', " +
                         $"UserName='{session.UserName}', " +
@@ -180,9 +182,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             var buffer = new GrowingSpanBuffer(stackalloc byte[412]);
             if (session.State != SessionState.New && message is IEncryptedMessage encryptedMessage)
             {
-                encryptedMessage.SequenceId = session.LastSentSequenceId + 1;
-                session.LastSentSequenceId = encryptedMessage.SequenceId;
-
+                encryptedMessage.SequenceId = session.GetNextRequestId();
                 buffer.WriteBool(true);
                 _encryptedMessageWriter.WriteTo(ref buffer, message, session.SendKey, session.SendMac);
             }
@@ -208,7 +208,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             if (session.State == SessionState.Authenticated)
                 _logger.Error(e,
                     $"Error during {callerMemberName} " +
-                    $"(EndPoint={session.EndPoint}, " +
+                    $"(EndPoint='{session.EndPoint}', " +
                     $"Platform={session.Platform}, " +
                     $"UserId='{session.UserId}', " +
                     $"UserName='{session.UserName}', " +
@@ -217,7 +217,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             else
                 _logger.Error(e,
                     $"Error during {callerMemberName} " +
-                    $"(EndPoint={session.EndPoint})."
+                    $"(EndPoint='{session.EndPoint}')."
                 );
         }
 
