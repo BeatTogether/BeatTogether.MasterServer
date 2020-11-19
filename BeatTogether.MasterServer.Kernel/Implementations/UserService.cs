@@ -305,6 +305,18 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 };
             }
 
+            if (!await _serverRepository.IncrementCurrentPlayerCount(server.Secret))
+            {
+                _logger.Warning(
+                    "Failed to increment player count " +
+                    $"(Secret='{server.Secret}')."
+                );
+                return new ConnectToServerResponse()
+                {
+                    Result = ConnectToServerResponse.ResultCode.UnknownError
+                };
+            }
+
             // Let the host know that someone is about to connect (hole-punch)
             await _messageDispatcher.Send(hostSession, new PrepareForConnectionRequest()
             {
@@ -317,17 +329,10 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 IsDedicatedServer = false
             });
 
-            if (!await _serverRepository.IncrementCurrentPlayerCount(server.Secret))
-            {
-                _logger.Warning(
-                    "Failed to increment player count " +
-                    $"(Secret='{server.Secret}')."
-                );
-                return new ConnectToServerResponse()
-                {
-                    Result = ConnectToServerResponse.ResultCode.UnknownError
-                };
-            }
+            // Give the host some time to hole-punch
+            // This is very ugly, but we don't have any better way to do this
+            // outside of modifying the client
+            await Task.Delay(500);
 
             session.Secret = request.Secret;
 
