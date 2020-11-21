@@ -9,42 +9,58 @@ using BeatTogether.MasterServer.Kernel.Implementations.MessageReceivers;
 using BeatTogether.MasterServer.Kernel.Implementations.Providers;
 using BeatTogether.MasterServer.Kernel.Implementations.Security;
 using BeatTogether.MasterServer.Kernel.Implementations.Sessions;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Org.BouncyCastle.Security;
 
 namespace BeatTogether.MasterServer.Kernel.Bootstrap
 {
     public static class MasterServerKernelStartup
     {
-        public static void ConfigureServices(IServiceCollection services)
-        {
-            services.AddSingleton<MasterServerConfiguration>();
-            services.AddSingleton<MessagingConfiguration>();
-            services.AddSingleton<SessionLifetimeConfiguration>();
+        public static void ConfigureServices(HostBuilderContext hostBuilderContext, IServiceCollection services) =>
+            services
+                .AddSingleton(
+                    hostBuilderContext
+                        .Configuration
+                        .GetSection("MasterServer")
+                        .Get<MasterServerConfiguration>()
+                )
+                .AddSingleton(
+                    hostBuilderContext
+                        .Configuration
+                        .GetSection("Messaging")
+                        .Get<MessagingConfiguration>()
+                )
+                .AddSingleton(
+                    hostBuilderContext
+                        .Configuration
+                        .GetSection("SessionLifetime")
+                        .Get<SessionLifetimeConfiguration>()
+                )
 
-            services.AddTransient<SecureRandom>();
-            services.AddTransient<RNGCryptoServiceProvider>();
+                .AddTransient<SecureRandom>()
+                .AddTransient<RNGCryptoServiceProvider>()
 
-            services.AddSingleton<ICookieProvider, CookieProvider>();
-            services.AddSingleton<IRandomProvider, RandomProvider>();
-            services.AddSingleton<ICertificateProvider, CertificateProvider>();
-            services.AddSingleton<IServerCodeProvider, ServerCodeProvider>();
+                .AddSingleton<ICookieProvider, CookieProvider>()
+                .AddSingleton<IRandomProvider, RandomProvider>()
+                .AddSingleton<ICertificateProvider, CertificateProvider>()
+                .AddSingleton<IServerCodeProvider, ServerCodeProvider>()
 
-            services.AddSingleton<IDiffieHellmanService, DiffieHellmanService>();
-            services.AddSingleton<ICertificateSigningService, CertificateSigningService>();
+                .AddSingleton<IDiffieHellmanService, DiffieHellmanService>()
+                .AddSingleton<ICertificateSigningService, CertificateSigningService>()
 
-            services.AddSingleton<IMessageDispatcher, MessageDispatcher>();
+                .AddSingleton<IMessageDispatcher, MessageDispatcher>()
 
-            services.AddSingleton<HandshakeMessageReceiver>();
-            services.AddSingleton<UserMessageReceiver>();
+                .AddSingleton<HandshakeMessageReceiver>()
+                .AddSingleton<UserMessageReceiver>()
 
-            services.AddSingleton<ISessionService, SessionService>();
-            services.AddSingleton<IMultipartMessageService, MultipartMessageService>();
-            services.AddScoped<IHandshakeService, HandshakeService>();
-            services.AddScoped<IUserService, UserService>();
+                .AddSingleton<ISessionService, SessionService>()
+                .AddSingleton<IMultipartMessageService, MultipartMessageService>()
+                .AddScoped<IHandshakeService, HandshakeService>()
+                .AddScoped<IUserService, UserService>()
 
-            services.AddHostedService<SessionTickService>();
-            services.AddHostedService<Implementations.MasterServer>();
-        }
+                .AddHostedService<SessionTickService>()
+                .AddHostedService<Implementations.MasterServer>();
     }
 }

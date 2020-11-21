@@ -18,6 +18,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations.Sessions
         private readonly ILogger _logger;
 
         private Task _task;
+        private CancellationTokenSource _cancellationTokenSource;
 
         public SessionTickService(
             SessionLifetimeConfiguration sessionLifetimeConfiguration,
@@ -37,13 +38,29 @@ namespace BeatTogether.MasterServer.Kernel.Implementations.Sessions
             if (_task != null)
                 await StopAsync(cancellationToken);
 
-            _task = Task.Run(() => Tick(cancellationToken));
+            _cancellationTokenSource = new CancellationTokenSource();
+            _task = Task.Run(() => Tick(_cancellationTokenSource.Token));
         }
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
-            await _task;
-            _task = null;
+            if (_task == null)
+                return;
+
+            _cancellationTokenSource?.Cancel();
+            try
+            {
+                await _task;
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            finally
+            {
+                _cancellationTokenSource?.Dispose();
+                _cancellationTokenSource = null;
+                _task = null;
+            }
         }
 
         #endregion

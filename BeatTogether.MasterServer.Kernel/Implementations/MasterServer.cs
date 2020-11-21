@@ -106,7 +106,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         public Task StopAsync(CancellationToken cancellationToken)
         {
             _logger.Information($"Stopping Master Server (EndPoint='{_configuration.EndPoint}').");
-            Stop();
             return Task.CompletedTask;
         }
     }
