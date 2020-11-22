@@ -1,7 +1,5 @@
 ﻿using System.IO;
-using BeatTogether.MasterServer.Data.Bootstrap;
 using BeatTogether.MasterServer.Kernel.Bootstrap;
-using BeatTogether.MasterServer.Messaging.Bootstrap;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Serilog;

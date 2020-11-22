@@ -19,7 +19,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "2. Implementation", "2. Imp
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "3. Dependencies", "3. Dependencies", "{4C7D48DC-3BEF-48FF-A57C-7DFB6B6BB6AC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BeatTogether.Core.Messaging", "..\BeatTogether.Core\BeatTogether.Core.Messaging\BeatTogether.Core.Messaging.csproj", "{31B0201F-FE74-492A-BB68-38DDEC86299D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BeatTogether.Core.Messaging", "dependencies\BeatTogether.Core\BeatTogether.Core.Messaging\BeatTogether.Core.Messaging.csproj", "{31B0201F-FE74-492A-BB68-38DDEC86299D}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BeatTogether.Core.Data", "dependencies\BeatTogether.Core\BeatTogether.Core.Data\BeatTogether.Core.Data.csproj", "{57A1F0E5-14E3-417C-96BF-7CFCC978E169}"
 EndProject
