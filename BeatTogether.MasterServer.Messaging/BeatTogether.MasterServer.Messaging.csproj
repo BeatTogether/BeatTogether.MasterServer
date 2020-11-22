@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\BeatTogether.Core\BeatTogether.Core.Messaging\BeatTogether.Core.Messaging.csproj" />
+    <ProjectReference Include="..\dependencies\BeatTogether.Core\BeatTogether.Core.Messaging\BeatTogether.Core.Messaging.csproj" />
   </ItemGroup>
 
 </Project>
