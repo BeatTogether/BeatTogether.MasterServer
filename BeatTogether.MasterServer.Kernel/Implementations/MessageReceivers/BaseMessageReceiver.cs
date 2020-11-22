@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using BeatTogether.Core.Messaging.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions.Sessions;
 using BeatTogether.MasterServer.Kernel.Delegates;
 using BeatTogether.MasterServer.Kernel.Enums;
-using BeatTogether.MasterServer.Messaging.Abstractions.Messages;
-using BeatTogether.MasterServer.Messaging.Implementations.Messages;
+using BeatTogether.MasterServer.Messaging.Messages;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 

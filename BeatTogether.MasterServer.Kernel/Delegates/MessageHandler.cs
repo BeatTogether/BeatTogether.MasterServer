@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
+using BeatTogether.Core.Messaging.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions.Sessions;
-using BeatTogether.MasterServer.Messaging.Abstractions.Messages;
 
 namespace BeatTogether.MasterServer.Kernel.Delegates
 {

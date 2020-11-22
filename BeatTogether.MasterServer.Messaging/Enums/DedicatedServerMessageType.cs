@@ -1,6 +1,6 @@
 ﻿namespace BeatTogether.MasterServer.Messaging.Enums
 {
-    public enum DedicatedServerMessageType
+    public enum DedicatedServerMessageType : uint
     {
         AuthenticateDedicatedServerRequest,
         AuthenticateDedicatedServerResponse,

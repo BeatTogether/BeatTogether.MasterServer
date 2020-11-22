@@ -9,7 +9,7 @@ using BeatTogether.MasterServer.Kernel.Abstractions.Providers;
 using BeatTogether.MasterServer.Kernel.Abstractions.Security;
 using BeatTogether.MasterServer.Kernel.Abstractions.Sessions;
 using BeatTogether.MasterServer.Kernel.Enums;
-using BeatTogether.MasterServer.Messaging.Implementations.Messages.Handshake;
+using BeatTogether.MasterServer.Messaging.Messages.Handshake;
 using Krypton.Buffers;
 using Serilog;
 

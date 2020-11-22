@@ -1,6 +1,6 @@
 ﻿using System;
 using BeatTogether.MasterServer.Kernel.Abstractions;
-using BeatTogether.MasterServer.Messaging.Implementations.Messages.User;
+using BeatTogether.MasterServer.Messaging.Messages.User;
 
 namespace BeatTogether.MasterServer.Kernel.Implementations.MessageReceivers
 {

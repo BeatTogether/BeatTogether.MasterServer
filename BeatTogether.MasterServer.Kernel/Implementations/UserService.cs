@@ -7,12 +7,59 @@ using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions.Providers;
 using BeatTogether.MasterServer.Kernel.Abstractions.Sessions;
 using BeatTogether.MasterServer.Messaging.Enums;
-using BeatTogether.MasterServer.Messaging.Implementations.Messages.Models;
-using BeatTogether.MasterServer.Messaging.Implementations.Messages.User;
+using BeatTogether.MasterServer.Messaging.Messages.User;
+using BeatTogether.MasterServer.Messaging.Models;
+using NetCoreServer;
 using Serilog;
 
 namespace BeatTogether.MasterServer.Kernel.Implementations
 {
+    public class RelayServer : UdpServer
+    {
+        private readonly ILogger _logger;
+
+        private IPEndPoint _sourceEndPoint;
+        private IPEndPoint _targetEndPoint;
+
+        public RelayServer(
+            IPEndPoint endPoint,
+            IPEndPoint sourceEndPoint,
+            IPEndPoint targetEndPoint)
+            : base(endPoint)
+        {
+            _logger = Log.ForContext<RelayServer>();
+
+            _sourceEndPoint = sourceEndPoint;
+            _targetEndPoint = targetEndPoint;
+        }
+
+        protected override void OnStarted() => ReceiveAsync();
+
+        protected override void OnReceived(EndPoint endPoint, ReadOnlySpan<byte> buffer)
+        {
+            _logger.Verbose($"Handling OnReceived (EndPoint='{endPoint}', Size={buffer.Length}).");
+            if (endPoint.Equals(_sourceEndPoint))
+            {
+                _logger.Verbose(
+                    "Routing message from " +
+                    $"'{_sourceEndPoint}' -> '{_targetEndPoint}' " +
+                    $"(Data='{BitConverter.ToString(buffer.ToArray())}')."
+                );
+                SendAsync(_targetEndPoint, buffer);
+            }
+            else if (endPoint.Equals(_targetEndPoint))
+            {
+                _logger.Verbose(
+                    "Routing message from " +
+                    $"'{_targetEndPoint}' -> '{_sourceEndPoint}' " +
+                    $"(Data='{BitConverter.ToString(buffer.ToArray())}')."
+                );
+                SendAsync(_sourceEndPoint, buffer);
+            }
+            ReceiveAsync();
+        }
+    }
+
     public class UserService : IUserService
     {
         private readonly IMessageDispatcher _messageDispatcher;
@@ -21,6 +68,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         private readonly ISessionService _sessionService;
         private readonly IServerCodeProvider _serverCodeProvider;
         private readonly ILogger _logger;
+
+        private RelayServer _relayServer;
 
         public UserService(
             IMessageDispatcher messageDispatcher,
@@ -80,6 +129,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 $"Random={BitConverter.ToString(request.Random)}, " +
                 $"PublicKey={BitConverter.ToString(request.PublicKey)})."
             );
+
             var server = await _serverRepository.GetServer(request.Secret);
             if (server != null)
                 return new BroadcastServerStatusResponse()
@@ -317,22 +367,35 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 };
             }
 
+            if (_relayServer != null)
+            {
+                try
+                {
+                    _relayServer.Stop();
+                }
+                catch (Exception e)
+                {
+                    _logger.Warning(e, "Failed to stop relay server.");
+                }
+            }
+            _relayServer = new RelayServer(
+                IPEndPoint.Parse("0.0.0.0:10000"),
+                (IPEndPoint)session.EndPoint,
+                (IPEndPoint)hostSession.EndPoint
+            );
+            _relayServer.Start();
+
             // Let the host know that someone is about to connect (hole-punch)
             await _messageDispatcher.Send(hostSession, new PrepareForConnectionRequest()
             {
                 UserId = request.UserId,
                 UserName = request.UserName,
-                RemoteEndPoint = (IPEndPoint)session.EndPoint,
+                RemoteEndPoint = IPEndPoint.Parse("142.93.122.203:10000"),
                 Random = request.Random,
                 PublicKey = request.PublicKey,
                 IsConnectionOwner = false,
-                IsDedicatedServer = false
+                IsDedicatedServer = true
             });
-
-            // Give the host some time to hole-punch
-            // This is very ugly, but we don't have any better way to do this
-            // outside of modifying the client
-            await Task.Delay(500);
 
             session.Secret = request.Secret;
 
@@ -353,8 +416,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     SongPackBloomFilterBottom = server.SongPackBloomFilterBottom
                 },
                 IsConnectionOwner = true,
-                IsDedicatedServer = false,
-                RemoteEndPoint = server.RemoteEndPoint,
+                IsDedicatedServer = true,
+                RemoteEndPoint = IPEndPoint.Parse("142.93.122.203:10000"),
                 Random = server.Random,
                 PublicKey = server.PublicKey
             };

@@ -16,24 +16,19 @@ namespace BeatTogether.MasterServer
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
                 .ConfigureAppConfiguration((hostBuilderContext, configurationBuilder) =>
-                {
                     configurationBuilder
                         .SetBasePath(Directory.GetCurrentDirectory())
                         .AddJsonFile("appsettings.json", true)
                         .AddJsonFile($"appsettings.{hostBuilderContext.HostingEnvironment.EnvironmentName}.json", true)
-                        .AddEnvironmentVariables();
-                })
+                        .AddEnvironmentVariables()
+                )
                 .UseSerilog((hostBuilderContext, services, loggerConfiguration) =>
-                {
                     loggerConfiguration
                         .ReadFrom
-                        .Configuration(hostBuilderContext.Configuration);
-                })
+                        .Configuration(hostBuilderContext.Configuration)
+                )
                 .ConfigureServices((hostBuilderContext, services) =>
-                {
-                    MasterServerDataStartup.ConfigureServices(hostBuilderContext, services);
-                    MasterServerMessagingStartup.ConfigureServices(hostBuilderContext, services);
-                    MasterServerKernelStartup.ConfigureServices(hostBuilderContext, services);
-                });
+                    MasterServerKernelBootstrapper.ConfigureServices(hostBuilderContext, services)
+                );
     }
 }

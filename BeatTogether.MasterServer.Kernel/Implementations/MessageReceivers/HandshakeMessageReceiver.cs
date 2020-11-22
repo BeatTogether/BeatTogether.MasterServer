@@ -1,6 +1,6 @@
 ﻿using System;
 using BeatTogether.MasterServer.Kernel.Abstractions;
-using BeatTogether.MasterServer.Messaging.Implementations.Messages.Handshake;
+using BeatTogether.MasterServer.Messaging.Messages.Handshake;
 
 namespace BeatTogether.MasterServer.Kernel.Implementations
 {

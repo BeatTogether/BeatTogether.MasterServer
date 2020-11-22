@@ -3,12 +3,11 @@ using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using BeatTogether.Core.Messaging.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions.Sessions;
 using BeatTogether.MasterServer.Kernel.Configuration;
 using BeatTogether.MasterServer.Kernel.Enums;
-using BeatTogether.MasterServer.Messaging.Abstractions;
-using BeatTogether.MasterServer.Messaging.Abstractions.Messages;
 using Krypton.Buffers;
 using Serilog;
 
