@@ -1,4 +1,5 @@
 ﻿using System.Security.Cryptography;
+using BeatTogether.Core.Hosting.Extensions;
 using BeatTogether.MasterServer.Data.Bootstrap;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions.Providers;
@@ -11,7 +12,6 @@ using BeatTogether.MasterServer.Kernel.Implementations.Providers;
 using BeatTogether.MasterServer.Kernel.Implementations.Security;
 using BeatTogether.MasterServer.Kernel.Implementations.Sessions;
 using BeatTogether.MasterServer.Messaging.Bootstrap;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Org.BouncyCastle.Security;
@@ -25,24 +25,9 @@ namespace BeatTogether.MasterServer.Kernel.Bootstrap
             MasterServerMessagingBootstrapper.ConfigureServices(hostBuilderContext, services);
             MasterServerDataBootstrapper.ConfigureServices(hostBuilderContext, services);
 
-            services.AddSingleton(
-                hostBuilderContext
-                    .Configuration
-                    .GetSection("MasterServer")
-                    .Get<MasterServerConfiguration>()
-            );
-            services.AddSingleton(
-                hostBuilderContext
-                    .Configuration
-                    .GetSection("Messaging")
-                    .Get<MessagingConfiguration>()
-            );
-            services.AddSingleton(
-                hostBuilderContext
-                    .Configuration
-                    .GetSection("SessionLifetime")
-                    .Get<SessionLifetimeConfiguration>()
-            );
+            services.AddConfiguration<MasterServerConfiguration>(hostBuilderContext.Configuration, "MasterServer");
+            services.AddConfiguration<MessagingConfiguration>(hostBuilderContext.Configuration, "Messaging");
+            services.AddConfiguration<SessionLifetimeConfiguration>(hostBuilderContext.Configuration, "SessionLifetime");
 
             services.AddTransient<SecureRandom>();
             services.AddTransient<RNGCryptoServiceProvider>();

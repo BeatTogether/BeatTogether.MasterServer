@@ -7,10 +7,10 @@
 
   <ItemGroup>
     <PackageReference Include="Krypton.Buffers" Version="1.1.0" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="5.0.0" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\dependencies\BeatTogether.Core\BeatTogether.Core.Hosting\BeatTogether.Core.Hosting.csproj" />
     <ProjectReference Include="..\dependencies\BeatTogether.Core\BeatTogether.Core.Messaging\BeatTogether.Core.Messaging.csproj" />
   </ItemGroup>
 
