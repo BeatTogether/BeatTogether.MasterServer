@@ -2,11 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
+using BeatTogether.Core.Security.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions.Providers;
-using BeatTogether.MasterServer.Kernel.Abstractions.Security;
 using BeatTogether.MasterServer.Kernel.Abstractions.Sessions;
 using BeatTogether.MasterServer.Kernel.Enums;
 using BeatTogether.MasterServer.Messaging.Messages.Handshake;
@@ -20,7 +21,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         private readonly IMessageDispatcher _messageDispatcher;
         private readonly ICookieProvider _cookieProvider;
         private readonly IRandomProvider _randomProvider;
-        private readonly ICertificateProvider _certificateProvider;
+        private readonly X509Certificate2 _certificate;
         private readonly ICertificateSigningService _certificateSigningService;
         private readonly IDiffieHellmanService _diffieHellmanService;
         private readonly ILogger _logger;
@@ -34,14 +35,14 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             IMessageDispatcher messageDispatcher,
             ICookieProvider cookieProvider,
             IRandomProvider randomProvider,
-            ICertificateProvider certificateProvider,
+            X509Certificate2 certificate,
             ICertificateSigningService certificateSigningService,
             IDiffieHellmanService diffieHellmanService)
         {
             _messageDispatcher = messageDispatcher;
             _cookieProvider = cookieProvider;
             _randomProvider = randomProvider;
-            _certificateProvider = certificateProvider;
+            _certificate = certificate;
             _certificateSigningService = certificateSigningService;
             _diffieHellmanService = diffieHellmanService;
             _logger = Log.ForContext<HandshakeService>();
@@ -102,14 +103,13 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             session.ServerPrivateKeyParameters = keyPair.PrivateKeyParameters;
 
             // Generate a signature
-            var certificate = _certificateProvider.GetCertificate();
             var signature = MakeSignature(session.ClientRandom, session.ServerRandom, keyPair.PublicKey);
 
             await _messageDispatcher.Send(session, new ServerCertificateRequest()
             {
                 RequestId = session.GetNextRequestId(),
                 ResponseId = request.CertificateResponseId,
-                Certificates = new List<byte[]>() { certificate.RawData }
+                Certificates = new List<byte[]>() { _certificate.RawData }
             });
             return new ServerHelloRequest()
             {
@@ -158,7 +158,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         private byte[] MakeSignature(byte[] clientRandom, byte[] serverRandom, byte[] publicKey)
         {
-            var certificate = _certificateProvider.GetCertificate();
             var buffer = new GrowingSpanBuffer(stackalloc byte[512]);
             buffer.WriteBytes(clientRandom);
             buffer.WriteBytes(serverRandom);

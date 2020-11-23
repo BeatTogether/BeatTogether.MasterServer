@@ -1,15 +1,14 @@
 ﻿using System.Security.Cryptography;
 using BeatTogether.Core.Hosting.Extensions;
+using BeatTogether.Core.Security.Bootstrap;
 using BeatTogether.MasterServer.Data.Bootstrap;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions.Providers;
-using BeatTogether.MasterServer.Kernel.Abstractions.Security;
 using BeatTogether.MasterServer.Kernel.Abstractions.Sessions;
 using BeatTogether.MasterServer.Kernel.Configuration;
 using BeatTogether.MasterServer.Kernel.Implementations;
 using BeatTogether.MasterServer.Kernel.Implementations.MessageReceivers;
 using BeatTogether.MasterServer.Kernel.Implementations.Providers;
-using BeatTogether.MasterServer.Kernel.Implementations.Security;
 using BeatTogether.MasterServer.Kernel.Implementations.Sessions;
 using BeatTogether.MasterServer.Messaging.Bootstrap;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,6 +21,7 @@ namespace BeatTogether.MasterServer.Kernel.Bootstrap
     {
         public static void ConfigureServices(HostBuilderContext hostBuilderContext, IServiceCollection services)
         {
+            CoreSecurityBootstrapper.ConfigureServices(hostBuilderContext, services);
             MasterServerMessagingBootstrapper.ConfigureServices(hostBuilderContext, services);
             MasterServerDataBootstrapper.ConfigureServices(hostBuilderContext, services);
 
@@ -34,11 +34,7 @@ namespace BeatTogether.MasterServer.Kernel.Bootstrap
 
             services.AddSingleton<ICookieProvider, CookieProvider>();
             services.AddSingleton<IRandomProvider, RandomProvider>();
-            services.AddSingleton<ICertificateProvider, CertificateProvider>();
             services.AddSingleton<IServerCodeProvider, ServerCodeProvider>();
-
-            services.AddSingleton<IDiffieHellmanService, DiffieHellmanService>();
-            services.AddSingleton<ICertificateSigningService, CertificateSigningService>();
 
             services.AddSingleton<IMessageDispatcher, MessageDispatcher>();
 
