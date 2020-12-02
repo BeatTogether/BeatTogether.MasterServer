@@ -5,7 +5,6 @@ using BeatTogether.MasterServer.Data.Abstractions.Repositories;
 using BeatTogether.MasterServer.Data.Entities;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions.Providers;
-using BeatTogether.MasterServer.Kernel.Abstractions.Sessions;
 using BeatTogether.MasterServer.Messaging.Enums;
 using BeatTogether.MasterServer.Messaging.Messages.User;
 using BeatTogether.MasterServer.Messaging.Models;
@@ -15,29 +14,26 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 {
     public class UserService : IUserService
     {
-        private readonly IMessageDispatcher _messageDispatcher;
-        private readonly ISessionRepository _sessionRepository;
+        private readonly MasterServerMessageDispatcher _messageDispatcher;
         private readonly IServerRepository _serverRepository;
-        private readonly ISessionService _sessionService;
+        private readonly IMasterServerSessionService _sessionService;
         private readonly IServerCodeProvider _serverCodeProvider;
         private readonly ILogger _logger;
 
         public UserService(
-            IMessageDispatcher messageDispatcher,
-            ISessionRepository sessionRepository,
+            MasterServerMessageDispatcher messageDispatcher,
             IServerRepository serverRepository,
-            ISessionService sessionService,
+            IMasterServerSessionService sessionService,
             IServerCodeProvider serverCodeProvider)
         {
             _messageDispatcher = messageDispatcher;
-            _sessionRepository = sessionRepository;
             _serverRepository = serverRepository;
             _sessionService = sessionService;
             _serverCodeProvider = serverCodeProvider;
             _logger = Log.ForContext<UserService>();
         }
 
-        public Task<AuthenticateUserResponse> AuthenticateUser(ISession session, AuthenticateUserRequest request)
+        public Task<AuthenticateUserResponse> Authenticate(MasterServerSession session, AuthenticateUserRequest request)
         {
             _logger.Verbose(
                 $"Handling {nameof(AuthenticateUserRequest)} " +
@@ -63,7 +59,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             });
         }
 
-        public async Task<BroadcastServerStatusResponse> BroadcastServerStatus(ISession session, BroadcastServerStatusRequest request)
+        public async Task<BroadcastServerStatusResponse> BroadcastServerStatus(MasterServerSession session, BroadcastServerStatusRequest request)
         {
             _logger.Verbose(
                 $"Handling {nameof(BroadcastServerStatusRequest)} " +
@@ -159,7 +155,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             };
         }
 
-        public async Task<BroadcastServerHeartbeatResponse> BroadcastServerHeartbeat(ISession session, BroadcastServerHeartbeatRequest request)
+        public async Task BroadcastServerHeartbeat(MasterServerSession session, BroadcastServerHeartbeatRequest request)
         {
             _logger.Verbose(
                 $"Handling {nameof(BroadcastServerHeartbeatRequest)} " +
@@ -178,28 +174,32 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     $"Secret='{request.Secret}', " +
                     $"Expected='{session.Secret}')."
                 );
-                return new BroadcastServerHeartbeatResponse()
+                _messageDispatcher.Send(session, new BroadcastServerHeartbeatResponse()
                 {
                     Result = BroadcastServerHeartbeatResponse.ResultCode.UnknownError
-                };
+                });
+                return;
             }
 
             var server = await _serverRepository.GetServer(request.Secret);
             if (server == null)
-                return new BroadcastServerHeartbeatResponse()
+            {
+                _messageDispatcher.Send(session, new BroadcastServerHeartbeatResponse()
                 {
                     Result = BroadcastServerHeartbeatResponse.ResultCode.ServerDoesNotExist
-                };
+                });
+                return;
+            }
 
-            _sessionRepository.UpdateLastKeepAlive(session.EndPoint, DateTimeOffset.UtcNow);
+            session.LastKeepAlive = DateTimeOffset.UtcNow;
             _serverRepository.UpdateCurrentPlayerCount(request.Secret, (int)request.CurrentPlayerCount);
-            return new BroadcastServerHeartbeatResponse()
+            _messageDispatcher.Send(session, new BroadcastServerHeartbeatResponse()
             {
                 Result = BroadcastServerHeartbeatResponse.ResultCode.Success
-            };
+            });
         }
 
-        public async Task BroadcastServerRemove(ISession session, BroadcastServerRemoveRequest request)
+        public async Task BroadcastServerRemove(MasterServerSession session, BroadcastServerRemoveRequest request)
         {
             _logger.Verbose(
                 $"Handling {nameof(BroadcastServerRemoveRequest)} " +
@@ -235,7 +235,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             );
         }
 
-        public Task<ConnectToServerResponse> ConnectToMatchmaking(ISession session, ConnectToMatchmakingRequest request)
+        public Task<ConnectToServerResponse> ConnectToMatchmaking(MasterServerSession session, ConnectToMatchmakingRequest request)
         {
             _logger.Verbose(
                 $"Handling {nameof(ConnectToMatchmakingRequest)} " +
@@ -253,7 +253,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             });
         }
 
-        public async Task<ConnectToServerResponse> ConnectToServer(ISession session, ConnectToServerRequest request)
+        public async Task<ConnectToServerResponse> ConnectToServer(MasterServerSession session, ConnectToServerRequest request)
         {
             _logger.Verbose(
                 $"Handling {nameof(ConnectToServerRequest)} " +
@@ -319,7 +319,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             }
 
             // Let the host know that someone is about to connect (hole-punch)
-            await _messageDispatcher.Send(hostSession, new PrepareForConnectionRequest()
+            await _messageDispatcher.SendWithRetry(hostSession, new PrepareForConnectionRequest()
             {
                 UserId = request.UserId,
                 UserName = request.UserName,
@@ -356,7 +356,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             };
         }
 
-        public Task SessionKeepalive(ISession session, SessionKeepaliveMessage message)
+        public Task SessionKeepalive(MasterServerSession session, SessionKeepaliveMessage message)
         {
             _logger.Verbose(
                 $"Handling {nameof(SessionKeepalive)} " +
@@ -365,7 +365,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 $"UserId='{session.UserId}', " +
                 $"UserName='{session.UserName}')."
             );
-            _sessionRepository.UpdateLastKeepAlive(session.EndPoint, DateTimeOffset.UtcNow);
+            session.LastKeepAlive = DateTimeOffset.UtcNow;
             return Task.CompletedTask;
         }
     }

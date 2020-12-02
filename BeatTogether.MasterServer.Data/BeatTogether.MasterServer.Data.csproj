@@ -6,13 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Serilog" Version="2.10.0" />
-    <PackageReference Include="StackExchange.Redis" Version="2.2.4" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\dependencies\BeatTogether.Core\BeatTogether.Core.Data\BeatTogether.Core.Data.csproj" />
-    <ProjectReference Include="..\dependencies\BeatTogether.Core\BeatTogether.Core.Hosting\BeatTogether.Core.Hosting.csproj" />
+    <PackageReference Include="BeatTogether.Core.Data" Version="1.0.0" />
   </ItemGroup>
 
   <ItemGroup>

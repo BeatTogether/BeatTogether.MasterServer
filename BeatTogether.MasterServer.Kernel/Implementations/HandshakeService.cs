@@ -5,10 +5,10 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
+using BeatTogether.Core.Messaging.Models;
 using BeatTogether.Core.Security.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions.Providers;
-using BeatTogether.MasterServer.Kernel.Abstractions.Sessions;
 using BeatTogether.MasterServer.Kernel.Enums;
 using BeatTogether.MasterServer.Messaging.Messages.Handshake;
 using Krypton.Buffers;
@@ -18,7 +18,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 {
     public class HandshakeService : IHandshakeService
     {
-        private readonly IMessageDispatcher _messageDispatcher;
+        private readonly MasterServerMessageDispatcher _messageDispatcher;
         private readonly ICookieProvider _cookieProvider;
         private readonly IRandomProvider _randomProvider;
         private readonly X509Certificate2 _certificate;
@@ -32,7 +32,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         private const uint _epochMask = 0xff000000;
 
         public HandshakeService(
-            IMessageDispatcher messageDispatcher,
+            MasterServerMessageDispatcher messageDispatcher,
             ICookieProvider cookieProvider,
             IRandomProvider randomProvider,
             X509Certificate2 certificate,
@@ -50,14 +50,15 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         #region Public Methods
 
-        public Task<HelloVerifyRequest> ClientHello(ISession session, ClientHelloRequest request)
+        public Task<HelloVerifyRequest> ClientHello(MasterServerSession session, ClientHelloRequest request)
         {
             _logger.Verbose(
                 $"Handling {nameof(ClientHelloRequest)} " +
                 $"(Random='{BitConverter.ToString(request.Random)}')."
             );
             session.Epoch = request.RequestId & _epochMask;
-            session.State = SessionState.New;
+            session.State = MasterServerSessionState.New;
+            session.EncryptionParameters = null;
             session.Cookie = _cookieProvider.GetCookie();
             session.ClientRandom = request.Random;
             return Task.FromResult(new HelloVerifyRequest()
@@ -66,7 +67,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             });
         }
 
-        public async Task<ServerHelloRequest> ClientHelloWithCookie(ISession session, ClientHelloWithCookieRequest request)
+        public async Task<ServerHelloRequest> ClientHelloWithCookie(MasterServerSession session, ClientHelloWithCookieRequest request)
         {
             _logger.Verbose(
                 $"Handling {nameof(ClientHelloWithCookieRequest)} " +
@@ -105,9 +106,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             // Generate a signature
             var signature = MakeSignature(session.ClientRandom, session.ServerRandom, keyPair.PublicKey);
 
-            await _messageDispatcher.Send(session, new ServerCertificateRequest()
+            await _messageDispatcher.SendWithRetry(session, new ServerCertificateRequest()
             {
-                RequestId = session.GetNextRequestId(),
                 ResponseId = request.CertificateResponseId,
                 Certificates = new List<byte[]>() { _certificate.RawData }
             });
@@ -119,7 +119,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             };
         }
 
-        public Task<ChangeCipherSpecRequest> ClientKeyExchange(ISession session, ClientKeyExchangeRequest request)
+        public Task<ChangeCipherSpecRequest> ClientKeyExchange(MasterServerSession session, ClientKeyExchangeRequest request)
         {
             _logger.Verbose(
                 $"Handling {nameof(ClientKeyExchange)} " +
@@ -130,9 +130,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 session.ClientPublicKeyParameters,
                 session.ServerPrivateKeyParameters
             );
-            session.State = SessionState.Established;
-            session.ReceiveKey = new byte[32];
-            session.SendKey = new byte[32];
+            var receiveKey = new byte[32];
+            var sendKey = new byte[32];
             var sendMacSourceArray = new byte[64];
             var receiveMacSourceArray = new byte[64];
             var masterSecretSeed = MakeSeed(_masterSecretSeed, session.ServerRandom, session.ClientRandom);
@@ -142,12 +141,17 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 keyExpansionSeed,
                 192
             );
-            Array.Copy(sourceArray, 0, session.SendKey, 0, 32);
-            Array.Copy(sourceArray, 32, session.ReceiveKey, 0, 32);
+            Array.Copy(sourceArray, 0, sendKey, 0, 32);
+            Array.Copy(sourceArray, 32, receiveKey, 0, 32);
             Array.Copy(sourceArray, 64, sendMacSourceArray, 0, 64);
             Array.Copy(sourceArray, 128, receiveMacSourceArray, 0, 64);
-            session.SendMac = new HMACSHA256(sendMacSourceArray);
-            session.ReceiveMac = new HMACSHA256(receiveMacSourceArray);
+            session.EncryptionParameters = new EncryptionParameters(
+                receiveKey,
+                sendKey,
+                new HMACSHA256(receiveMacSourceArray),
+                new HMACSHA256(sendMacSourceArray)
+            );
+            session.State = MasterServerSessionState.Established;
             _logger.Information($"Session established (EndPoint='{session.EndPoint}').");
             return Task.FromResult(new ChangeCipherSpecRequest());
         }

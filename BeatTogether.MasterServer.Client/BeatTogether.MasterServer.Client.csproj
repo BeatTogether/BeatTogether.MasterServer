@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
@@ -6,11 +6,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BeatTogether.Core.Security" Version="1.0.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\BeatTogether.MasterServer.Data\BeatTogether.MasterServer.Data.csproj" />
     <ProjectReference Include="..\BeatTogether.MasterServer.Messaging\BeatTogether.MasterServer.Messaging.csproj" />
   </ItemGroup>
 

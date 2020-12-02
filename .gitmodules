@@ -1,6 +1,0 @@
-[submodule "dependencies/NetCoreServer"]
-	path = dependencies/NetCoreServer
-	url = https://github.com/chandler14362/NetCoreServer.git
-[submodule "dependencies/BeatTogether.Core"]
-	path = dependencies/BeatTogether.Core
-	url = https://github.com/pythonology/BeatTogether.Core.git

@@ -6,12 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Krypton.Buffers" Version="1.1.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\dependencies\BeatTogether.Core\BeatTogether.Core.Hosting\BeatTogether.Core.Hosting.csproj" />
-    <ProjectReference Include="..\dependencies\BeatTogether.Core\BeatTogether.Core.Messaging\BeatTogether.Core.Messaging.csproj" />
+    <PackageReference Include="BeatTogether.Core.Messaging" Version="1.4.0" />
   </ItemGroup>
 
 </Project>

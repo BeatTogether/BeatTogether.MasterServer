@@ -1,6 +1,6 @@
 ﻿using BeatTogether.Core.Messaging.Abstractions;
 using BeatTogether.Core.Messaging.Bootstrap;
-using BeatTogether.MasterServer.Messaging.Registries;
+using BeatTogether.MasterServer.Messaging.Implementations.Registries;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 

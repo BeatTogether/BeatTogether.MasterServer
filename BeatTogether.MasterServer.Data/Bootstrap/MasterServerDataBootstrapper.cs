@@ -11,7 +11,6 @@ namespace BeatTogether.MasterServer.Data.Bootstrap
         public static void ConfigureServices(HostBuilderContext hostBuilderContext, IServiceCollection services)
         {
             CoreDataBootstrapper.ConfigureServices(hostBuilderContext, services);
-            services.AddScoped<ISessionRepository, SessionRepository>();
             services.AddScoped<IServerRepository, ServerRepository>();
         }
     }
