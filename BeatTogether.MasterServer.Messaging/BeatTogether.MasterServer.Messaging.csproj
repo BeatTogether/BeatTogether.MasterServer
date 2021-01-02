@@ -3,10 +3,11 @@
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
     <LangVersion>9</LangVersion>
+    <Version>1.0.1</Version>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BeatTogether.Core.Messaging" Version="1.4.0" />
+    <PackageReference Include="BeatTogether.Core.Messaging" Version="1.5.2" />
   </ItemGroup>
 
 </Project>
