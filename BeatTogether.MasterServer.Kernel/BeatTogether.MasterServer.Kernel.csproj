@@ -7,6 +7,7 @@
 
   <ItemGroup>
     <PackageReference Include="BeatTogether.Core.Security" Version="1.0.2" />
+    <PackageReference Include="BeatTogether.DedicatedServer.Messaging" Version="1.0.0" />
   </ItemGroup>
 
   <ItemGroup>

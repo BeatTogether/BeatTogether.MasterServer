@@ -10,6 +10,7 @@ using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Obvs;
 using Serilog;
 
 namespace BeatTogether.MasterServer.Kernel.Implementations
@@ -31,7 +32,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             _sessionService = sessionService;
             _logger = Log.ForContext<MasterServer>();
 
-            // Warm up the Redis connection pool
+            // Warm up service bus/Redis connection pool
+            serviceProvider.GetRequiredService<IServiceBus>();
             if (redisConfiguration.Enabled)
                 serviceProvider.GetRequiredService<IConnectionMultiplexerPool>();
         }
@@ -41,14 +43,14 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            _logger.Information($"Starting Master Server (EndPoint='{Endpoint}').");
+            _logger.Information($"Starting master server (EndPoint='{Endpoint}').");
             Start();
             return Task.CompletedTask;
         }
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
-            _logger.Information($"Stopping Master Server (EndPoint='{Endpoint}').");
+            _logger.Information($"Stopping master server (EndPoint='{Endpoint}').");
             Stop();
             return Task.CompletedTask;
         }

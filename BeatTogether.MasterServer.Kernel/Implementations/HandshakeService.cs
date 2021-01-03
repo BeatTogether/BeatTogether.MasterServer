@@ -61,7 +61,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             session.EncryptionParameters = null;
             session.Cookie = _cookieProvider.GetCookie();
             session.ClientRandom = request.Random;
-            return Task.FromResult(new HelloVerifyRequest()
+            return Task.FromResult(new HelloVerifyRequest
             {
                 Cookie = session.Cookie
             });
@@ -111,7 +111,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 ResponseId = request.CertificateResponseId,
                 Certificates = new List<byte[]>() { _certificate.RawData }
             });
-            return new ServerHelloRequest()
+            return new ServerHelloRequest
             {
                 Random = session.ServerRandom,
                 PublicKey = keyPair.PublicKey,

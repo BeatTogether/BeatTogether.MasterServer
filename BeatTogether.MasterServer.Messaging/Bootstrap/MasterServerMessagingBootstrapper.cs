@@ -13,7 +13,6 @@ namespace BeatTogether.MasterServer.Messaging.Bootstrap
             CoreMessagingBootstrapper.ConfigureServices(hostBuilderContext, services);
             services.AddSingleton<IMessageRegistry, HandshakeMessageRegistry>();
             services.AddSingleton<IMessageRegistry, UserMessageRegistry>();
-            services.AddSingleton<IMessageRegistry, DedicatedServerMessageRegistry>();
         }
     }
 }
