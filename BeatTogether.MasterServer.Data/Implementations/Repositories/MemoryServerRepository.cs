@@ -8,14 +8,8 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
 {
     public class MemoryServerRepository : IServerRepository
     {
-        private readonly ConcurrentDictionary<string, Server> _servers;
-        private readonly ConcurrentDictionary<string, Server> _serversByCode;
-
-        public MemoryServerRepository()
-        {
-            _servers = new();
-            _serversByCode = new();
-        }
+        private static ConcurrentDictionary<string, Server> _servers = new();
+        private static ConcurrentDictionary<string, Server> _serversByCode = new();
 
         public Task<Server> GetServer(string secret)
         {
