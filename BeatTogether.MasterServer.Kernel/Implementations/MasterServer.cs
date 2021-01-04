@@ -1,111 +1,56 @@
 ﻿using System;
 using System.Net;
-using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using BeatTogether.MasterServer.Kernel.Abstractions.Sessions;
+using BeatTogether.Core.Data.Abstractions;
+using BeatTogether.Core.Data.Configuration;
+using BeatTogether.Core.Messaging.Abstractions;
+using BeatTogether.Core.Messaging.Implementations;
+using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Configuration;
-using BeatTogether.MasterServer.Kernel.Implementations.MessageReceivers;
-using BeatTogether.MasterServer.Messaging.Abstractions;
-using BeatTogether.MasterServer.Messaging.Abstractions.Messages;
-using Krypton.Buffers;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using NetCoreServer;
+using Obvs;
 using Serilog;
 
 namespace BeatTogether.MasterServer.Kernel.Implementations
 {
-    public class MasterServer : UdpServer, IHostedService
+    public class MasterServer : BaseUdpServer, IHostedService
     {
-        private readonly MasterServerConfiguration _configuration;
-        private readonly ISessionService _sessionService;
-        private readonly IMessageReader _messageReader;
-        private readonly IEncryptedMessageReader _encryptedMessageReader;
-        private readonly HandshakeMessageReceiver _handshakeMessageReceiver;
-        private readonly UserMessageReceiver _userMessageReceiver;
+        private readonly IMasterServerSessionService _sessionService;
         private readonly ILogger _logger;
 
         public MasterServer(
+            IServiceProvider serviceProvider,
             MasterServerConfiguration configuration,
-            ISessionService sessionService,
-            IMessageReader messageReader,
-            IEncryptedMessageReader encryptedMessageReader,
-            HandshakeMessageReceiver handshakeMessageReceiver,
-            UserMessageReceiver userMessageReceiver)
-            : base(IPEndPoint.Parse(configuration.EndPoint))
+            RedisConfiguration redisConfiguration,
+            MasterServerMessageSource messageSource,
+            MasterServerMessageDispatcher messageDispatcher,
+            IMasterServerSessionService sessionService)
+            : base(IPEndPoint.Parse(configuration.EndPoint), messageSource, messageDispatcher)
         {
-            _configuration = configuration;
             _sessionService = sessionService;
-            _messageReader = messageReader;
-            _encryptedMessageReader = encryptedMessageReader;
-            _handshakeMessageReceiver = handshakeMessageReceiver;
-            _userMessageReceiver = userMessageReceiver;
             _logger = Log.ForContext<MasterServer>();
+
+            // Warm up service bus/Redis connection pool
+            serviceProvider.GetRequiredService<IServiceBus>();
+            if (redisConfiguration.Enabled)
+                serviceProvider.GetRequiredService<IConnectionMultiplexerPool>();
         }
 
-        protected override void OnStarted() => ReceiveAsync();
-
-        protected override void OnReceived(EndPoint endPoint, ReadOnlySpan<byte> buffer)
-        {
-            _logger.Verbose($"Handling OnReceived (EndPoint='{endPoint}', Size={buffer.Length}).");
-            if (buffer.Length <= 0)
-            {
-                ReceiveAsync();
-                return;
-            }
-
-            // Retrieve the session
-            if (!_sessionService.TryGetSession(endPoint, out var session))
-                session = _sessionService.OpenSession(this, endPoint);
-
-            // Read the message
-            var bufferReader = new SpanBufferReader(buffer);
-            IMessage message;
-            try
-            {
-                var isEncrypted = bufferReader.ReadBool();
-                if (isEncrypted)
-                    message = _encryptedMessageReader.ReadFrom(
-                        ref bufferReader,
-                        session.ReceiveKey, session.ReceiveMac
-                    );
-                else
-                    message = _messageReader.ReadFrom(ref bufferReader);
-            }
-            catch (Exception e)
-            {
-                _logger.Warning(e, $"Failed to read message (EndPoint='{session.EndPoint}').");
-                ReceiveAsync();
-                return;
-            }
-
-            // Pass it off to a message receiver
-            Task.Run(async () =>
-            {
-                // TODO: This logic should probably be expanded in case of other
-                // message receivers being added (i.e. dedicated servers)
-                if (message is not IEncryptedMessage)
-                    await _handshakeMessageReceiver.OnReceived(session, message).ConfigureAwait(false);
-                else
-                    await _userMessageReceiver.OnReceived(session, message).ConfigureAwait(false);
-            });
-
-            ReceiveAsync();
-        }
-
-        protected override void OnError(SocketError error)
-            => _logger.Error($"Handling socket error (Error={error}).");
+        protected override ISession GetSession(EndPoint endPoint) =>
+            _sessionService.GetOrAddSession(endPoint);
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            _logger.Information($"Starting Master Server (EndPoint='{_configuration.EndPoint}').");
+            _logger.Information($"Starting master server (EndPoint='{Endpoint}').");
             Start();
             return Task.CompletedTask;
         }
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
-            _logger.Information($"Stopping Master Server (EndPoint='{_configuration.EndPoint}').");
+            _logger.Information($"Stopping master server (EndPoint='{Endpoint}').");
             Stop();
             return Task.CompletedTask;
         }

@@ -6,17 +6,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BouncyCastle.NetCore" Version="1.8.8" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="5.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
-    <PackageReference Include="NetCoreServer" Version="5.0.0" />
-    <PackageReference Include="Serilog" Version="2.10.0" />
+    <PackageReference Include="BeatTogether.Core.Security" Version="1.0.2" />
+    <PackageReference Include="BeatTogether.DedicatedServer.Messaging" Version="1.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\BeatTogether.MasterServer.Data\BeatTogether.MasterServer.Data.csproj" />
     <ProjectReference Include="..\BeatTogether.MasterServer.Messaging\BeatTogether.MasterServer.Messaging.csproj" />
-    <ProjectReference Include="..\dependencies\NetCoreServer\source\NetCoreServer\NetCoreServer.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,43 +1,46 @@
 ﻿using System;
 using System.Net;
+using System.Reactive.Linq;
 using System.Threading.Tasks;
+using BeatTogether.DedicatedServer.Messaging.Requests;
+using BeatTogether.DedicatedServer.Messaging.Responses;
 using BeatTogether.MasterServer.Data.Abstractions.Repositories;
 using BeatTogether.MasterServer.Data.Entities;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions.Providers;
-using BeatTogether.MasterServer.Kernel.Abstractions.Sessions;
 using BeatTogether.MasterServer.Messaging.Enums;
-using BeatTogether.MasterServer.Messaging.Implementations.Messages.Models;
-using BeatTogether.MasterServer.Messaging.Implementations.Messages.User;
+using BeatTogether.MasterServer.Messaging.Messages.User;
+using BeatTogether.MasterServer.Messaging.Models;
+using Obvs;
 using Serilog;
 
 namespace BeatTogether.MasterServer.Kernel.Implementations
 {
     public class UserService : IUserService
     {
-        private readonly IMessageDispatcher _messageDispatcher;
-        private readonly ISessionRepository _sessionRepository;
+        private readonly MasterServerMessageDispatcher _messageDispatcher;
+        private readonly IServiceBus _serviceBus;
         private readonly IServerRepository _serverRepository;
-        private readonly ISessionService _sessionService;
+        private readonly IMasterServerSessionService _sessionService;
         private readonly IServerCodeProvider _serverCodeProvider;
         private readonly ILogger _logger;
 
         public UserService(
-            IMessageDispatcher messageDispatcher,
-            ISessionRepository sessionRepository,
+            MasterServerMessageDispatcher messageDispatcher,
+            IServiceBus serviceBus,
             IServerRepository serverRepository,
-            ISessionService sessionService,
+            IMasterServerSessionService sessionService,
             IServerCodeProvider serverCodeProvider)
         {
             _messageDispatcher = messageDispatcher;
-            _sessionRepository = sessionRepository;
+            _serviceBus = serviceBus;
             _serverRepository = serverRepository;
             _sessionService = sessionService;
             _serverCodeProvider = serverCodeProvider;
             _logger = Log.ForContext<UserService>();
         }
 
-        public Task<AuthenticateUserResponse> AuthenticateUser(ISession session, AuthenticateUserRequest request)
+        public Task<AuthenticateUserResponse> Authenticate(MasterServerSession session, AuthenticateUserRequest request)
         {
             _logger.Verbose(
                 $"Handling {nameof(AuthenticateUserRequest)} " +
@@ -57,13 +60,13 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             session.Platform = request.AuthenticationToken.Platform;
             session.UserId = request.AuthenticationToken.UserId;
             session.UserName = request.AuthenticationToken.UserName;
-            return Task.FromResult(new AuthenticateUserResponse()
+            return Task.FromResult(new AuthenticateUserResponse
             {
                 Result = AuthenticateUserResponse.ResultCode.Success
             });
         }
 
-        public async Task<BroadcastServerStatusResponse> BroadcastServerStatus(ISession session, BroadcastServerStatusRequest request)
+        public async Task<BroadcastServerStatusResponse> BroadcastServerStatus(MasterServerSession session, BroadcastServerStatusRequest request)
         {
             _logger.Verbose(
                 $"Handling {nameof(BroadcastServerStatusRequest)} " +
@@ -80,9 +83,10 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 $"Random={BitConverter.ToString(request.Random)}, " +
                 $"PublicKey={BitConverter.ToString(request.PublicKey)})."
             );
+
             var server = await _serverRepository.GetServer(request.Secret);
             if (server != null)
-                return new BroadcastServerStatusResponse()
+                return new BroadcastServerStatusResponse
                 {
                     Result = BroadcastServerStatusResponse.ResultCode.SecretNotUnique
                 };
@@ -129,7 +133,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     $"Random={BitConverter.ToString(request.Random)}, " +
                     $"PublicKey={BitConverter.ToString(request.PublicKey)})."
                 );
-                return new BroadcastServerStatusResponse()
+                return new BroadcastServerStatusResponse
                 {
                     Result = BroadcastServerStatusResponse.ResultCode.UnknownError
                 };
@@ -150,7 +154,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 $"Random='{BitConverter.ToString(request.Random)}', " +
                 $"PublicKey='{BitConverter.ToString(request.PublicKey)}')."
             );
-            return new BroadcastServerStatusResponse()
+            return new BroadcastServerStatusResponse
             {
                 Result = BroadcastServerStatusResponse.ResultCode.Success,
                 Code = server.Code,
@@ -158,7 +162,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             };
         }
 
-        public async Task<BroadcastServerHeartbeatResponse> BroadcastServerHeartbeat(ISession session, BroadcastServerHeartbeatRequest request)
+        public async Task BroadcastServerHeartbeat(MasterServerSession session, BroadcastServerHeartbeatRequest request)
         {
             _logger.Verbose(
                 $"Handling {nameof(BroadcastServerHeartbeatRequest)} " +
@@ -177,28 +181,32 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     $"Secret='{request.Secret}', " +
                     $"Expected='{session.Secret}')."
                 );
-                return new BroadcastServerHeartbeatResponse()
+                _messageDispatcher.Send(session, new BroadcastServerHeartbeatResponse
                 {
                     Result = BroadcastServerHeartbeatResponse.ResultCode.UnknownError
-                };
+                });
+                return;
             }
 
             var server = await _serverRepository.GetServer(request.Secret);
             if (server == null)
-                return new BroadcastServerHeartbeatResponse()
+            {
+                _messageDispatcher.Send(session, new BroadcastServerHeartbeatResponse
                 {
                     Result = BroadcastServerHeartbeatResponse.ResultCode.ServerDoesNotExist
-                };
+                });
+                return;
+            }
 
-            _sessionRepository.UpdateLastKeepAlive(session.EndPoint, DateTimeOffset.UtcNow);
+            session.LastKeepAlive = DateTimeOffset.UtcNow;
             _serverRepository.UpdateCurrentPlayerCount(request.Secret, (int)request.CurrentPlayerCount);
-            return new BroadcastServerHeartbeatResponse()
+            _messageDispatcher.Send(session, new BroadcastServerHeartbeatResponse
             {
                 Result = BroadcastServerHeartbeatResponse.ResultCode.Success
-            };
+            });
         }
 
-        public async Task BroadcastServerRemove(ISession session, BroadcastServerRemoveRequest request)
+        public async Task BroadcastServerRemove(MasterServerSession session, BroadcastServerRemoveRequest request)
         {
             _logger.Verbose(
                 $"Handling {nameof(BroadcastServerRemoveRequest)} " +
@@ -234,7 +242,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             );
         }
 
-        public Task<ConnectToServerResponse> ConnectToMatchmaking(ISession session, ConnectToMatchmakingRequest request)
+        public Task<ConnectToServerResponse> ConnectToMatchmaking(MasterServerSession session, ConnectToMatchmakingRequest request)
         {
             _logger.Verbose(
                 $"Handling {nameof(ConnectToMatchmakingRequest)} " +
@@ -246,13 +254,13 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 $"GameplayModifiersMask={request.Configuration.GameplayModifiersMask}, " +
                 $"Secret='{request.Secret}')."
             );
-            return Task.FromResult(new ConnectToServerResponse()
+            return Task.FromResult(new ConnectToServerResponse
             {
                 Result = ConnectToServerResponse.ResultCode.UnknownError
             });
         }
 
-        public async Task<ConnectToServerResponse> ConnectToServer(ISession session, ConnectToServerRequest request)
+        public async Task<ConnectToServerResponse> ConnectToServer(MasterServerSession session, ConnectToServerRequest request)
         {
             _logger.Verbose(
                 $"Handling {nameof(ConnectToServerRequest)} " +
@@ -271,7 +279,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             {
                 server = await _serverRepository.GetServerByCode(request.Code);
                 if (server == null)
-                    return new ConnectToServerResponse()
+                    return new ConnectToServerResponse
                     {
                         Result = ConnectToServerResponse.ResultCode.InvalidCode
                     };
@@ -280,14 +288,14 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             {
                 server = await _serverRepository.GetServer(request.Secret);
                 if (server == null)
-                    return new ConnectToServerResponse()
+                    return new ConnectToServerResponse
                     {
                         Result = ConnectToServerResponse.ResultCode.InvalidSecret
                     };
             }
 
             if (server.CurrentPlayerCount >= server.MaximumPlayerCount)
-                return new ConnectToServerResponse()
+                return new ConnectToServerResponse
                 {
                     Result = ConnectToServerResponse.ResultCode.ServerAtCapacity
                 };
@@ -299,39 +307,66 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     $"{nameof(ConnectToServerRequest)} " +
                     $"(EndPoint='{server.RemoteEndPoint}')."
                 );
-                return new ConnectToServerResponse()
+                return new ConnectToServerResponse
                 {
                     Result = ConnectToServerResponse.ResultCode.UnknownError
                 };
             }
 
+            var remoteEndPoint = (IPEndPoint)session.EndPoint;
+            if (request.UseRelay)
+            {
+                var taskCompletionSource = new TaskCompletionSource<GetAvailableRelayServerResponse>();
+                _serviceBus
+                    .GetResponse<GetAvailableRelayServerResponse>(new GetAvailableRelayServerRequest
+                    {
+                        SourceEndPoint = session.EndPoint.ToString(),
+                        TargetEndPoint = hostSession.EndPoint.ToString()
+                    })
+                    .Timeout(TimeSpan.FromSeconds(3))
+                    .Subscribe(
+                        response => taskCompletionSource.SetResult(response),
+                        e => taskCompletionSource.SetException(e)
+                    );
+                GetAvailableRelayServerResponse getAvailableRelayServerResponse;
+                try
+                {
+                    getAvailableRelayServerResponse = await taskCompletionSource.Task;
+                }
+                catch (Exception e)
+                {
+                    _logger.Error(e, "Failed to get available relay server.");
+                    return new ConnectToServerResponse
+                    {
+                        Result = ConnectToServerResponse.ResultCode.NoAvailableDedicatedServers
+                    };
+                }
+                if (getAvailableRelayServerResponse.Error != GetAvailableRelayServerResponse.ErrorCode.None)
+                {
+                    _logger.Warning("No available relay servers.");
+                    return new ConnectToServerResponse
+                    {
+                        Result = ConnectToServerResponse.ResultCode.NoAvailableDedicatedServers
+                    };
+                }
+                remoteEndPoint = IPEndPoint.Parse(getAvailableRelayServerResponse.RemoteEndPoint);
+            }
+
             // Let the host know that someone is about to connect (hole-punch)
-            await _messageDispatcher.Send(hostSession, new PrepareForConnectionRequest()
+            await _messageDispatcher.SendWithRetry(hostSession, new PrepareForConnectionRequest
             {
                 UserId = request.UserId,
                 UserName = request.UserName,
-                RemoteEndPoint = (IPEndPoint)session.EndPoint,
+                RemoteEndPoint = remoteEndPoint,
                 Random = request.Random,
                 PublicKey = request.PublicKey,
                 IsConnectionOwner = false,
                 IsDedicatedServer = false
             });
 
-            if (!await _serverRepository.IncrementCurrentPlayerCount(server.Secret))
-            {
-                _logger.Warning(
-                    "Failed to increment player count " +
-                    $"(Secret='{server.Secret}')."
-                );
-                return new ConnectToServerResponse()
-                {
-                    Result = ConnectToServerResponse.ResultCode.UnknownError
-                };
-            }
-
             session.Secret = request.Secret;
 
-            return new ConnectToServerResponse()
+            return new ConnectToServerResponse
             {
                 Result = ConnectToServerResponse.ResultCode.Success,
                 UserId = server.Host.UserId,
@@ -349,13 +384,13 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 },
                 IsConnectionOwner = true,
                 IsDedicatedServer = false,
-                RemoteEndPoint = server.RemoteEndPoint,
+                RemoteEndPoint = remoteEndPoint,
                 Random = server.Random,
                 PublicKey = server.PublicKey
             };
         }
 
-        public Task SessionKeepalive(ISession session, SessionKeepaliveMessage message)
+        public Task SessionKeepalive(MasterServerSession session, SessionKeepaliveMessage message)
         {
             _logger.Verbose(
                 $"Handling {nameof(SessionKeepalive)} " +
@@ -364,7 +399,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 $"UserId='{session.UserId}', " +
                 $"UserName='{session.UserName}')."
             );
-            _sessionRepository.UpdateLastKeepAlive(session.EndPoint, DateTimeOffset.UtcNow);
+            session.LastKeepAlive = DateTimeOffset.UtcNow;
             return Task.CompletedTask;
         }
     }

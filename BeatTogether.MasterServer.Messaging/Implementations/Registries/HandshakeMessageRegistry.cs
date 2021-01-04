@@ -1,6 +1,7 @@
-﻿using BeatTogether.MasterServer.Messaging.Enums;
-using BeatTogether.MasterServer.Messaging.Implementations.Messages;
-using BeatTogether.MasterServer.Messaging.Implementations.Messages.Handshake;
+﻿using BeatTogether.Core.Messaging.Implementations.Registries;
+using BeatTogether.Core.Messaging.Messages;
+using BeatTogether.MasterServer.Messaging.Enums;
+using BeatTogether.MasterServer.Messaging.Messages.Handshake;
 
 namespace BeatTogether.MasterServer.Messaging.Implementations.Registries
 {

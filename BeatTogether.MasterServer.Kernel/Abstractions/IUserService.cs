@@ -1,17 +1,17 @@
 ﻿using System.Threading.Tasks;
-using BeatTogether.MasterServer.Kernel.Abstractions.Sessions;
-using BeatTogether.MasterServer.Messaging.Implementations.Messages.User;
+using BeatTogether.MasterServer.Kernel.Implementations;
+using BeatTogether.MasterServer.Messaging.Messages.User;
 
 namespace BeatTogether.MasterServer.Kernel.Abstractions
 {
     public interface IUserService
     {
-        Task<AuthenticateUserResponse> AuthenticateUser(ISession session, AuthenticateUserRequest request);
-        Task<BroadcastServerHeartbeatResponse> BroadcastServerHeartbeat(ISession session, BroadcastServerHeartbeatRequest request);
-        Task BroadcastServerRemove(ISession session, BroadcastServerRemoveRequest request);
-        Task<BroadcastServerStatusResponse> BroadcastServerStatus(ISession session, BroadcastServerStatusRequest request);
-        Task<ConnectToServerResponse> ConnectToServer(ISession session, ConnectToServerRequest request);
-        Task<ConnectToServerResponse> ConnectToMatchmaking(ISession session, ConnectToMatchmakingRequest request);
-        Task SessionKeepalive(ISession session, SessionKeepaliveMessage request);
+        Task<AuthenticateUserResponse> Authenticate(MasterServerSession session, AuthenticateUserRequest request);
+        Task BroadcastServerHeartbeat(MasterServerSession session, BroadcastServerHeartbeatRequest request);
+        Task BroadcastServerRemove(MasterServerSession session, BroadcastServerRemoveRequest request);
+        Task<BroadcastServerStatusResponse> BroadcastServerStatus(MasterServerSession session, BroadcastServerStatusRequest request);
+        Task<ConnectToServerResponse> ConnectToServer(MasterServerSession session, ConnectToServerRequest request);
+        Task<ConnectToServerResponse> ConnectToMatchmaking(MasterServerSession session, ConnectToMatchmakingRequest request);
+        Task SessionKeepalive(MasterServerSession session, SessionKeepaliveMessage message);
     }
 }
