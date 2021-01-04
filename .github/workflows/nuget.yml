@@ -1,0 +1,54 @@
+name: NuGet
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  nuget-1:
+    name: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 5.0.100
+          source-url: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
+        env:
+          NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      - name: Pack
+        run: |
+          dotnet pack -c Release --output nupkgs BeatTogether.MasterServer.Messaging/BeatTogether.MasterServer.Messaging.csproj
+          dotnet pack -c Release --output nupkgs BeatTogether.MasterServer.Client/BeatTogether.MasterServer.Client.csproj
+      - name: Publish
+        run: |
+          dotnet nuget push nupkgs/BeatTogether.MasterServer.Messaging.*.nupkg -k ${{secrets.GITHUB_TOKEN}} --skip-duplicate
+          dotnet nuget push nupkgs/BeatTogether.MasterServer.Client.*.nupkg -k ${{secrets.GITHUB_TOKEN}} --skip-duplicate
+
+  nuget-2:
+    name: https://api.nuget.org/v3/index.json
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 5.0.100
+          source-url: https://api.nuget.org/v3/index.json
+        env:
+          NUGET_AUTH_TOKEN: ${{secrets.NUGET_API_KEY}}
+      - name: Pack
+        run: |
+          dotnet pack -c Release --output nupkgs BeatTogether.MasterServer.Messaging/BeatTogether.MasterServer.Messaging.csproj
+          dotnet pack -c Release --output nupkgs BeatTogether.MasterServer.Client/BeatTogether.MasterServer.Client.csproj
+      - name: Publish
+        run: |
+          dotnet nuget push nupkgs/BeatTogether.MasterServer.Messaging.*.nupkg -k ${{secrets.NUGET_API_KEY}} --skip-duplicate
+          dotnet nuget push nupkgs/BeatTogether.MasterServer.Client.*.nupkg -k ${{secrets.NUGET_API_KEY}} --skip-duplicate
