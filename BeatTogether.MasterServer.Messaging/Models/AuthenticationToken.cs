@@ -1,5 +1,5 @@
 ﻿using BeatTogether.Core.Messaging.Abstractions;
-using BeatTogether.Core.Messaging.Extensions;
+using BeatTogether.Extensions;
 using BeatTogether.MasterServer.Messaging.Enums;
 using Krypton.Buffers;
 
@@ -12,12 +12,12 @@ namespace BeatTogether.MasterServer.Messaging.Models
         public string UserName { get; set; }
         public byte[] SessionToken { get; set; }
 
-        public void WriteTo(ref GrowingSpanBuffer buffer)
+        public void WriteTo(ref SpanBufferWriter bufferWriter)
         {
-            buffer.WriteUInt8((byte)Platform);
-            buffer.WriteString(UserId);
-            buffer.WriteString(UserName);
-            buffer.WriteVarBytes(SessionToken);
+            bufferWriter.WriteUInt8((byte)Platform);
+            bufferWriter.WriteString(UserId);
+            bufferWriter.WriteString(UserName);
+            bufferWriter.WriteVarBytes(SessionToken);
         }
 
         public void ReadFrom(ref SpanBufferReader bufferReader)

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Net;
-using System.Reactive.Linq;
 using System.Threading.Tasks;
+using BeatTogether.DedicatedServer.Interface;
 using BeatTogether.DedicatedServer.Messaging.Requests;
 using BeatTogether.DedicatedServer.Messaging.Responses;
 using BeatTogether.MasterServer.Data.Abstractions.Repositories;
@@ -11,7 +11,6 @@ using BeatTogether.MasterServer.Kernel.Abstractions.Providers;
 using BeatTogether.MasterServer.Messaging.Enums;
 using BeatTogether.MasterServer.Messaging.Messages.User;
 using BeatTogether.MasterServer.Messaging.Models;
-using Obvs;
 using Serilog;
 
 namespace BeatTogether.MasterServer.Kernel.Implementations
@@ -19,7 +18,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
     public class UserService : IUserService
     {
         private readonly MasterServerMessageDispatcher _messageDispatcher;
-        private readonly IServiceBus _serviceBus;
+        private readonly IRelayServerService _relayServerService;
         private readonly IServerRepository _serverRepository;
         private readonly IMasterServerSessionService _sessionService;
         private readonly IServerCodeProvider _serverCodeProvider;
@@ -27,13 +26,13 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         public UserService(
             MasterServerMessageDispatcher messageDispatcher,
-            IServiceBus serviceBus,
+            IRelayServerService relayServerService,
             IServerRepository serverRepository,
             IMasterServerSessionService sessionService,
             IServerCodeProvider serverCodeProvider)
         {
             _messageDispatcher = messageDispatcher;
-            _serviceBus = serviceBus;
+            _relayServerService = relayServerService;
             _serverRepository = serverRepository;
             _sessionService = sessionService;
             _serverCodeProvider = serverCodeProvider;
@@ -274,25 +273,12 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 $"UseRelay={request.UseRelay})."
             );
 
-            Server server = null;
-            if (!string.IsNullOrEmpty(request.Code))
-            {
-                server = await _serverRepository.GetServerByCode(request.Code);
-                if (server == null)
-                    return new ConnectToServerResponse
-                    {
-                        Result = ConnectToServerResponse.ResultCode.InvalidCode
-                    };
-            }
-            else if (!string.IsNullOrEmpty(request.Secret))
-            {
-                server = await _serverRepository.GetServer(request.Secret);
-                if (server == null)
-                    return new ConnectToServerResponse
-                    {
-                        Result = ConnectToServerResponse.ResultCode.InvalidSecret
-                    };
-            }
+            var server = await _serverRepository.GetServerByCode(request.Code);
+            if (server is null)
+                return new ConnectToServerResponse
+                {
+                    Result = ConnectToServerResponse.ResultCode.InvalidCode
+                };
 
             if (server.CurrentPlayerCount >= server.MaximumPlayerCount)
                 return new ConnectToServerResponse
@@ -316,24 +302,17 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             var remoteEndPoint = (IPEndPoint)session.EndPoint;
             if (request.UseRelay)
             {
-                var taskCompletionSource = new TaskCompletionSource<GetAvailableRelayServerResponse>();
-                _serviceBus
-                    .GetResponse<GetAvailableRelayServerResponse>(new GetAvailableRelayServerRequest
-                    {
-                        SourceEndPoint = session.EndPoint.ToString(),
-                        TargetEndPoint = hostSession.EndPoint.ToString()
-                    })
-                    .Timeout(TimeSpan.FromSeconds(3))
-                    .Subscribe(
-                        response => taskCompletionSource.SetResult(response),
-                        e => taskCompletionSource.SetException(e)
-                    );
                 GetAvailableRelayServerResponse getAvailableRelayServerResponse;
                 try
                 {
-                    getAvailableRelayServerResponse = await taskCompletionSource.Task;
+                    getAvailableRelayServerResponse = await _relayServerService.GetAvailableRelayServer(
+                        new GetAvailableRelayServerRequest(
+                            session.EndPoint.ToString()!,
+                            hostSession.EndPoint.ToString()!
+                        )
+                    );
                 }
-                catch (Exception e)
+                catch (TimeoutException e)
                 {
                     _logger.Error(e, "Failed to get available relay server.");
                     return new ConnectToServerResponse
@@ -341,7 +320,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                         Result = ConnectToServerResponse.ResultCode.NoAvailableDedicatedServers
                     };
                 }
-                if (getAvailableRelayServerResponse.Error != GetAvailableRelayServerResponse.ErrorCode.None)
+                if (!getAvailableRelayServerResponse.Success)
                 {
                     _logger.Warning("No available relay servers.");
                     return new ConnectToServerResponse
@@ -349,7 +328,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                         Result = ConnectToServerResponse.ResultCode.NoAvailableDedicatedServers
                     };
                 }
-                remoteEndPoint = IPEndPoint.Parse(getAvailableRelayServerResponse.RemoteEndPoint);
+                remoteEndPoint = IPEndPoint.Parse(getAvailableRelayServerResponse.RemoteEndPoint!);
             }
 
             // Let the host know that someone is about to connect (hole-punch)

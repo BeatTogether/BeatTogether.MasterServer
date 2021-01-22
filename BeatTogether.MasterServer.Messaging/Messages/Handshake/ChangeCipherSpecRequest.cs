@@ -8,11 +8,11 @@ namespace BeatTogether.MasterServer.Messaging.Messages.Handshake
         public uint RequestId { get; set; }
         public uint ResponseId { get; set; }
 
-        public void ReadFrom(ref SpanBufferReader bufferReader)
+        public void WriteTo(ref SpanBufferWriter bufferWriter)
         {
         }
 
-        public void WriteTo(ref GrowingSpanBuffer buffer)
+        public void ReadFrom(ref SpanBufferReader bufferReader)
         {
         }
     }

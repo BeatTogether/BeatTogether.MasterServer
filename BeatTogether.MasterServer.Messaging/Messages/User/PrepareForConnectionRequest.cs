@@ -1,6 +1,6 @@
 ﻿using System.Net;
 using BeatTogether.Core.Messaging.Abstractions;
-using BeatTogether.Core.Messaging.Extensions;
+using BeatTogether.Extensions;
 using Krypton.Buffers;
 
 namespace BeatTogether.MasterServer.Messaging.Messages.User
@@ -17,14 +17,14 @@ namespace BeatTogether.MasterServer.Messaging.Messages.User
         public bool IsConnectionOwner { get; set; }
         public bool IsDedicatedServer { get; set; }
 
-        public void WriteTo(ref GrowingSpanBuffer buffer)
+        public void WriteTo(ref SpanBufferWriter bufferWriter)
         {
-            buffer.WriteString(UserId);
-            buffer.WriteString(UserName);
-            buffer.WriteIPEndPoint(RemoteEndPoint);
-            buffer.WriteBytes(Random);
-            buffer.WriteVarBytes(PublicKey);
-            buffer.WriteUInt8((byte)((IsConnectionOwner ? 1 : 0) | (IsDedicatedServer ? 2 : 0)));
+            bufferWriter.WriteString(UserId);
+            bufferWriter.WriteString(UserName);
+            bufferWriter.WriteIPEndPoint(RemoteEndPoint);
+            bufferWriter.WriteBytes(Random);
+            bufferWriter.WriteVarBytes(PublicKey);
+            bufferWriter.WriteUInt8((byte)((IsConnectionOwner ? 1 : 0) | (IsDedicatedServer ? 2 : 0)));
         }
 
         public void ReadFrom(ref SpanBufferReader bufferReader)

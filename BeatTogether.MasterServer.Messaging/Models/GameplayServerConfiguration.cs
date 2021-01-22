@@ -11,12 +11,12 @@ namespace BeatTogether.MasterServer.Messaging.Models
         public ulong SongPackBloomFilterTop { get; set; }
         public ulong SongPackBloomFilterBottom { get; set; }
 
-        public void WriteTo(ref GrowingSpanBuffer buffer)
+        public void WriteTo(ref SpanBufferWriter bufferWriter)
         {
-            buffer.WriteUInt8((byte)BeatmapDifficultyMask);
-            buffer.WriteUInt16((ushort)GameplayModifiersMask);
-            buffer.WriteUInt64(SongPackBloomFilterTop);
-            buffer.WriteUInt64(SongPackBloomFilterBottom);
+            bufferWriter.WriteUInt8((byte)BeatmapDifficultyMask);
+            bufferWriter.WriteUInt16((ushort)GameplayModifiersMask);
+            bufferWriter.WriteUInt64(SongPackBloomFilterTop);
+            bufferWriter.WriteUInt64(SongPackBloomFilterBottom);
         }
 
         public void ReadFrom(ref SpanBufferReader bufferReader)

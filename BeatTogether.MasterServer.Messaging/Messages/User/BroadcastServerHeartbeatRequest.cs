@@ -1,5 +1,5 @@
 ﻿using BeatTogether.Core.Messaging.Abstractions;
-using BeatTogether.Core.Messaging.Extensions;
+using BeatTogether.Extensions;
 using Krypton.Buffers;
 
 namespace BeatTogether.MasterServer.Messaging.Messages.User
@@ -12,12 +12,12 @@ namespace BeatTogether.MasterServer.Messaging.Messages.User
         public string Secret { get; set; }
         public uint CurrentPlayerCount { get; set; }
 
-        public void WriteTo(ref GrowingSpanBuffer buffer)
+        public void WriteTo(ref SpanBufferWriter bufferWriter)
         {
-            buffer.WriteString(UserId);
-            buffer.WriteString(UserName);
-            buffer.WriteString(Secret);
-            buffer.WriteVarUInt(CurrentPlayerCount);
+            bufferWriter.WriteString(UserId);
+            bufferWriter.WriteString(UserName);
+            bufferWriter.WriteString(Secret);
+            bufferWriter.WriteVarUInt(CurrentPlayerCount);
         }
 
         public void ReadFrom(ref SpanBufferReader bufferReader)

@@ -15,8 +15,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "1. Distributed Services", "
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "2. Implementation", "2. Implementation", "{841AF837-675A-4D10-9FB8-DFB6BEF2CE82}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BeatTogether.MasterServer.Client", "BeatTogether.MasterServer.Client\BeatTogether.MasterServer.Client.csproj", "{2DB0F317-3A7A-4FAA-95F1-3EA503B8528E}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,10 +37,6 @@ Global
 		{95889E1B-3DE3-4341-8C10-AFAE0F481C9B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{95889E1B-3DE3-4341-8C10-AFAE0F481C9B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{95889E1B-3DE3-4341-8C10-AFAE0F481C9B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2DB0F317-3A7A-4FAA-95F1-3EA503B8528E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2DB0F317-3A7A-4FAA-95F1-3EA503B8528E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2DB0F317-3A7A-4FAA-95F1-3EA503B8528E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2DB0F317-3A7A-4FAA-95F1-3EA503B8528E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -52,7 +46,6 @@ Global
 		{3BC5B050-2D4C-4440-90DC-28150E5AA0A8} = {841AF837-675A-4D10-9FB8-DFB6BEF2CE82}
 		{7144B9EE-45BD-4934-BCB3-9CCCAE101D1C} = {841AF837-675A-4D10-9FB8-DFB6BEF2CE82}
 		{95889E1B-3DE3-4341-8C10-AFAE0F481C9B} = {841AF837-675A-4D10-9FB8-DFB6BEF2CE82}
-		{2DB0F317-3A7A-4FAA-95F1-3EA503B8528E} = {841AF837-675A-4D10-9FB8-DFB6BEF2CE82}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {2596679F-3FAA-49BC-80D2-33A59ED5B8BB}

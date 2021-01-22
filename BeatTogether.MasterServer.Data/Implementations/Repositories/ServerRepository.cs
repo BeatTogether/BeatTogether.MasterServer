@@ -96,22 +96,6 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
             return (bool)redisResult;
         }
 
-        public async Task<Server> GetAvailablePublicServerAndAddPlayer()
-        {
-            var database = _connectionMultiplexer.GetDatabase();
-            var redisResult = await database.ScriptEvaluateAsync(
-                _getAvailablePublicServerAndAddPlayerScript,
-                parameters: new
-                {
-                    publicServersByPlayerCountKey = RedisKeys.PublicServersByPlayerCount
-                },
-                flags: CommandFlags.DemandMaster
-            );
-            if (redisResult.IsNull)
-                return null;
-            return await GetServer((string)redisResult);
-        }
-
         public async Task<bool> IncrementCurrentPlayerCount(string secret)
         {
             var database = _connectionMultiplexer.GetDatabase();
@@ -177,10 +161,6 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
 
         private static readonly LuaScript _removeServerScript = LuaScript.Prepare(
             File.ReadAllText("Scripts/RemoveServer.lua")
-        );
-
-        private static readonly LuaScript _getAvailablePublicServerAndAddPlayerScript = LuaScript.Prepare(
-            File.ReadAllText("Scripts/GetAvailablePublicServerAndAddPlayer.lua")
         );
 
         private static readonly LuaScript _updateCurrentPlayerCountScript = LuaScript.Prepare(

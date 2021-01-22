@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 using BeatTogether.Core.Messaging.Implementations;
 using BeatTogether.MasterServer.Kernel.Enums;
 using BeatTogether.MasterServer.Messaging.Enums;
@@ -21,5 +22,10 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         public ECPublicKeyParameters ClientPublicKeyParameters { get; set; }
         public byte[] PreMasterSecret { get; set; }
         public DateTimeOffset LastKeepAlive { get; set; }
+
+        public MasterServerSession(EndPoint endPoint)
+            : base(endPoint)
+        {
+        }
     }
 }

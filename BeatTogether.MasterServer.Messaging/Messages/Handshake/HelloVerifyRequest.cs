@@ -9,9 +9,9 @@ namespace BeatTogether.MasterServer.Messaging.Messages.Handshake
         public uint ResponseId { get; set; }
         public byte[] Cookie { get; set; }
 
-        public void WriteTo(ref GrowingSpanBuffer buffer)
+        public void WriteTo(ref SpanBufferWriter bufferWriter)
         {
-            buffer.WriteBytes(Cookie);
+            bufferWriter.WriteBytes(Cookie);
         }
 
         public void ReadFrom(ref SpanBufferReader bufferReader)

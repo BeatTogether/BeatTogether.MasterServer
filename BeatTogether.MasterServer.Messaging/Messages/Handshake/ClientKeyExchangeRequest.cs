@@ -1,5 +1,5 @@
 ﻿using BeatTogether.Core.Messaging.Abstractions;
-using BeatTogether.Core.Messaging.Extensions;
+using BeatTogether.Extensions;
 using Krypton.Buffers;
 
 namespace BeatTogether.MasterServer.Messaging.Messages.Handshake
@@ -10,9 +10,9 @@ namespace BeatTogether.MasterServer.Messaging.Messages.Handshake
         public uint ResponseId { get; set; }
         public byte[] ClientPublicKey { get; set; }
 
-        public void WriteTo(ref GrowingSpanBuffer buffer)
+        public void WriteTo(ref SpanBufferWriter bufferWriter)
         {
-            buffer.WriteVarBytes(ClientPublicKey);
+            bufferWriter.WriteVarBytes(ClientPublicKey);
         }
 
         public void ReadFrom(ref SpanBufferReader bufferReader)

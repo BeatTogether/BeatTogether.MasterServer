@@ -3,11 +3,10 @@
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
     <LangVersion>9</LangVersion>
-    <Version>1.1.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BeatTogether.Core.Data" Version="1.1.0" />
+    <PackageReference Include="BeatTogether.Extensions.StackExchange.Redis" Version="1.0.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -15,9 +14,6 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Scripts\AddServer.lua">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Scripts\GetAvailablePublicServerAndAddPlayer.lua">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Scripts\RemoveServer.lua">

@@ -8,9 +8,9 @@ namespace BeatTogether.MasterServer.Messaging.Messages.Handshake
         public uint RequestId { get; set; }
         public byte[] Random { get; set; }
 
-        public void WriteTo(ref GrowingSpanBuffer buffer)
+        public void WriteTo(ref SpanBufferWriter bufferWriter)
         {
-            buffer.WriteBytes(Random);
+            bufferWriter.WriteBytes(Random);
         }
 
         public void ReadFrom(ref SpanBufferReader bufferReader)

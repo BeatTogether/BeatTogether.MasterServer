@@ -1,6 +1,6 @@
 ﻿using System.Net;
 using BeatTogether.Core.Messaging.Abstractions;
-using BeatTogether.Core.Messaging.Extensions;
+using BeatTogether.Extensions;
 using BeatTogether.MasterServer.Messaging.Enums;
 using BeatTogether.MasterServer.Messaging.Models;
 using Krypton.Buffers;
@@ -41,23 +41,23 @@ namespace BeatTogether.MasterServer.Messaging.Messages.User
 
         public bool Success => Result == ResultCode.Success;
 
-        public void WriteTo(ref GrowingSpanBuffer buffer)
+        public void WriteTo(ref SpanBufferWriter bufferWriter)
         {
-            buffer.WriteUInt8((byte)Result);
+            bufferWriter.WriteUInt8((byte)Result);
             if (!Success)
                 return;
 
-            buffer.WriteString(UserId);
-            buffer.WriteString(UserName);
-            buffer.WriteString(Secret);
-            buffer.WriteUInt8((byte)DiscoveryPolicy);
-            buffer.WriteUInt8((byte)InvitePolicy);
-            buffer.WriteVarInt(MaximumPlayerCount);
-            Configuration.WriteTo(ref buffer);
-            buffer.WriteUInt8((byte)((IsConnectionOwner ? 1 : 0) | (IsDedicatedServer ? 2 : 0)));
-            buffer.WriteIPEndPoint(RemoteEndPoint);
-            buffer.WriteBytes(Random);
-            buffer.WriteVarBytes(PublicKey);
+            bufferWriter.WriteString(UserId);
+            bufferWriter.WriteString(UserName);
+            bufferWriter.WriteString(Secret);
+            bufferWriter.WriteUInt8((byte)DiscoveryPolicy);
+            bufferWriter.WriteUInt8((byte)InvitePolicy);
+            bufferWriter.WriteVarInt(MaximumPlayerCount);
+            Configuration.WriteTo(ref bufferWriter);
+            bufferWriter.WriteUInt8((byte)((IsConnectionOwner ? 1 : 0) | (IsDedicatedServer ? 2 : 0)));
+            bufferWriter.WriteIPEndPoint(RemoteEndPoint);
+            bufferWriter.WriteBytes(Random);
+            bufferWriter.WriteVarBytes(PublicKey);
         }
 
         public void ReadFrom(ref SpanBufferReader bufferReader)

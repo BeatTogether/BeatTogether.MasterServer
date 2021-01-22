@@ -11,8 +11,6 @@ namespace BeatTogether.MasterServer.Data.Abstractions.Repositories
         Task<bool> AddServer(Server server);
         Task<bool> RemoveServer(string secret);
 
-        Task<Server> GetAvailablePublicServerAndAddPlayer();
-
         Task<bool> IncrementCurrentPlayerCount(string secret);
         void UpdateCurrentPlayerCount(string secret, int currentPlayerCount);
     }

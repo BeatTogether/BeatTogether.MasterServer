@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Net;
 using BeatTogether.MasterServer.Kernel.Abstractions;
@@ -32,9 +33,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 key =>
                 {
                     _logger.Verbose($"Opening session (EndPoint='{endPoint}').");
-                    return new MasterServerSession()
+                    return new MasterServerSession(key)
                     {
-                        EndPoint = key,
                         State = MasterServerSessionState.New,
                         LastKeepAlive = DateTimeOffset.UtcNow
                     };
@@ -44,7 +44,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         public MasterServerSession GetSession(EndPoint endPoint) =>
             _sessions[endPoint];
 
-        public bool TryGetSession(EndPoint endPoint, out MasterServerSession session) =>
+        public bool TryGetSession(EndPoint endPoint, [MaybeNullWhen(false)] out MasterServerSession session) =>
             _sessions.TryGetValue(endPoint, out session);
 
         public bool CloseSession(MasterServerSession session)

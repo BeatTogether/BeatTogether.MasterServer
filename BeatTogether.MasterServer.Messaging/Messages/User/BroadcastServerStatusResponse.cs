@@ -1,6 +1,6 @@
 ﻿using System.Net;
 using BeatTogether.Core.Messaging.Abstractions;
-using BeatTogether.Core.Messaging.Extensions;
+using BeatTogether.Extensions;
 using Krypton.Buffers;
 
 namespace BeatTogether.MasterServer.Messaging.Messages.User
@@ -23,14 +23,14 @@ namespace BeatTogether.MasterServer.Messaging.Messages.User
 
         public bool Success => Result == ResultCode.Success;
 
-        public void WriteTo(ref GrowingSpanBuffer buffer)
+        public void WriteTo(ref SpanBufferWriter bufferWriter)
         {
-            buffer.WriteUInt8((byte)Result);
+            bufferWriter.WriteUInt8((byte)Result);
             if (!Success)
                 return;
 
-            buffer.WriteIPEndPoint(RemoteEndPoint);
-            buffer.WriteString(Code);
+            bufferWriter.WriteIPEndPoint(RemoteEndPoint);
+            bufferWriter.WriteString(Code);
         }
 
         public void ReadFrom(ref SpanBufferReader bufferReader)

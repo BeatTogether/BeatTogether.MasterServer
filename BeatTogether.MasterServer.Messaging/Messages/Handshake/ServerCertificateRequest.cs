@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using BeatTogether.Core.Messaging.Abstractions;
-using BeatTogether.Core.Messaging.Extensions;
+using BeatTogether.Extensions;
 using Krypton.Buffers;
 
 namespace BeatTogether.MasterServer.Messaging.Messages.Handshake
@@ -11,11 +11,11 @@ namespace BeatTogether.MasterServer.Messaging.Messages.Handshake
         public uint ResponseId { get; set; }
         public List<byte[]> Certificates { get; set; }
 
-        public void WriteTo(ref GrowingSpanBuffer buffer)
+        public void WriteTo(ref SpanBufferWriter bufferWriter)
         {
-            buffer.WriteVarUInt((uint)Certificates.Count);
+            bufferWriter.WriteVarUInt((uint)Certificates.Count);
             foreach (var certificate in Certificates)
-                buffer.WriteVarBytes(certificate);
+                bufferWriter.WriteVarBytes(certificate);
         }
 
         public void ReadFrom(ref SpanBufferReader bufferReader)

@@ -11,9 +11,9 @@ namespace BeatTogether.MasterServer.Messaging.Messages.User
         public uint ResponseId { get; set; }
         public AuthenticationToken AuthenticationToken { get; set; }
 
-        public void WriteTo(ref GrowingSpanBuffer buffer)
+        public void WriteTo(ref SpanBufferWriter bufferWriter)
         {
-            AuthenticationToken.WriteTo(ref buffer);
+            AuthenticationToken.WriteTo(ref bufferWriter);
         }
 
         public void ReadFrom(ref SpanBufferReader bufferReader)

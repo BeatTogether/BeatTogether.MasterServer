@@ -1,16 +1,11 @@
-﻿using System;
-using System.Net;
+﻿using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using BeatTogether.Core.Data.Abstractions;
-using BeatTogether.Core.Data.Configuration;
 using BeatTogether.Core.Messaging.Abstractions;
 using BeatTogether.Core.Messaging.Implementations;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Obvs;
 using Serilog;
 
 namespace BeatTogether.MasterServer.Kernel.Implementations
@@ -21,9 +16,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         private readonly ILogger _logger;
 
         public MasterServer(
-            IServiceProvider serviceProvider,
             MasterServerConfiguration configuration,
-            RedisConfiguration redisConfiguration,
             MasterServerMessageSource messageSource,
             MasterServerMessageDispatcher messageDispatcher,
             IMasterServerSessionService sessionService)
@@ -31,11 +24,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         {
             _sessionService = sessionService;
             _logger = Log.ForContext<MasterServer>();
-
-            // Warm up service bus/Redis connection pool
-            serviceProvider.GetRequiredService<IServiceBus>();
-            if (redisConfiguration.Enabled)
-                serviceProvider.GetRequiredService<IConnectionMultiplexerPool>();
         }
 
         protected override ISession GetSession(EndPoint endPoint) =>

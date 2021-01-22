@@ -3,13 +3,10 @@
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
     <LangVersion>9</LangVersion>
-    <Authors>pythonology</Authors>
-    <Version>1.0.1</Version>
-    <RepositoryUrl>https://github.com/pythonology/BeatTogether.MasterServer</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BeatTogether.Core.Messaging" Version="1.6.2" />
+    <PackageReference Include="BeatTogether.Core.Messaging" Version="1.7.1" />
   </ItemGroup>
 
 </Project>

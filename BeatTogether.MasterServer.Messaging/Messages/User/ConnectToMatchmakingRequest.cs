@@ -1,5 +1,5 @@
 ﻿using BeatTogether.Core.Messaging.Abstractions;
-using BeatTogether.Core.Messaging.Extensions;
+using BeatTogether.Extensions;
 using BeatTogether.MasterServer.Messaging.Models;
 using Krypton.Buffers;
 
@@ -16,14 +16,14 @@ namespace BeatTogether.MasterServer.Messaging.Messages.User
         public GameplayServerConfiguration Configuration { get; set; }
         public string Secret { get; set; }
 
-        public void WriteTo(ref GrowingSpanBuffer buffer)
+        public void WriteTo(ref SpanBufferWriter bufferWriter)
         {
-            buffer.WriteString(UserId);
-            buffer.WriteString(UserName);
-            buffer.WriteBytes(Random);
-            buffer.WriteVarBytes(PublicKey);
-            Configuration.WriteTo(ref buffer);
-            buffer.WriteString(Secret);
+            bufferWriter.WriteString(UserId);
+            bufferWriter.WriteString(UserName);
+            bufferWriter.WriteBytes(Random);
+            bufferWriter.WriteVarBytes(PublicKey);
+            Configuration.WriteTo(ref bufferWriter);
+            bufferWriter.WriteString(Secret);
         }
 
         public void ReadFrom(ref SpanBufferReader bufferReader)

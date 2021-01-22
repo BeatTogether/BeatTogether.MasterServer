@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using BeatTogether.MasterServer.Data.Abstractions.Repositories;
 using BeatTogether.MasterServer.Data.Entities;
@@ -39,11 +38,6 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
                 return Task.FromResult(false);
             _serversByCode.TryRemove(server.Code, out _);
             return Task.FromResult(true);
-        }
-
-        public Task<Server> GetAvailablePublicServerAndAddPlayer()
-        {
-            throw new NotImplementedException();
         }
 
         public Task<bool> IncrementCurrentPlayerCount(string secret)

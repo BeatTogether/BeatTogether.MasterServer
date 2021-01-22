@@ -1,5 +1,5 @@
 ﻿using BeatTogether.Core.Messaging.Abstractions;
-using BeatTogether.Core.Messaging.Extensions;
+using BeatTogether.Extensions;
 using BeatTogether.MasterServer.Messaging.Enums;
 using BeatTogether.MasterServer.Messaging.Models;
 using Krypton.Buffers;
@@ -23,20 +23,20 @@ namespace BeatTogether.MasterServer.Messaging.Messages.User
         public byte[] Random { get; set; }
         public byte[] PublicKey { get; set; }
 
-        public void WriteTo(ref GrowingSpanBuffer buffer)
+        public void WriteTo(ref SpanBufferWriter bufferWriter)
         {
-            buffer.WriteString(ServerName);
-            buffer.WriteString(UserId);
-            buffer.WriteString(UserName);
-            buffer.WriteString(Secret);
-            buffer.WriteString(Password);
-            buffer.WriteVarInt(CurrentPlayerCount);
-            buffer.WriteVarInt(MaximumPlayerCount);
-            buffer.WriteUInt8((byte)DiscoveryPolicy);
-            buffer.WriteUInt8((byte)InvitePolicy);
-            Configuration.WriteTo(ref buffer);
-            buffer.WriteBytes(Random);
-            buffer.WriteVarBytes(PublicKey);
+            bufferWriter.WriteString(ServerName);
+            bufferWriter.WriteString(UserId);
+            bufferWriter.WriteString(UserName);
+            bufferWriter.WriteString(Secret);
+            bufferWriter.WriteString(Password);
+            bufferWriter.WriteVarInt(CurrentPlayerCount);
+            bufferWriter.WriteVarInt(MaximumPlayerCount);
+            bufferWriter.WriteUInt8((byte)DiscoveryPolicy);
+            bufferWriter.WriteUInt8((byte)InvitePolicy);
+            Configuration.WriteTo(ref bufferWriter);
+            bufferWriter.WriteBytes(Random);
+            bufferWriter.WriteVarBytes(PublicKey);
         }
 
         public void ReadFrom(ref SpanBufferReader bufferReader)

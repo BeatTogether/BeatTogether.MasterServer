@@ -17,9 +17,9 @@ namespace BeatTogether.MasterServer.Messaging.Messages.User
 
         public bool Success => Result == ResultCode.Success;
 
-        public void WriteTo(ref GrowingSpanBuffer buffer)
+        public void WriteTo(ref SpanBufferWriter bufferWriter)
         {
-            buffer.WriteUInt8((byte)Result);
+            bufferWriter.WriteUInt8((byte)Result);
         }
 
         public void ReadFrom(ref SpanBufferReader bufferReader)

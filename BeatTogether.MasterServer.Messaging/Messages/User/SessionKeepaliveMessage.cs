@@ -7,11 +7,11 @@ namespace BeatTogether.MasterServer.Messaging.Messages.User
     {
         public uint SequenceId { get; set; }
 
-        public void ReadFrom(ref SpanBufferReader bufferReader)
+        public void WriteTo(ref SpanBufferWriter bufferWriter)
         {
         }
 
-        public void WriteTo(ref GrowingSpanBuffer buffer)
+        public void ReadFrom(ref SpanBufferReader bufferReader)
         {
         }
     }

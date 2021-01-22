@@ -128,14 +128,14 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             session.ClientPublicKeyParameters = _diffieHellmanService.DeserializeECPublicKey(request.ClientPublicKey);
             session.PreMasterSecret = _diffieHellmanService.GetPreMasterSecret(
                 session.ClientPublicKeyParameters,
-                session.ServerPrivateKeyParameters
+                session.ServerPrivateKeyParameters!
             );
             var receiveKey = new byte[32];
             var sendKey = new byte[32];
             var sendMacSourceArray = new byte[64];
             var receiveMacSourceArray = new byte[64];
-            var masterSecretSeed = MakeSeed(_masterSecretSeed, session.ServerRandom, session.ClientRandom);
-            var keyExpansionSeed = MakeSeed(_keyExpansionSeed, session.ServerRandom, session.ClientRandom);
+            var masterSecretSeed = MakeSeed(_masterSecretSeed, session.ServerRandom!, session.ClientRandom!);
+            var keyExpansionSeed = MakeSeed(_keyExpansionSeed, session.ServerRandom!, session.ClientRandom!);
             var sourceArray = PRF(
                 PRF(session.PreMasterSecret, masterSecretSeed, 48),
                 keyExpansionSeed,
@@ -162,11 +162,11 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         private byte[] MakeSignature(byte[] clientRandom, byte[] serverRandom, byte[] publicKey)
         {
-            var buffer = new GrowingSpanBuffer(stackalloc byte[512]);
-            buffer.WriteBytes(clientRandom);
-            buffer.WriteBytes(serverRandom);
-            buffer.WriteBytes(publicKey);
-            return _certificateSigningService.Sign(buffer.Data.ToArray());
+            var bufferWriter = new SpanBufferWriter(stackalloc byte[512]);
+            bufferWriter.WriteBytes(clientRandom);
+            bufferWriter.WriteBytes(serverRandom);
+            bufferWriter.WriteBytes(publicKey);
+            return _certificateSigningService.Sign(bufferWriter.Data.ToArray());
         }
 
         private byte[] MakeSeed(byte[] baseSeed, byte[] serverSeed, byte[] clientSeed)
