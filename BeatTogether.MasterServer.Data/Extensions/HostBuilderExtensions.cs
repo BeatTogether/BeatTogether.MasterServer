@@ -1,4 +1,5 @@
-﻿using BeatTogether.MasterServer.Data.Abstractions.Repositories;
+﻿using System.Linq;
+using BeatTogether.MasterServer.Data.Abstractions.Repositories;
 using BeatTogether.MasterServer.Data.Implementations.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -10,9 +11,13 @@ namespace BeatTogether.Extensions
         public static IHostBuilder UseMasterServerData(this IHostBuilder hostBuilder) =>
             hostBuilder.ConfigureServices((hostBuilderContext, services) =>
             {
-                services.AddStackExchangeRedis();
-                if (hostBuilderContext.Configuration.GetSection("Redis") is not null)
-                    services.AddScoped<IServerRepository, ServerRepository>();
+                var isRedisConfigured = hostBuilderContext.Configuration
+                    .GetChildren()
+                    .Any(child => child.Key == "Redis");
+                if (isRedisConfigured)
+                    services
+                        .AddStackExchangeRedis()
+                        .AddScoped<IServerRepository, ServerRepository>();
                 else
                     services.AddScoped<IServerRepository, MemoryServerRepository>();
             });

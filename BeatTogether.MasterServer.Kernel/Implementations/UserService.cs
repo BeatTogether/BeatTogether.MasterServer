@@ -123,6 +123,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     $"UserId='{request.UserId}', " +
                     $"UserName='{request.UserName}', " +
                     $"Secret='{request.Secret}', " +
+                    $"Code='{server.Code}', " +
                     $"CurrentPlayerCount={request.CurrentPlayerCount}, " +
                     $"MaximumPlayerCount={request.MaximumPlayerCount}, " +
                     $"DiscoveryPolicy={request.DiscoveryPolicy}, " +
@@ -144,6 +145,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 $"UserId='{request.UserId}', " +
                 $"UserName='{request.UserName}', " +
                 $"Secret='{request.Secret}', " +
+                $"Code='{server.Code}', " +
                 $"CurrentPlayerCount={request.CurrentPlayerCount}, " +
                 $"MaximumPlayerCount={request.MaximumPlayerCount}, " +
                 $"DiscoveryPolicy={request.DiscoveryPolicy}, " +
@@ -291,7 +293,15 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 _logger.Warning(
                     "Failed to retrieve server host session while handling " +
                     $"{nameof(ConnectToServerRequest)} " +
-                    $"(EndPoint='{server.RemoteEndPoint}')."
+                    $"(EndPoint='{server.RemoteEndPoint}', " +
+                    $"UserId='{request.UserId}', " +
+                    $"UserName='{request.UserName}', " +
+                    $"Random='{BitConverter.ToString(request.Random)}', " +
+                    $"PublicKey='{BitConverter.ToString(request.PublicKey)}', " +
+                    $"Secret='{request.Secret}', " +
+                    $"Code='{request.Code}', " +
+                    $"Password='{request.Password}', " +
+                    $"UseRelay={request.UseRelay})."
                 );
                 return new ConnectToServerResponse
                 {
@@ -314,7 +324,19 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 }
                 catch (TimeoutException e)
                 {
-                    _logger.Error(e, "Failed to get available relay server.");
+                    _logger.Error(e,
+                        "Failed to get an available relay server while handling " +
+                        $"{nameof(ConnectToServerRequest)} " +
+                        $"(EndPoint='{server.RemoteEndPoint}', " +
+                        $"UserId='{request.UserId}', " +
+                        $"UserName='{request.UserName}', " +
+                        $"Random='{BitConverter.ToString(request.Random)}', " +
+                        $"PublicKey='{BitConverter.ToString(request.PublicKey)}', " +
+                        $"Secret='{request.Secret}', " +
+                        $"Code='{request.Code}', " +
+                        $"Password='{request.Password}', " +
+                        $"UseRelay={request.UseRelay})."
+                    );
                     return new ConnectToServerResponse
                     {
                         Result = ConnectToServerResponse.ResultCode.NoAvailableDedicatedServers
@@ -322,7 +344,19 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 }
                 if (!getAvailableRelayServerResponse.Success)
                 {
-                    _logger.Warning("No available relay servers.");
+                    _logger.Warning(
+                        "No available relay servers while handling " +
+                        $"{nameof(ConnectToServerRequest)} " +
+                        $"(EndPoint='{server.RemoteEndPoint}', " +
+                        $"UserId='{request.UserId}', " +
+                        $"UserName='{request.UserName}', " +
+                        $"Random='{BitConverter.ToString(request.Random)}', " +
+                        $"PublicKey='{BitConverter.ToString(request.PublicKey)}', " +
+                        $"Secret='{request.Secret}', " +
+                        $"Code='{request.Code}', " +
+                        $"Password='{request.Password}', " +
+                        $"UseRelay={request.UseRelay})."
+                    );
                     return new ConnectToServerResponse
                     {
                         Result = ConnectToServerResponse.ResultCode.NoAvailableDedicatedServers
@@ -345,6 +379,18 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
             session.Secret = request.Secret;
 
+            _logger.Information(
+                "Successfully connected to server " +
+                $"(EndPoint='{server.RemoteEndPoint}', " +
+                $"UserId='{request.UserId}', " +
+                $"UserName='{request.UserName}', " +
+                $"Random='{BitConverter.ToString(request.Random)}', " +
+                $"PublicKey='{BitConverter.ToString(request.PublicKey)}', " +
+                $"Secret='{request.Secret}', " +
+                $"Code='{request.Code}', " +
+                $"Password='{request.Password}', " +
+                $"UseRelay={request.UseRelay})."
+            );
             return new ConnectToServerResponse
             {
                 Result = ConnectToServerResponse.ResultCode.Success,
