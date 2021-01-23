@@ -11,10 +11,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BeatTogether.MasterServer.M
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BeatTogether.MasterServer.Kernel", "BeatTogether.MasterServer.Kernel\BeatTogether.MasterServer.Kernel.csproj", "{95889E1B-3DE3-4341-8C10-AFAE0F481C9B}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "1. Distributed Services", "1. Distributed Services", "{0A637ABF-54B6-4161-B2DE-97317F7217AD}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "2. Implementation", "2. Implementation", "{841AF837-675A-4D10-9FB8-DFB6BEF2CE82}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -40,12 +36,6 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		{D6AD4A9E-BC48-4D3A-A953-43C4DC57CE30} = {0A637ABF-54B6-4161-B2DE-97317F7217AD}
-		{3BC5B050-2D4C-4440-90DC-28150E5AA0A8} = {841AF837-675A-4D10-9FB8-DFB6BEF2CE82}
-		{7144B9EE-45BD-4934-BCB3-9CCCAE101D1C} = {841AF837-675A-4D10-9FB8-DFB6BEF2CE82}
-		{95889E1B-3DE3-4341-8C10-AFAE0F481C9B} = {841AF837-675A-4D10-9FB8-DFB6BEF2CE82}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {2596679F-3FAA-49BC-80D2-33A59ED5B8BB}

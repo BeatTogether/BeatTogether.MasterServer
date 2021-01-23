@@ -293,7 +293,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 _logger.Warning(
                     "Failed to retrieve server host session while handling " +
                     $"{nameof(ConnectToServerRequest)} " +
-                    $"(EndPoint='{server.RemoteEndPoint}', " +
+                    $"(RemoteEndPoint='{server.RemoteEndPoint}', " +
                     $"UserId='{request.UserId}', " +
                     $"UserName='{request.UserName}', " +
                     $"Random='{BitConverter.ToString(request.Random)}', " +
@@ -327,7 +327,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     _logger.Error(e,
                         "Failed to get an available relay server while handling " +
                         $"{nameof(ConnectToServerRequest)} " +
-                        $"(EndPoint='{server.RemoteEndPoint}', " +
+                        $"(RemoteEndPoint='{server.RemoteEndPoint}', " +
                         $"UserId='{request.UserId}', " +
                         $"UserName='{request.UserName}', " +
                         $"Random='{BitConverter.ToString(request.Random)}', " +
@@ -347,7 +347,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     _logger.Warning(
                         "No available relay servers while handling " +
                         $"{nameof(ConnectToServerRequest)} " +
-                        $"(EndPoint='{server.RemoteEndPoint}', " +
+                        $"(RemoteEndPoint='{server.RemoteEndPoint}', " +
                         $"UserId='{request.UserId}', " +
                         $"UserName='{request.UserName}', " +
                         $"Random='{BitConverter.ToString(request.Random)}', " +
@@ -362,7 +362,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                         Result = ConnectToServerResponse.ResultCode.NoAvailableDedicatedServers
                     };
                 }
-                remoteEndPoint = IPEndPoint.Parse(getAvailableRelayServerResponse.RemoteEndPoint!);
+                remoteEndPoint = IPEndPoint.Parse(getAvailableRelayServerResponse.RemoteEndPoint);
             }
 
             // Let the host know that someone is about to connect (hole-punch)
@@ -381,7 +381,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
             _logger.Information(
                 "Successfully connected to server " +
-                $"(EndPoint='{server.RemoteEndPoint}', " +
+                $"(RemoteEndPoint='{remoteEndPoint}', " +
                 $"UserId='{request.UserId}', " +
                 $"UserName='{request.UserName}', " +
                 $"Random='{BitConverter.ToString(request.Random)}', " +
