@@ -309,7 +309,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 };
             }
 
-            var remoteEndPoint = (IPEndPoint)session.EndPoint;
+            var connectingEndPoint = (IPEndPoint)session.EndPoint;
+            var remoteEndPoint = (IPEndPoint)hostSession.EndPoint;
             if (request.UseRelay)
             {
                 GetAvailableRelayServerResponse getAvailableRelayServerResponse;
@@ -363,6 +364,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     };
                 }
                 remoteEndPoint = IPEndPoint.Parse(getAvailableRelayServerResponse.RemoteEndPoint);
+                connectingEndPoint = remoteEndPoint;
             }
 
             // Let the host know that someone is about to connect (hole-punch)
@@ -370,7 +372,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             {
                 UserId = request.UserId,
                 UserName = request.UserName,
-                RemoteEndPoint = remoteEndPoint,
+                RemoteEndPoint = connectingEndPoint,
                 Random = request.Random,
                 PublicKey = request.PublicKey,
                 IsConnectionOwner = false,
