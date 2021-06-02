@@ -275,7 +275,12 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 $"UseRelay={request.UseRelay})."
             );
 
-            var server = await _serverRepository.GetServerByCode(request.Code);
+            Server server = null;
+            if (!String.IsNullOrEmpty(request.Code))
+                server = await _serverRepository.GetServerByCode(request.Code);
+            else if (!String.IsNullOrEmpty(request.Secret))
+                server = await _serverRepository.GetServer(request.Secret);
+            
             if (server is null)
                 return new ConnectToServerResponse
                 {
