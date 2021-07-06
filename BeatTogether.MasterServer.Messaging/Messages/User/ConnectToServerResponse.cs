@@ -7,7 +7,7 @@ using Krypton.Buffers;
 
 namespace BeatTogether.MasterServer.Messaging.Messages.User
 {
-    public class ConnectToServerResponse : IEncryptedMessage, IReliableRequest, IReliableResponse
+    public class ConnectToServerResponse : IEncryptedMessage, IReliableRequest, IReliableResponse, IVersionedMessage
     {
         public enum ResultCode : byte
         {
@@ -38,6 +38,7 @@ namespace BeatTogether.MasterServer.Messaging.Messages.User
         public IPEndPoint RemoteEndPoint { get; set; }
         public byte[] Random { get; set; }
         public byte[] PublicKey { get; set; }
+        public string Code { get; set; }
 
         public bool Success => Result == ResultCode.Success;
 
@@ -60,6 +61,19 @@ namespace BeatTogether.MasterServer.Messaging.Messages.User
             bufferWriter.WriteVarBytes(PublicKey);
         }
 
+        public void WriteTo(ref SpanBufferWriter bufferWriter, uint protocolVersion)
+        {
+            WriteTo(ref bufferWriter);
+            
+            if (!Success)
+                return;
+
+            if (protocolVersion >= 3)
+            {
+                bufferWriter.WriteString(Code);
+            }
+        }
+
         public void ReadFrom(ref SpanBufferReader bufferReader)
         {
             Result = (ResultCode)bufferReader.ReadUInt8();
@@ -80,6 +94,19 @@ namespace BeatTogether.MasterServer.Messaging.Messages.User
             RemoteEndPoint = bufferReader.ReadIPEndPoint();
             Random = bufferReader.ReadBytes(32).ToArray();
             PublicKey = bufferReader.ReadVarBytes().ToArray();
+        }
+
+        public void ReadFrom(ref SpanBufferReader bufferReader, uint protocolVersion)
+        {
+            ReadFrom(ref bufferReader);
+            
+            if (!Success)
+                return;
+
+            if (protocolVersion >= 3)
+            {
+                Code = bufferReader.ReadString();
+            }
         }
     }
 }
