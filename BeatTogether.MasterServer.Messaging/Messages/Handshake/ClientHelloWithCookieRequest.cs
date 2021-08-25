@@ -3,7 +3,7 @@ using Krypton.Buffers;
 
 namespace BeatTogether.MasterServer.Messaging.Messages.Handshake
 {
-    public class ClientHelloWithCookieRequest : IMessage, IReliableRequest
+    public sealed class ClientHelloWithCookieRequest : IMessage, IReliableRequest
     {
         public uint RequestId { get; set; }
         public uint CertificateResponseId { get; set; }

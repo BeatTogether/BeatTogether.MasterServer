@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace BeatTogether.MasterServer.Data.Enums
+namespace BeatTogether.MasterServer.Domain.Enums
 {
     [Flags]
     public enum BeatmapDifficultyMask : byte

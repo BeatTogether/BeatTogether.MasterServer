@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Net;
 using System.Threading.Tasks;
+using Autobus;
+using AutoMapper;
 using BeatTogether.DedicatedServer.Interface;
-using BeatTogether.DedicatedServer.Messaging.Requests;
-using BeatTogether.DedicatedServer.Messaging.Responses;
+using BeatTogether.DedicatedServer.Interface.Requests;
 using BeatTogether.MasterServer.Data.Abstractions.Repositories;
-using BeatTogether.MasterServer.Data.Entities;
+using BeatTogether.MasterServer.Domain.Models;
+using BeatTogether.MasterServer.Interface.Events;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions.Providers;
 using BeatTogether.MasterServer.Messaging.Enums;
@@ -17,22 +19,28 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 {
     public class UserService : IUserService
     {
+        private readonly IAutobus _autobus;
+        private readonly IMapper _mapper;
         private readonly MasterServerMessageDispatcher _messageDispatcher;
-        private readonly IRelayServerService _relayServerService;
+        private readonly IMatchmakingService _matchmakingService;
         private readonly IServerRepository _serverRepository;
         private readonly IMasterServerSessionService _sessionService;
         private readonly IServerCodeProvider _serverCodeProvider;
         private readonly ILogger _logger;
 
         public UserService(
+            IAutobus autobus,
+            IMapper mapper,
             MasterServerMessageDispatcher messageDispatcher,
-            IRelayServerService relayServerService,
+            IMatchmakingService matchmakingService,
             IServerRepository serverRepository,
             IMasterServerSessionService sessionService,
             IServerCodeProvider serverCodeProvider)
         {
+            _autobus = autobus;
+            _mapper = mapper;
             _messageDispatcher = messageDispatcher;
-            _relayServerService = relayServerService;
+            _matchmakingService = matchmakingService;
             _serverRepository = serverRepository;
             _sessionService = sessionService;
             _serverCodeProvider = serverCodeProvider;
@@ -61,364 +69,130 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             session.UserName = request.AuthenticationToken.UserName;
             return Task.FromResult(new AuthenticateUserResponse
             {
-                Result = AuthenticateUserResponse.ResultCode.Success
+                Result = AuthenticateUserResult.Success
             });
         }
 
-        public async Task<BroadcastServerStatusResponse> BroadcastServerStatus(MasterServerSession session, BroadcastServerStatusRequest request)
+        public async Task<ConnectToServerResponse> ConnectToMatchmakingServer(MasterServerSession session, ConnectToMatchmakingServerRequest request)
         {
             _logger.Verbose(
-                $"Handling {nameof(BroadcastServerStatusRequest)} " +
-                $"(ServerName='{request.ServerName}', " +
-                $"UserId='{request.UserId}', " +
-                $"UserName='{request.UserName}', " +
-                $"Secret='{request.Secret}', " +
-                $"CurrentPlayerCount={request.CurrentPlayerCount}, " +
-                $"MaximumPlayerCount={request.MaximumPlayerCount}, " +
-                $"DiscoveryPolicy={request.DiscoveryPolicy}, " +
-                $"InvitePolicy={request.InvitePolicy}, " +
-                $"BeatmapDifficultyMask={request.Configuration.BeatmapDifficultyMask}, " +
-                $"GameplayModifiersMask={request.Configuration.GameplayModifiersMask}, " +
-                $"Random={BitConverter.ToString(request.Random)}, " +
-                $"PublicKey={BitConverter.ToString(request.PublicKey)})."
-            );
-
-            var server = await _serverRepository.GetServer(request.Secret);
-            if (server != null)
-                return new BroadcastServerStatusResponse
-                {
-                    Result = BroadcastServerStatusResponse.ResultCode.SecretNotUnique
-                };
-
-            // TODO: We should probably retry in the event that a duplicate
-            // code is ever generated (pretty unlikely to happen though)
-            session.Secret = request.Secret;
-            server = new Server()
-            {
-                Host = new Player()
-                {
-                    UserId = request.UserId,
-                    UserName = request.UserName
-                },
-                RemoteEndPoint = (IPEndPoint)session.EndPoint,
-                Secret = request.Secret,
-                Code = _serverCodeProvider.Generate(),
-                IsPublic = request.DiscoveryPolicy == DiscoveryPolicy.Public,
-                DiscoveryPolicy = (Data.Enums.DiscoveryPolicy)request.DiscoveryPolicy,
-                InvitePolicy = (Data.Enums.InvitePolicy)request.InvitePolicy,
-                BeatmapDifficultyMask = (Data.Enums.BeatmapDifficultyMask)request.Configuration.BeatmapDifficultyMask,
-                GameplayModifiersMask = (Data.Enums.GameplayModifiersMask)request.Configuration.GameplayModifiersMask,
-                SongPackBloomFilterTop = request.Configuration.SongPackBloomFilterTop,
-                SongPackBloomFilterBottom = request.Configuration.SongPackBloomFilterBottom,
-                CurrentPlayerCount = request.CurrentPlayerCount,
-                MaximumPlayerCount = request.MaximumPlayerCount,
-                Random = request.Random,
-                PublicKey = request.PublicKey
-            };
-            if (!await _serverRepository.AddServer(server))
-            {
-                _logger.Warning(
-                    "Failed to create server " +
-                    $"(ServerName='{request.ServerName}', " +
-                    $"UserId='{request.UserId}', " +
-                    $"UserName='{request.UserName}', " +
-                    $"Secret='{request.Secret}', " +
-                    $"Code='{server.Code}', " +
-                    $"CurrentPlayerCount={request.CurrentPlayerCount}, " +
-                    $"MaximumPlayerCount={request.MaximumPlayerCount}, " +
-                    $"DiscoveryPolicy={request.DiscoveryPolicy}, " +
-                    $"InvitePolicy={request.InvitePolicy}, " +
-                    $"BeatmapDifficultyMask={request.Configuration.BeatmapDifficultyMask}, " +
-                    $"GameplayModifiersMask={request.Configuration.GameplayModifiersMask}, " +
-                    $"Random={BitConverter.ToString(request.Random)}, " +
-                    $"PublicKey={BitConverter.ToString(request.PublicKey)})."
-                );
-                return new BroadcastServerStatusResponse
-                {
-                    Result = BroadcastServerStatusResponse.ResultCode.UnknownError
-                };
-            }
-
-            _logger.Information(
-                "Successfully created server " +
-                $"(ServerName='{request.ServerName}', " +
-                $"UserId='{request.UserId}', " +
-                $"UserName='{request.UserName}', " +
-                $"Secret='{request.Secret}', " +
-                $"Code='{server.Code}', " +
-                $"CurrentPlayerCount={request.CurrentPlayerCount}, " +
-                $"MaximumPlayerCount={request.MaximumPlayerCount}, " +
-                $"DiscoveryPolicy={request.DiscoveryPolicy}, " +
-                $"InvitePolicy={request.InvitePolicy}, " +
-                $"BeatmapDifficultyMask={request.Configuration.BeatmapDifficultyMask}, " +
-                $"GameplayModifiersMask={request.Configuration.GameplayModifiersMask}, " +
-                $"Random='{BitConverter.ToString(request.Random)}', " +
-                $"PublicKey='{BitConverter.ToString(request.PublicKey)}')."
-            );
-            return new BroadcastServerStatusResponse
-            {
-                Result = BroadcastServerStatusResponse.ResultCode.Success,
-                Code = server.Code,
-                RemoteEndPoint = server.RemoteEndPoint
-            };
-        }
-
-        public async Task BroadcastServerHeartbeat(MasterServerSession session, BroadcastServerHeartbeatRequest request)
-        {
-            _logger.Verbose(
-                $"Handling {nameof(BroadcastServerHeartbeatRequest)} " +
-                $"(UserId='{request.UserId}', " +
-                $"UserName='{request.UserName}', " +
-                $"Secret='{request.Secret}', " +
-                $"CurrentPlayerCount={request.CurrentPlayerCount})."
-            );
-            if (session.Secret != request.Secret)
-            {
-                _logger.Warning(
-                    $"User sent {nameof(BroadcastServerHeartbeatRequest)} " +
-                    "with an invalid secret " +
-                    $"(UserId='{request.UserId}', " +
-                    $"UserName='{request.UserName}', " +
-                    $"Secret='{request.Secret}', " +
-                    $"Expected='{session.Secret}')."
-                );
-                _messageDispatcher.Send(session, new BroadcastServerHeartbeatResponse
-                {
-                    Result = BroadcastServerHeartbeatResponse.ResultCode.UnknownError
-                });
-                return;
-            }
-
-            var server = await _serverRepository.GetServer(request.Secret);
-            if (server == null)
-            {
-                _messageDispatcher.Send(session, new BroadcastServerHeartbeatResponse
-                {
-                    Result = BroadcastServerHeartbeatResponse.ResultCode.ServerDoesNotExist
-                });
-                return;
-            }
-
-            session.LastKeepAlive = DateTimeOffset.UtcNow;
-            _serverRepository.UpdateCurrentPlayerCount(request.Secret, (int)request.CurrentPlayerCount);
-            _messageDispatcher.Send(session, new BroadcastServerHeartbeatResponse
-            {
-                Result = BroadcastServerHeartbeatResponse.ResultCode.Success
-            });
-        }
-
-        public async Task BroadcastServerRemove(MasterServerSession session, BroadcastServerRemoveRequest request)
-        {
-            _logger.Verbose(
-                $"Handling {nameof(BroadcastServerRemoveRequest)} " +
-                $"(UserId='{request.UserId}', " +
-                $"UserName='{request.UserName}', " +
-                $"Secret='{request.Secret}')."
-            );
-            if (session.Secret != request.Secret)
-            {
-                _logger.Warning(
-                    $"User sent {nameof(BroadcastServerRemoveRequest)} " +
-                    "with an invalid secret " +
-                    $"(UserId='{request.UserId}', " +
-                    $"UserName='{request.UserName}', " +
-                    $"Secret='{request.Secret}', " +
-                    $"Expected='{session.Secret}')."
-                );
-                return;
-            }
-
-            var server = await _serverRepository.GetServer(request.Secret);
-            if (server == null)
-                return;
-
-            if (!await _serverRepository.RemoveServer(server.Secret))
-                return;
-
-            _logger.Information(
-                "Successfully removed server " +
-                $"(UserId='{request.UserId}', " +
-                $"UserName='{request.UserName}', " +
-                $"Secret='{server.Secret}')."
-            );
-        }
-
-        public Task<ConnectToServerResponse> ConnectToMatchmaking(MasterServerSession session, ConnectToMatchmakingRequest request)
-        {
-            _logger.Verbose(
-                $"Handling {nameof(ConnectToMatchmakingRequest)} " +
+                $"Handling {nameof(ConnectToMatchmakingServerRequest)} " +
                 $"(UserId='{request.UserId}', " +
                 $"UserName='{request.UserName}', " +
                 $"Random='{BitConverter.ToString(request.Random)}', " +
                 $"PublicKey='{BitConverter.ToString(request.PublicKey)}', " +
-                $"BeatmapDifficultyMask={request.Configuration.BeatmapDifficultyMask}, " +
-                $"GameplayModifiersMask={request.Configuration.GameplayModifiersMask}, " +
-                $"Secret='{request.Secret}')."
-            );
-            return Task.FromResult(new ConnectToServerResponse
-            {
-                Result = ConnectToServerResponse.ResultCode.UnknownError
-            });
-        }
-
-        public async Task<ConnectToServerResponse> ConnectToServer(MasterServerSession session, ConnectToServerRequest request)
-        {
-            _logger.Verbose(
-                $"Handling {nameof(ConnectToServerRequest)} " +
-                $"(UserId='{request.UserId}', " +
-                $"UserName='{request.UserName}', " +
-                $"Random='{BitConverter.ToString(request.Random)}', " +
-                $"PublicKey='{BitConverter.ToString(request.PublicKey)}', " +
+                $"BeatmapDifficultyMask={request.BeatmapLevelSelectionMask.BeatmapDifficultyMask}, " +
+                $"GameplayModifiersMask={request.BeatmapLevelSelectionMask.GameplayModifiersMask}, " +
                 $"Secret='{request.Secret}', " +
-                $"Code='{request.Code}', " +
-                $"Password='{request.Password}', " +
-                $"UseRelay={request.UseRelay})."
+                $"Code='{request.Code}')."
             );
 
-            Server server = null;
-            if (!String.IsNullOrEmpty(request.Code))
+            Server server;
+            var configuration = new GameplayServerConfiguration();
+            if (!string.IsNullOrEmpty(request.Code))
+            {
                 server = await _serverRepository.GetServerByCode(request.Code);
-            else if (!String.IsNullOrEmpty(request.Secret))
-                server = await _serverRepository.GetServer(request.Secret);
-            
-            if (server is null)
-                return new ConnectToServerResponse
-                {
-                    Result = ConnectToServerResponse.ResultCode.InvalidCode
-                };
-
-            if (server.CurrentPlayerCount >= server.MaximumPlayerCount)
-                return new ConnectToServerResponse
-                {
-                    Result = ConnectToServerResponse.ResultCode.ServerAtCapacity
-                };
-
-            if (!_sessionService.TryGetSession(server.RemoteEndPoint, out var hostSession))
+                if (server is null)
+                    return new ConnectToServerResponse
+                    {
+                        Result = ConnectToServerResult.InvalidCode
+                    };
+            }
+            else if (!string.IsNullOrEmpty(request.Secret))
             {
-                _logger.Warning(
-                    "Failed to retrieve server host session while handling " +
-                    $"{nameof(ConnectToServerRequest)} " +
-                    $"(RemoteEndPoint='{server.RemoteEndPoint}', " +
-                    $"UserId='{request.UserId}', " +
-                    $"UserName='{request.UserName}', " +
-                    $"Random='{BitConverter.ToString(request.Random)}', " +
-                    $"PublicKey='{BitConverter.ToString(request.PublicKey)}', " +
-                    $"Secret='{request.Secret}', " +
-                    $"Code='{request.Code}', " +
-                    $"Password='{request.Password}', " +
-                    $"UseRelay={request.UseRelay})."
+                // Create a new matchmaking server
+                configuration.MaxPlayerCount = 5;
+                configuration.DiscoveryPolicy = DiscoveryPolicy.WithCode;
+                configuration.GameplayServerMode = GameplayServerMode.Managed;
+                configuration.SongSelectionMode = SongSelectionMode.OwnerPicks;
+                configuration.GameplayServerControlSettings = GameplayServerControlSettings.All;
+
+                var createMatchmakingServerResponse = await _matchmakingService.CreateMatchmakingServer(
+                    new CreateMatchmakingServerRequest(
+                        request.Secret,
+                        session.UserId,
+                        _mapper.Map<DedicatedServer.Interface.Models.GameplayServerConfiguration>(configuration)
+                    )
                 );
-                return new ConnectToServerResponse
+                if (!createMatchmakingServerResponse.Success)
+                    return new ConnectToServerResponse
+                    {
+                        Result = ConnectToServerResult.NoAvailableDedicatedServers
+                    };
+
+                var remoteEndPoint = IPEndPoint.Parse(createMatchmakingServerResponse.RemoteEndPoint);
+                server = new Server
                 {
-                    Result = ConnectToServerResponse.ResultCode.UnknownError
+                    Host = new Player
+                    {
+                        UserId = session.UserId,
+                        UserName = session.UserName
+                    },
+                    RemoteEndPoint = remoteEndPoint,
+                    Secret = request.Secret,
+                    Code = _serverCodeProvider.Generate(),
+                    IsPublic = false,
+                    DiscoveryPolicy = Domain.Enums.DiscoveryPolicy.WithCode,
+                    InvitePolicy = Domain.Enums.InvitePolicy.AnyoneCanInvite,
+                    BeatmapDifficultyMask = (Domain.Enums.BeatmapDifficultyMask)request.BeatmapLevelSelectionMask.BeatmapDifficultyMask,
+                    GameplayModifiersMask = (Domain.Enums.GameplayModifiersMask)request.BeatmapLevelSelectionMask.GameplayModifiersMask,
+                    SongPackBloomFilterTop = request.BeatmapLevelSelectionMask.SongPackMask.Top,
+                    SongPackBloomFilterBottom = request.BeatmapLevelSelectionMask.SongPackMask.Bottom,
+                    CurrentPlayerCount = 1,
+                    Random = createMatchmakingServerResponse.Random,
+                    PublicKey = createMatchmakingServerResponse.PublicKey
                 };
-            }
-
-            var connectingEndPoint = (IPEndPoint)session.EndPoint;
-            var remoteEndPoint = (IPEndPoint)hostSession.EndPoint;
-            if (request.UseRelay)
-            {
-                GetAvailableRelayServerResponse getAvailableRelayServerResponse;
-                try
-                {
-                    getAvailableRelayServerResponse = await _relayServerService.GetAvailableRelayServer(
-                        new GetAvailableRelayServerRequest(
-                            session.EndPoint.ToString()!,
-                            hostSession.EndPoint.ToString()!
-                        )
-                    );
-                }
-                catch (TimeoutException e)
-                {
-                    _logger.Error(e,
-                        "Failed to get an available relay server while handling " +
-                        $"{nameof(ConnectToServerRequest)} " +
-                        $"(RemoteEndPoint='{server.RemoteEndPoint}', " +
-                        $"UserId='{request.UserId}', " +
-                        $"UserName='{request.UserName}', " +
-                        $"Random='{BitConverter.ToString(request.Random)}', " +
-                        $"PublicKey='{BitConverter.ToString(request.PublicKey)}', " +
-                        $"Secret='{request.Secret}', " +
-                        $"Code='{request.Code}', " +
-                        $"Password='{request.Password}', " +
-                        $"UseRelay={request.UseRelay})."
-                    );
+                if (!await _serverRepository.AddServer(server))
                     return new ConnectToServerResponse
                     {
-                        Result = ConnectToServerResponse.ResultCode.NoAvailableDedicatedServers
+                        Result = ConnectToServerResult.InvalidSecret
                     };
-                }
-                if (!getAvailableRelayServerResponse.Success)
+            }
+            else
+            {
+                server = await _serverRepository.GetAvailablePublicServer();
+                if (server is null)
                 {
-                    _logger.Warning(
-                        "No available relay servers while handling " +
-                        $"{nameof(ConnectToServerRequest)} " +
-                        $"(RemoteEndPoint='{server.RemoteEndPoint}', " +
-                        $"UserId='{request.UserId}', " +
-                        $"UserName='{request.UserName}', " +
-                        $"Random='{BitConverter.ToString(request.Random)}', " +
-                        $"PublicKey='{BitConverter.ToString(request.PublicKey)}', " +
-                        $"Secret='{request.Secret}', " +
-                        $"Code='{request.Code}', " +
-                        $"Password='{request.Password}', " +
-                        $"UseRelay={request.UseRelay})."
-                    );
+                    // TODO: Create a new matchmaking server
                     return new ConnectToServerResponse
                     {
-                        Result = ConnectToServerResponse.ResultCode.NoAvailableDedicatedServers
+                        Result = ConnectToServerResult.NoAvailableDedicatedServers
                     };
                 }
-                remoteEndPoint = IPEndPoint.Parse(getAvailableRelayServerResponse.RemoteEndPoint);
-                connectingEndPoint = remoteEndPoint;
             }
 
-            // Let the host know that someone is about to connect (hole-punch)
-            await _messageDispatcher.SendWithRetry(hostSession, new PrepareForConnectionRequest
-            {
-                UserId = request.UserId,
-                UserName = request.UserName,
-                RemoteEndPoint = connectingEndPoint,
-                Random = request.Random,
-                PublicKey = request.PublicKey,
-                IsConnectionOwner = false,
-                IsDedicatedServer = false
-            });
-
-            session.Secret = request.Secret;
-
-            _logger.Information(
-                "Successfully connected to server " +
-                $"(RemoteEndPoint='{remoteEndPoint}', " +
-                $"UserId='{request.UserId}', " +
-                $"UserName='{request.UserName}', " +
-                $"Random='{BitConverter.ToString(request.Random)}', " +
-                $"PublicKey='{BitConverter.ToString(request.PublicKey)}', " +
-                $"Secret='{request.Secret}', " +
-                $"Code='{request.Code}', " +
-                $"Password='{request.Password}', " +
-                $"UseRelay={request.UseRelay})."
-            );
+            _autobus.Publish(new PlayerConnectedToMatchmakingServerEvent(
+                session.EndPoint.ToString(), session.UserId, session.UserName,
+                request.Random, request.PublicKey
+            ));
+            _logger.Information("Connected to matchmaking server!");
+            _logger.Information($"Random='{BitConverter.ToString(request.Random)}'");
+            _logger.Information($"PublicKey='{BitConverter.ToString(request.PublicKey)}'");
+            _logger.Information($"session.ClientRandom='{BitConverter.ToString(session.ClientRandom)}'");
+            _logger.Information($"session.ClientPublicKey='{BitConverter.ToString(session.ClientPublicKey)}'");
             return new ConnectToServerResponse
             {
-                Result = ConnectToServerResponse.ResultCode.Success,
-                UserId = server.Host.UserId,
-                UserName = server.Host.UserName,
+                UserId = "ziuMSceapEuNN7wRGQXrZg",
+                UserName = string.Empty,
                 Secret = server.Secret,
-                DiscoveryPolicy = (DiscoveryPolicy)server.DiscoveryPolicy,
-                InvitePolicy = (InvitePolicy)server.InvitePolicy,
-                MaximumPlayerCount = server.MaximumPlayerCount,
-                Configuration = new GameplayServerConfiguration()
+                BeatmapLevelSelectionMask = new BeatmapLevelSelectionMask
                 {
                     BeatmapDifficultyMask = (BeatmapDifficultyMask)server.BeatmapDifficultyMask,
                     GameplayModifiersMask = (GameplayModifiersMask)server.GameplayModifiersMask,
-                    SongPackBloomFilterTop = server.SongPackBloomFilterTop,
-                    SongPackBloomFilterBottom = server.SongPackBloomFilterBottom
+                    SongPackMask = new SongPackMask
+                    {
+                        Top = server.SongPackBloomFilterTop,
+                        Bottom = server.SongPackBloomFilterBottom
+                    }
                 },
                 IsConnectionOwner = true,
-                IsDedicatedServer = false,
-                RemoteEndPoint = remoteEndPoint,
+                IsDedicatedServer = true,
+                RemoteEndPoint = server.RemoteEndPoint,
                 Random = server.Random,
-                PublicKey = server.PublicKey
+                PublicKey = server.PublicKey,
+                Code = server.Code,
+                Configuration = configuration,
+                ManagerId = session.UserId
             };
         }
 

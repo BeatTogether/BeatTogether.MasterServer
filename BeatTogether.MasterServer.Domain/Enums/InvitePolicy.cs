@@ -1,4 +1,4 @@
-﻿namespace BeatTogether.MasterServer.Data.Enums
+﻿namespace BeatTogether.MasterServer.Domain.Enums
 {
     public enum InvitePolicy : byte
     {

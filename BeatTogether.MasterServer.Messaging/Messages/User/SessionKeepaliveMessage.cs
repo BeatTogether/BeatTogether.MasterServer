@@ -3,7 +3,7 @@ using Krypton.Buffers;
 
 namespace BeatTogether.MasterServer.Messaging.Messages.User
 {
-    public class SessionKeepaliveMessage : IEncryptedMessage
+    public sealed class SessionKeepaliveMessage : IEncryptedMessage
     {
         public uint SequenceId { get; set; }
 

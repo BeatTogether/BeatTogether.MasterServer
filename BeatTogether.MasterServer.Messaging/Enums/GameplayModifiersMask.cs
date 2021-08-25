@@ -18,6 +18,10 @@ namespace BeatTogether.MasterServer.Messaging.Enums
         SlowerSong = 512,
         NoArrows = 1024,
         GhostNotes = 2048,
-        All = 4095
+        SuperFastSong = 4096,
+        ProMode = 8192,
+        ZenMode = 16384,
+        SmallCubes = 32768,
+        All = 65535
     }
 }

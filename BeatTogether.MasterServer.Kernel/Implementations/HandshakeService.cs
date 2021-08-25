@@ -125,13 +125,14 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 $"Handling {nameof(ClientKeyExchange)} " +
                 $"(ClientPublicKey='{BitConverter.ToString(request.ClientPublicKey)}')."
             );
+            session.ClientPublicKey = request.ClientPublicKey;
             session.ClientPublicKeyParameters = _diffieHellmanService.DeserializeECPublicKey(request.ClientPublicKey);
             session.PreMasterSecret = _diffieHellmanService.GetPreMasterSecret(
                 session.ClientPublicKeyParameters,
                 session.ServerPrivateKeyParameters!
             );
-            var receiveKey = new byte[32];
             var sendKey = new byte[32];
+            var receiveKey = new byte[32];
             var sendMacSourceArray = new byte[64];
             var receiveMacSourceArray = new byte[64];
             var masterSecretSeed = MakeSeed(_masterSecretSeed, session.ServerRandom!, session.ClientRandom!);

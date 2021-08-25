@@ -13,14 +13,14 @@ namespace BeatTogether.MasterServer.Messaging.Implementations.Registries
         {
             Register<AuthenticateUserRequest>(UserMessageType.AuthenticateUserRequest);
             Register<AuthenticateUserResponse>(UserMessageType.AuthenticateUserResponse);
-            Register<BroadcastServerStatusRequest>(UserMessageType.BroadcastServerStatusRequest);
-            Register<BroadcastServerStatusResponse>(UserMessageType.BroadcastServerStatusResponse);
-            Register<BroadcastServerHeartbeatRequest>(UserMessageType.BroadcastServerHeartbeatRequest);
-            Register<BroadcastServerHeartbeatResponse>(UserMessageType.BroadcastServerHeartbeatResponse);
-            Register<BroadcastServerRemoveRequest>(UserMessageType.BroadcastServerRemoveRequest);
-            Register<ConnectToServerRequest>(UserMessageType.ConnectToServerRequest);
+            // Register<UserServerStatusUpdateRequest>(UserMessageType.UserServerStatusUpdateRequest); -- unused?
+            // Register<UserServerStatusUpdateResponse>(UserMessageType.UserServerStatusUpdateResponse); -- unused?
+            // Register<UserServerHeartbeatRequest>(UserMessageType.UserServerHeartbeatRequest); -- unused?
+            // Register<UserServerHeartbeatResponse>(UserMessageType.UserServerHeartbeatResponse); -- unused?
+            // Register<UserServerRemoveRequest>(UserMessageType.UserServerRemoveRequest); -- unused?
+            // Register<ConnectToUserServerRequest>(UserMessageType.ConnectToUserServerRequest); -- unused?
             Register<ConnectToServerResponse>(UserMessageType.ConnectToServerResponse);
-            Register<ConnectToMatchmakingRequest>(UserMessageType.ConnectToMatchmakingRequest);
+            Register<ConnectToMatchmakingServerRequest>(UserMessageType.ConnectToMatchmakingServerRequest);
             Register<PrepareForConnectionRequest>(UserMessageType.PrepareForConnectionRequest);
             // Register<GetPublicServersRequest>(UserMessageType.GetPublicServersRequest); -- unused?
             // Register<GetPublicServersResponse>(UserMessageType.GetPublicServersResponse); -- unused?

@@ -5,7 +5,7 @@ using Krypton.Buffers;
 
 namespace BeatTogether.MasterServer.Messaging.Models
 {
-    public class AuthenticationToken : IMessage
+    public sealed class AuthenticationToken : IMessage
     {
         public Platform Platform { get; set; }
         public string UserId { get; set; }

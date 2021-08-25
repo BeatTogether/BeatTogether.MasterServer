@@ -18,28 +18,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations.MessageReceivers
                     (MasterServerSession)session, request
                 )
             );
-            Register<BroadcastServerStatusRequest, BroadcastServerStatusResponse>(
-                (service, session, request) => service.BroadcastServerStatus(
-                    (MasterServerSession)session, request
-                )
-            );
-            Register<BroadcastServerHeartbeatRequest>(
-                (service, session, request) => service.BroadcastServerHeartbeat(
-                    (MasterServerSession)session, request
-                )
-            );
-            Register<BroadcastServerRemoveRequest>(
-                (service, session, request) => service.BroadcastServerRemove(
-                    (MasterServerSession)session, request
-                )
-            );
-            Register<ConnectToMatchmakingRequest, ConnectToServerResponse>(
-                (service, session, request) => service.ConnectToMatchmaking(
-                    (MasterServerSession)session, request
-                )
-            );
-            Register<ConnectToServerRequest, ConnectToServerResponse>(
-                (service, session, request) => service.ConnectToServer(
+            Register<ConnectToMatchmakingServerRequest, ConnectToServerResponse>(
+                (service, session, request) => service.ConnectToMatchmakingServer(
                     (MasterServerSession)session, request
                 )
             );

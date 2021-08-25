@@ -1,6 +1,6 @@
-﻿namespace BeatTogether.MasterServer.Data.Entities
+﻿namespace BeatTogether.MasterServer.Domain.Models
 {
-    public class Player
+    public sealed class Player
     {
         public string UserId { get; set; }
         public string UserName { get; set; }

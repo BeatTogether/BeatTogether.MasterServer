@@ -1,10 +1,12 @@
 ﻿using BeatTogether.Core.Messaging.Abstractions;
 using BeatTogether.Extensions;
+using BeatTogether.MasterServer.Messaging.Enums;
+using BeatTogether.MasterServer.Messaging.Models;
 using Krypton.Buffers;
 
 namespace BeatTogether.MasterServer.Messaging.Messages.User
 {
-    public class ConnectToServerRequest : IEncryptedMessage, IReliableRequest
+    public sealed class ConnectToMatchmakingServerRequest : IEncryptedMessage, IReliableRequest
     {
         public uint SequenceId { get; set; }
         public uint RequestId { get; set; }
@@ -12,10 +14,9 @@ namespace BeatTogether.MasterServer.Messaging.Messages.User
         public string UserName { get; set; }
         public byte[] Random { get; set; }
         public byte[] PublicKey { get; set; }
+        public BeatmapLevelSelectionMask BeatmapLevelSelectionMask { get; set; } = new();
         public string Secret { get; set; }
         public string Code { get; set; }
-        public string Password { get; set; }
-        public bool UseRelay { get; set; }
 
         public void WriteTo(ref SpanBufferWriter bufferWriter)
         {
@@ -23,10 +24,9 @@ namespace BeatTogether.MasterServer.Messaging.Messages.User
             bufferWriter.WriteString(UserName);
             bufferWriter.WriteBytes(Random);
             bufferWriter.WriteVarBytes(PublicKey);
+            BeatmapLevelSelectionMask.WriteTo(ref bufferWriter);
             bufferWriter.WriteString(Secret);
             bufferWriter.WriteString(Code);
-            bufferWriter.WriteString(Password);
-            bufferWriter.WriteBool(UseRelay);
         }
 
         public void ReadFrom(ref SpanBufferReader bufferReader)
@@ -35,10 +35,9 @@ namespace BeatTogether.MasterServer.Messaging.Messages.User
             UserName = bufferReader.ReadString();
             Random = bufferReader.ReadBytes(32).ToArray();
             PublicKey = bufferReader.ReadVarBytes().ToArray();
+            BeatmapLevelSelectionMask.ReadFrom(ref bufferReader);
             Secret = bufferReader.ReadString();
             Code = bufferReader.ReadString();
-            Password = bufferReader.ReadString();
-            UseRelay = bufferReader.ReadBool();
         }
     }
 }

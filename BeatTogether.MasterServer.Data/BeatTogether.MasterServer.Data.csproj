@@ -6,7 +6,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BeatTogether.Extensions.StackExchange.Redis" Version="1.0.0" />
+    <PackageReference Include="BeatTogether.Extensions.StackExchange.Redis" Version="1.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BeatTogether.MasterServer.Domain\BeatTogether.MasterServer.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -3,13 +3,13 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using BeatTogether.MasterServer.Data.Abstractions.Repositories;
-using BeatTogether.MasterServer.Data.Entities;
-using BeatTogether.MasterServer.Data.Enums;
+using BeatTogether.MasterServer.Domain.Enums;
+using BeatTogether.MasterServer.Domain.Models;
 using StackExchange.Redis;
 
 namespace BeatTogether.MasterServer.Data.Implementations.Repositories
 {
-    public class ServerRepository : IServerRepository
+    public sealed class ServerRepository : IServerRepository
     {
         public static class RedisKeys
         {
@@ -47,6 +47,16 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
             return await GetServer(secret);
         }
 
+        public async Task<Server> GetAvailablePublicServer()
+        {
+            var database = _connectionMultiplexer.GetDatabase();
+            var redisValues = await database.SortedSetRangeByScoreAsync(RedisKeys.PublicServersByPlayerCount, take: 1);
+            var secret = redisValues.First();
+            if (secret.IsNull)
+                return null;
+            return await GetServer(secret);
+        }
+
         public async Task<bool> AddServer(Server server)
         {
             var database = _connectionMultiplexer.GetDatabase();
@@ -70,7 +80,6 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
                     songPackBloomFilterTop = (RedisValue)server.SongPackBloomFilterTop,
                     songPackBloomFilterBottom = (RedisValue)server.SongPackBloomFilterBottom,
                     currentPlayerCount = (RedisValue)server.CurrentPlayerCount,
-                    maximumPlayerCount = (RedisValue)server.MaximumPlayerCount,
                     random = (RedisValue)server.Random,
                     publicKey = (RedisValue)server.PublicKey
                 },
@@ -145,7 +154,6 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
                 SongPackBloomFilterTop = (ulong)dictionary["SongPackBloomFilterTop"],
                 SongPackBloomFilterBottom = (ulong)dictionary["SongPackBloomFilterBottom"],
                 CurrentPlayerCount = (int)dictionary["CurrentPlayerCount"],
-                MaximumPlayerCount = (int)dictionary["MaximumPlayerCount"],
                 Random = dictionary["Random"],
                 PublicKey = dictionary["PublicKey"]
             };

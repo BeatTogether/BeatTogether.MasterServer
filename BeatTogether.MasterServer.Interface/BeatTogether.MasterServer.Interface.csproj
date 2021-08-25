@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <LangVersion>9</LangVersion>
+    <PackageIcon>icon.png</PackageIcon>
+    <Authors>pythonology</Authors>
+    <Company>pythonology</Company>
+    <RepositoryUrl>https://github.com/pythonology/BeatTogether.MasterServer</RepositoryUrl>
+    <Version>1.0.2</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="../icon.png" PackagePath="" Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Autobus.Abstractions" Version="0.1.5" />
+  </ItemGroup>
+
+</Project>

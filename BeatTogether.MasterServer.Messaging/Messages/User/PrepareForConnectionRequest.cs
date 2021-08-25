@@ -5,7 +5,7 @@ using Krypton.Buffers;
 
 namespace BeatTogether.MasterServer.Messaging.Messages.User
 {
-    public class PrepareForConnectionRequest : IEncryptedMessage, IReliableRequest
+    public sealed class PrepareForConnectionRequest : IEncryptedMessage, IReliableRequest
     {
         public uint SequenceId { get; set; }
         public uint RequestId { get; set; }
