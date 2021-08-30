@@ -88,7 +88,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             );
 
             Server server;
-            var configuration = new GameplayServerConfiguration();
             if (!string.IsNullOrEmpty(request.Code))
             {
                 server = await _serverRepository.GetServerByCode(request.Code);
@@ -101,17 +100,12 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             else if (!string.IsNullOrEmpty(request.Secret))
             {
                 // Create a new matchmaking server
-                configuration.MaxPlayerCount = 5;
-                configuration.DiscoveryPolicy = DiscoveryPolicy.WithCode;
-                configuration.GameplayServerMode = GameplayServerMode.Managed;
-                configuration.SongSelectionMode = SongSelectionMode.OwnerPicks;
-                configuration.GameplayServerControlSettings = GameplayServerControlSettings.All;
 
                 var createMatchmakingServerResponse = await _matchmakingService.CreateMatchmakingServer(
                     new CreateMatchmakingServerRequest(
                         request.Secret,
                         session.UserId,
-                        _mapper.Map<DedicatedServer.Interface.Models.GameplayServerConfiguration>(configuration)
+                        _mapper.Map<DedicatedServer.Interface.Models.GameplayServerConfiguration>(request.GameplayServerConfiguration)
                     )
                 );
                 if (!createMatchmakingServerResponse.Success)
@@ -191,7 +185,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 Random = server.Random,
                 PublicKey = server.PublicKey,
                 Code = server.Code,
-                Configuration = configuration,
+                Configuration = request.GameplayServerConfiguration,
                 ManagerId = session.UserId
             };
         }
