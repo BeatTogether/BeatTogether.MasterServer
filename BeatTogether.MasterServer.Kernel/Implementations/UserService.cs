@@ -104,7 +104,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 var createMatchmakingServerResponse = await _matchmakingService.CreateMatchmakingServer(
                     new CreateMatchmakingServerRequest(
                         request.Secret,
-                        session.UserId,
+                        session.GetGameUserId(),
                         _mapper.Map<DedicatedServer.Interface.Models.GameplayServerConfiguration>(request.GameplayServerConfiguration)
                     )
                 );
