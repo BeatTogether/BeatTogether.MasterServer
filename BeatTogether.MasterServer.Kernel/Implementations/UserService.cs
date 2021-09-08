@@ -170,7 +170,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 }
             }
 
-            _autobus.Publish(new PlayerConnectedToMatchmakingServerEvent(
+            _ = await _autobus.Publish<PlayerConnectedToMatchmakingServerEvent, PlayerConnectedToMatchmakingServerAck>(new PlayerConnectedToMatchmakingServerEvent(
                 session.EndPoint.ToString(), session.UserId, session.UserName,
                 request.Random, request.PublicKey
             ));
