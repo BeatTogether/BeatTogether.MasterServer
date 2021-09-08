@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Net;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using Autobus;
 using AutoMapper;
@@ -67,6 +69,19 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             session.Platform = request.AuthenticationToken.Platform;
             session.UserId = request.AuthenticationToken.UserId;
             session.UserName = request.AuthenticationToken.UserName;
+
+            string platformStr = session.Platform switch
+            {
+                Platform.Test => "Test#",
+                Platform.Oculus => "Oculus#",
+                Platform.OculusQuest => "Oculus#",
+                Platform.Steam => "Steam#",
+                Platform.PS4 => "PSN#",
+                _ => ""
+            };
+
+            session.GameId = Convert.ToBase64String(SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(platformStr + session.UserId))).Substring(0, 22);
+
             return Task.FromResult(new AuthenticateUserResponse
             {
                 Result = AuthenticateUserResult.Success
@@ -104,7 +119,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 var createMatchmakingServerResponse = await _matchmakingService.CreateMatchmakingServer(
                     new CreateMatchmakingServerRequest(
                         request.Secret,
-                        session.GetGameUserId(),
+                        session.GameId,
                         _mapper.Map<DedicatedServer.Interface.Models.GameplayServerConfiguration>(request.GameplayServerConfiguration)
                     )
                 );

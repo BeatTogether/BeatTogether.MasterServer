@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Net;
-using System.Security.Cryptography;
-using System.Text;
 using BeatTogether.Core.Messaging.Implementations;
 using BeatTogether.MasterServer.Kernel.Enums;
 using BeatTogether.MasterServer.Messaging.Enums;
@@ -16,6 +14,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         public string UserId { get; set; }
         public string UserName { get; set; }
         public string Secret { get; set; }
+        public string GameId { get; set; }
 
         public byte[] Cookie { get; set; }
         public byte[] ClientRandom { get; set; }
@@ -29,21 +28,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         public MasterServerSession(EndPoint endPoint)
             : base(endPoint)
         {
-        }
-
-        public string GetGameUserId()
-        {
-            string platformStr = Platform switch
-            {
-                Platform.Test => "Test#",
-                Platform.Oculus => "Oculus#",
-                Platform.OculusQuest => "Oculus#",
-                Platform.Steam => "Steam#",
-                Platform.PS4 => "PSN#",
-                _ => ""
-            };
-
-            return Convert.ToBase64String(SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(platformStr+UserId))).Substring(0, 22);
         }
     }
 }
