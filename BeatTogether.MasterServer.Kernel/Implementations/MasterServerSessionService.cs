@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Net;
+using Autobus;
+using BeatTogether.MasterServer.Interface.Events;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Enums;
 using Serilog;
@@ -12,13 +14,14 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 {
     public class MasterServerSessionService : IMasterServerSessionService
     {
-        private readonly ILogger _logger;
-        private readonly ConcurrentDictionary<EndPoint, MasterServerSession> _sessions;
+        private readonly IAutobus _autobus;
+        private readonly ILogger _logger = Log.ForContext<MasterServerSessionService>();
 
-        public MasterServerSessionService()
+        private readonly ConcurrentDictionary<EndPoint, MasterServerSession> _sessions = new();
+
+        public MasterServerSessionService(IAutobus autobus)
         {
-            _logger = Log.ForContext<MasterServerSessionService>();
-            _sessions = new ConcurrentDictionary<EndPoint, MasterServerSession>();
+            _autobus = autobus;
         }
 
         #region Public Methods

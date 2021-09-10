@@ -1,11 +1,13 @@
 ﻿using System.Collections.Concurrent;
+using System.Linq;
 using System.Threading.Tasks;
 using BeatTogether.MasterServer.Data.Abstractions.Repositories;
-using BeatTogether.MasterServer.Data.Entities;
+using BeatTogether.MasterServer.Domain.Enums;
+using BeatTogether.MasterServer.Domain.Models;
 
 namespace BeatTogether.MasterServer.Data.Implementations.Repositories
 {
-    public class MemoryServerRepository : IServerRepository
+    public sealed class MemoryServerRepository : IServerRepository
     {
         private static ConcurrentDictionary<string, Server> _servers = new();
         private static ConcurrentDictionary<string, Server> _serversByCode = new();
@@ -20,6 +22,24 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
         public Task<Server> GetServerByCode(string code)
         {
             if (!_serversByCode.TryGetValue(code, out var server))
+                return Task.FromResult<Server>(null);
+            return Task.FromResult(server);
+        }
+
+        public Task<Server> GetAvailablePublicServer()
+        {
+            if (!_servers.Any())
+                return null;
+            var publicServers = _servers.Values.Where(server => server.DiscoveryPolicy == DiscoveryPolicy.Public);
+            var server = publicServers.First();
+            foreach (var publicServer in publicServers)
+            {
+                if (publicServer.CurrentPlayerCount < server.CurrentPlayerCount)
+                    server = publicServer;
+                if (server.CurrentPlayerCount <= 1)
+                    break;
+            }
+            if (server.CurrentPlayerCount >= Server.MaximumPlayerCount)
                 return Task.FromResult<Server>(null);
             return Task.FromResult(server);
         }

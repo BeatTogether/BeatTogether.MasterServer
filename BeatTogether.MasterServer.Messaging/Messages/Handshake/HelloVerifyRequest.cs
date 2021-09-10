@@ -3,7 +3,7 @@ using Krypton.Buffers;
 
 namespace BeatTogether.MasterServer.Messaging.Messages.Handshake
 {
-    public class HelloVerifyRequest : IMessage, IRequest, IResponse
+    public sealed class HelloVerifyRequest : IMessage, IRequest, IResponse
     {
         public uint RequestId { get; set; }
         public uint ResponseId { get; set; }

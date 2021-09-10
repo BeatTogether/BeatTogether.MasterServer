@@ -2,7 +2,7 @@
 {
     public enum InvitePolicy : byte
     {
-        OnlyConnectionOwnerCanInvite,
-        AnyoneCanInvite
+        OnlyConnectionOwnerCanInvite = 0,
+        AnyoneCanInvite = 1
     }
 }

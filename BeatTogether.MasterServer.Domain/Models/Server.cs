@@ -1,9 +1,9 @@
 ﻿using System.Net;
-using BeatTogether.MasterServer.Data.Enums;
+using BeatTogether.MasterServer.Domain.Enums;
 
-namespace BeatTogether.MasterServer.Data.Entities
+namespace BeatTogether.MasterServer.Domain.Models
 {
-    public class Server
+    public sealed class Server
     {
         public Player Host { get; set; }
         public IPEndPoint RemoteEndPoint { get; set; }
@@ -17,7 +17,7 @@ namespace BeatTogether.MasterServer.Data.Entities
         public ulong SongPackBloomFilterTop { get; set; }
         public ulong SongPackBloomFilterBottom { get; set; }
         public int CurrentPlayerCount { get; set; }
-        public int MaximumPlayerCount { get; set; }
+        public const int MaximumPlayerCount = 5;
         public byte[] Random { get; set; }
         public byte[] PublicKey { get; set; }
     }

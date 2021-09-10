@@ -6,14 +6,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="8.1.1" />
     <PackageReference Include="BeatTogether.Core.Security" Version="1.1.0" />
-    <PackageReference Include="BeatTogether.DedicatedServer.Interface" Version="1.0.0" />
-    <PackageReference Include="BeatTogether.Extensions.RabbitMQ" Version="1.0.1" />
-    <PackageReference Include="BeatTogether.Extensions.Serilog" Version="1.0.2" />
+    <PackageReference Include="BeatTogether.DedicatedServer.Interface" Version="1.1.2" />
+    <PackageReference Include="BeatTogether.Extensions.Autobus.RabbitMQ" Version="1.0.2" />
+    <PackageReference Include="BeatTogether.Extensions.Serilog" Version="2.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\BeatTogether.MasterServer.Data\BeatTogether.MasterServer.Data.csproj" />
+    <ProjectReference Include="..\BeatTogether.MasterServer.Interface\BeatTogether.MasterServer.Interface.csproj" />
     <ProjectReference Include="..\BeatTogether.MasterServer.Messaging\BeatTogether.MasterServer.Messaging.csproj" />
   </ItemGroup>
 

@@ -29,8 +29,12 @@ namespace BeatTogether.Extensions
                     services
                         .AddCoreSecurity()
                         .AddMasterServerMessaging()
+                        .AddAutoMapper(configuration =>
+                        {
+                            configuration.CreateMap<BeatTogether.MasterServer.Messaging.Models.GameplayServerConfiguration,
+                                                    DedicatedServer.Interface.Models.GameplayServerConfiguration>();
+                        })
                         .AddConfiguration<MasterServerConfiguration>("MasterServer")
-                        .AddServiceClient<IRelayServerService>()
                         .AddTransient<SecureRandom>()
                         .AddTransient<RNGCryptoServiceProvider>()
                         .AddSingleton<ICookieProvider, CookieProvider>()
@@ -41,6 +45,7 @@ namespace BeatTogether.Extensions
                         .AddSingleton<IMasterServerSessionService, MasterServerSessionService>()
                         .AddSingleton<MasterServerMessageSource>()
                         .AddSingleton<MasterServerMessageDispatcher>()
+                        .AddServiceClient<IMatchmakingService>()
                         .AddHostedService<MasterServer>()
                         .AddHostedService<MasterServerSessionTickService>()
                         .AddHostedService<HandshakeMessageHandler>()
