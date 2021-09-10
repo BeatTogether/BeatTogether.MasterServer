@@ -17,6 +17,7 @@ namespace BeatTogether.MasterServer.Messaging.Messages.User
         public BeatmapLevelSelectionMask BeatmapLevelSelectionMask { get; set; } = new();
         public string Secret { get; set; }
         public string Code { get; set; }
+        public GameplayServerConfiguration GameplayServerConfiguration { get; set; } = new();
 
         public void WriteTo(ref SpanBufferWriter bufferWriter)
         {
@@ -27,6 +28,7 @@ namespace BeatTogether.MasterServer.Messaging.Messages.User
             BeatmapLevelSelectionMask.WriteTo(ref bufferWriter);
             bufferWriter.WriteString(Secret);
             bufferWriter.WriteString(Code);
+            GameplayServerConfiguration.WriteTo(ref bufferWriter);
         }
 
         public void ReadFrom(ref SpanBufferReader bufferReader)
@@ -38,6 +40,7 @@ namespace BeatTogether.MasterServer.Messaging.Messages.User
             BeatmapLevelSelectionMask.ReadFrom(ref bufferReader);
             Secret = bufferReader.ReadString();
             Code = bufferReader.ReadString();
+            GameplayServerConfiguration.ReadFrom(ref bufferReader);
         }
     }
 }

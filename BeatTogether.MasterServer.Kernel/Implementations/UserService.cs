@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Net;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using Autobus;
 using AutoMapper;
@@ -67,6 +69,19 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             session.Platform = request.AuthenticationToken.Platform;
             session.UserId = request.AuthenticationToken.UserId;
             session.UserName = request.AuthenticationToken.UserName;
+
+            string platformStr = session.Platform switch
+            {
+                Platform.Test => "Test#",
+                Platform.Oculus => "Oculus#",
+                Platform.OculusQuest => "Oculus#",
+                Platform.Steam => "Steam#",
+                Platform.PS4 => "PSN#",
+                _ => ""
+            };
+
+            session.GameId = Convert.ToBase64String(SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(platformStr + session.UserId))).Substring(0, 22);
+
             return Task.FromResult(new AuthenticateUserResponse
             {
                 Result = AuthenticateUserResult.Success
@@ -88,7 +103,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             );
 
             Server server;
-            var configuration = new GameplayServerConfiguration();
             if (!string.IsNullOrEmpty(request.Code))
             {
                 server = await _serverRepository.GetServerByCode(request.Code);
@@ -101,17 +115,12 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             else if (!string.IsNullOrEmpty(request.Secret))
             {
                 // Create a new matchmaking server
-                configuration.MaxPlayerCount = 5;
-                configuration.DiscoveryPolicy = DiscoveryPolicy.WithCode;
-                configuration.GameplayServerMode = GameplayServerMode.Managed;
-                configuration.SongSelectionMode = SongSelectionMode.OwnerPicks;
-                configuration.GameplayServerControlSettings = GameplayServerControlSettings.All;
 
                 var createMatchmakingServerResponse = await _matchmakingService.CreateMatchmakingServer(
                     new CreateMatchmakingServerRequest(
                         request.Secret,
-                        session.UserId,
-                        _mapper.Map<DedicatedServer.Interface.Models.GameplayServerConfiguration>(configuration)
+                        session.GameId,
+                        _mapper.Map<DedicatedServer.Interface.Models.GameplayServerConfiguration>(request.GameplayServerConfiguration)
                     )
                 );
                 if (!createMatchmakingServerResponse.Success)
@@ -161,7 +170,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 }
             }
 
-            _autobus.Publish(new PlayerConnectedToMatchmakingServerEvent(
+            _ = await _autobus.Publish<PlayerConnectedToMatchmakingServerEvent, PlayerConnectedToMatchmakingServerAck>(new PlayerConnectedToMatchmakingServerEvent(
                 session.EndPoint.ToString(), session.UserId, session.UserName,
                 request.Random, request.PublicKey
             ));
@@ -191,7 +200,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 Random = server.Random,
                 PublicKey = server.PublicKey,
                 Code = server.Code,
-                Configuration = configuration,
+                Configuration = request.GameplayServerConfiguration,
                 ManagerId = session.UserId
             };
         }
