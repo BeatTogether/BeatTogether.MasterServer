@@ -182,8 +182,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                         };
                     var remoteEndPoint = IPEndPoint.Parse(createMatchmakingServerResponse.RemoteEndPoint);
                     var serverConfiguration = _mapper.Map<Domain.Models.GameplayServerConfiguration>(request.GameplayServerConfiguration);
-                    serverConfiguration.DiscoveryPolicy = Domain.Enums.DiscoveryPolicy.Public;
-                    serverConfiguration.InvitePolicy = Domain.Enums.InvitePolicy.OnlyConnectionOwnerCanInvite;
                     server = new Server
                     {
                         Host = new Player
@@ -195,8 +193,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                         Secret = serverSecret,
                         Code = _serverCodeProvider.Generate(),
                         IsPublic = true,
-                        DiscoveryPolicy = Domain.Enums.DiscoveryPolicy.Public,
-                        InvitePolicy = Domain.Enums.InvitePolicy.OnlyConnectionOwnerCanInvite,
+                        DiscoveryPolicy = serverConfiguration.DiscoveryPolicy,
+                        InvitePolicy = server.InvitePolicy,
                         BeatmapDifficultyMask = (Domain.Enums.BeatmapDifficultyMask)request.BeatmapLevelSelectionMask.BeatmapDifficultyMask,
                         GameplayModifiersMask = (Domain.Enums.GameplayModifiersMask)request.BeatmapLevelSelectionMask.GameplayModifiersMask,
                         GameplayServerConfiguration = serverConfiguration,
@@ -244,7 +242,15 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 Random = server.Random,
                 PublicKey = server.PublicKey,
                 Code = server.Code,
-                Configuration = _mapper.Map<Messaging.Models.GameplayServerConfiguration>(server.GameplayServerConfiguration),
+                Configuration = new Messaging.Models.GameplayServerConfiguration
+                {
+                    MaxPlayerCount = server.GameplayServerConfiguration.MaxPlayerCount,
+                    DiscoveryPolicy = (DiscoveryPolicy)server.GameplayServerConfiguration.DiscoveryPolicy,
+                    InvitePolicy = (InvitePolicy)server.GameplayServerConfiguration.InvitePolicy,
+                    GameplayServerMode = (GameplayServerMode)server.GameplayServerConfiguration.GameplayServerMode,
+                    SongSelectionMode = (SongSelectionMode)server.GameplayServerConfiguration.SongSelectionMode,
+                    GameplayServerControlSettings = (GameplayServerControlSettings)server.GameplayServerConfiguration.GameplayServerControlSettings
+                },
                 ManagerId = server.Host.UserId
             };
         }
