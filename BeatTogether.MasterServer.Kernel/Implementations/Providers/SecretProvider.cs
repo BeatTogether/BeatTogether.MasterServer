@@ -7,7 +7,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations.Providers
     {
         private const int _secretLength = 22;
 
-        private static readonly string _alphanumeric = "ABCDEFGHJKLMNPQRSTUVWXYZ12345789";
+        private static readonly string _alphanumeric = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz12345789";
 
         private readonly RNGCryptoServiceProvider _rngCryptoServiceProvider;
 
