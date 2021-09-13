@@ -14,6 +14,7 @@ namespace BeatTogether.MasterServer.Domain.Models
         public InvitePolicy InvitePolicy { get; set; }
         public BeatmapDifficultyMask BeatmapDifficultyMask { get; set; }
         public GameplayModifiersMask GameplayModifiersMask { get; set; }
+        public GameplayServerConfiguration GameplayServerConfiguration { get; set; }
         public ulong SongPackBloomFilterTop { get; set; }
         public ulong SongPackBloomFilterBottom { get; set; }
         public int CurrentPlayerCount { get; set; }

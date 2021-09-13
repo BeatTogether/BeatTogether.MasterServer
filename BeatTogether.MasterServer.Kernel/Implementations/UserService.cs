@@ -144,10 +144,11 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     Secret = request.Secret,
                     Code = _serverCodeProvider.Generate(),
                     IsPublic = false,
-                    DiscoveryPolicy = Domain.Enums.DiscoveryPolicy.WithCode,
-                    InvitePolicy = Domain.Enums.InvitePolicy.AnyoneCanInvite,
+                    DiscoveryPolicy = (Domain.Enums.DiscoveryPolicy)request.GameplayServerConfiguration.DiscoveryPolicy,
+                    InvitePolicy = (Domain.Enums.InvitePolicy)request.GameplayServerConfiguration.InvitePolicy,
                     BeatmapDifficultyMask = (Domain.Enums.BeatmapDifficultyMask)request.BeatmapLevelSelectionMask.BeatmapDifficultyMask,
                     GameplayModifiersMask = (Domain.Enums.GameplayModifiersMask)request.BeatmapLevelSelectionMask.GameplayModifiersMask,
+                    GameplayServerConfiguration = _mapper.Map<Domain.Models.GameplayServerConfiguration>(request.GameplayServerConfiguration),
                     SongPackBloomFilterTop = request.BeatmapLevelSelectionMask.SongPackMask.Top,
                     SongPackBloomFilterBottom = request.BeatmapLevelSelectionMask.SongPackMask.Bottom,
                     CurrentPlayerCount = 1,
@@ -180,6 +181,9 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                             Result = ConnectToServerResult.NoAvailableDedicatedServers
                         };
                     var remoteEndPoint = IPEndPoint.Parse(createMatchmakingServerResponse.RemoteEndPoint);
+                    var serverConfiguration = _mapper.Map<Domain.Models.GameplayServerConfiguration>(request.GameplayServerConfiguration);
+                    serverConfiguration.DiscoveryPolicy = Domain.Enums.DiscoveryPolicy.Public;
+                    serverConfiguration.InvitePolicy = Domain.Enums.InvitePolicy.OnlyConnectionOwnerCanInvite;
                     server = new Server
                     {
                         Host = new Player
@@ -195,6 +199,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                         InvitePolicy = Domain.Enums.InvitePolicy.OnlyConnectionOwnerCanInvite,
                         BeatmapDifficultyMask = (Domain.Enums.BeatmapDifficultyMask)request.BeatmapLevelSelectionMask.BeatmapDifficultyMask,
                         GameplayModifiersMask = (Domain.Enums.GameplayModifiersMask)request.BeatmapLevelSelectionMask.GameplayModifiersMask,
+                        GameplayServerConfiguration = serverConfiguration,
                         SongPackBloomFilterTop = request.BeatmapLevelSelectionMask.SongPackMask.Top,
                         SongPackBloomFilterBottom = request.BeatmapLevelSelectionMask.SongPackMask.Bottom,
                         CurrentPlayerCount = 1,
@@ -239,7 +244,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 Random = server.Random,
                 PublicKey = server.PublicKey,
                 Code = server.Code,
-                Configuration = request.GameplayServerConfiguration,
+                Configuration = _mapper.Map<Messaging.Models.GameplayServerConfiguration>(server.GameplayServerConfiguration),
                 ManagerId = server.Host.UserId
             };
         }
