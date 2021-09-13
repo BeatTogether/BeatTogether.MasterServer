@@ -28,6 +28,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         private readonly IServerRepository _serverRepository;
         private readonly IMasterServerSessionService _sessionService;
         private readonly IServerCodeProvider _serverCodeProvider;
+        private readonly ISecretProvider _secretProvider;
         private readonly ILogger _logger;
 
         public UserService(
@@ -37,7 +38,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             IMatchmakingService matchmakingService,
             IServerRepository serverRepository,
             IMasterServerSessionService sessionService,
-            IServerCodeProvider serverCodeProvider)
+            IServerCodeProvider serverCodeProvider,
+            ISecretProvider secretProvider)
         {
             _autobus = autobus;
             _mapper = mapper;
@@ -46,6 +48,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             _serverRepository = serverRepository;
             _sessionService = sessionService;
             _serverCodeProvider = serverCodeProvider;
+            _secretProvider = secretProvider;
             _logger = Log.ForContext<UserService>();
         }
 
@@ -162,9 +165,11 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 server = await _serverRepository.GetAvailablePublicServer();
                 if (server is null)
                 {
+                    var serverSecret = _secretProvider.GetSecret();
+
                     var createMatchmakingServerResponse = await _matchmakingService.CreateMatchmakingServer(
                         new CreateMatchmakingServerRequest(
-                            request.Secret,
+                            serverSecret,
                             "ziuMSceapEuNN7wRGQXrZg",
                             _mapper.Map<DedicatedServer.Interface.Models.GameplayServerConfiguration>(request.GameplayServerConfiguration)
                         )
@@ -183,7 +188,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                             UserName = ""
                         },
                         RemoteEndPoint = remoteEndPoint,
-                        Secret = request.Secret,
+                        Secret = serverSecret,
                         Code = _serverCodeProvider.Generate(),
                         IsPublic = true,
                         DiscoveryPolicy = Domain.Enums.DiscoveryPolicy.Public,

@@ -40,6 +40,7 @@ namespace BeatTogether.Extensions
                         .AddSingleton<ICookieProvider, CookieProvider>()
                         .AddSingleton<IRandomProvider, RandomProvider>()
                         .AddSingleton<IServerCodeProvider, ServerCodeProvider>()
+                        .AddSingleton<ISecretProvider, SecretProvider>()
                         .AddScoped<IHandshakeService, HandshakeService>()
                         .AddScoped<IUserService, UserService>()
                         .AddSingleton<IMasterServerSessionService, MasterServerSessionService>()
