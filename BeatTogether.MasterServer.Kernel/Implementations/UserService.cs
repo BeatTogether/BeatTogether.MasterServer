@@ -235,7 +235,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 PublicKey = server.PublicKey,
                 Code = server.Code,
                 Configuration = request.GameplayServerConfiguration,
-                ManagerId = "ziuMSceapEuNN7wRGQXrZg"
+                ManagerId = server.Host.UserId
             };
         }
 

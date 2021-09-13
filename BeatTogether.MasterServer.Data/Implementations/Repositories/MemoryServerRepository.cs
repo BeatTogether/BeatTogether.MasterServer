@@ -29,8 +29,10 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
         public Task<Server> GetAvailablePublicServer()
         {
             if (!_servers.Any())
-                return null;
+                return Task.FromResult<Server>(null);
             var publicServers = _servers.Values.Where(server => server.DiscoveryPolicy == DiscoveryPolicy.Public);
+            if (!publicServers.Any())
+                return Task.FromResult<Server>(null);
             var server = publicServers.First();
             foreach (var publicServer in publicServers)
             {
