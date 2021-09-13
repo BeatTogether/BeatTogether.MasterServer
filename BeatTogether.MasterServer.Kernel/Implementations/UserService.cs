@@ -162,11 +162,45 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 server = await _serverRepository.GetAvailablePublicServer();
                 if (server is null)
                 {
-                    // TODO: Create a new matchmaking server
-                    return new ConnectToServerResponse
+                    var createMatchmakingServerResponse = await _matchmakingService.CreateMatchmakingServer(
+                        new CreateMatchmakingServerRequest(
+                            request.Secret,
+                            session.GameId,
+                            _mapper.Map<DedicatedServer.Interface.Models.GameplayServerConfiguration>(request.GameplayServerConfiguration)
+                        )
+                    );
+                    if (!createMatchmakingServerResponse.Success)
+                        return new ConnectToServerResponse
+                        {
+                            Result = ConnectToServerResult.NoAvailableDedicatedServers
+                        };
+                    var remoteEndPoint = IPEndPoint.Parse(createMatchmakingServerResponse.RemoteEndPoint);
+                    server = new Server
                     {
-                        Result = ConnectToServerResult.NoAvailableDedicatedServers
+                        Host = new Player
+                        {
+                            UserId = "ziuMSceapEuNN7wRGQXrZg",
+                            UserName = ""
+                        },
+                        RemoteEndPoint = remoteEndPoint,
+                        Secret = request.Secret,
+                        Code = _serverCodeProvider.Generate(),
+                        IsPublic = true,
+                        DiscoveryPolicy = Domain.Enums.DiscoveryPolicy.Public,
+                        InvitePolicy = Domain.Enums.InvitePolicy.OnlyConnectionOwnerCanInvite,
+                        BeatmapDifficultyMask = (Domain.Enums.BeatmapDifficultyMask)request.BeatmapLevelSelectionMask.BeatmapDifficultyMask,
+                        GameplayModifiersMask = (Domain.Enums.GameplayModifiersMask)request.BeatmapLevelSelectionMask.GameplayModifiersMask,
+                        SongPackBloomFilterTop = request.BeatmapLevelSelectionMask.SongPackMask.Top,
+                        SongPackBloomFilterBottom = request.BeatmapLevelSelectionMask.SongPackMask.Bottom,
+                        CurrentPlayerCount = 1,
+                        Random = createMatchmakingServerResponse.Random,
+                        PublicKey = createMatchmakingServerResponse.PublicKey
                     };
+                    if (!await _serverRepository.AddServer(server))
+                        return new ConnectToServerResponse
+                        {
+                            Result = ConnectToServerResult.InvalidSecret
+                        };
                 }
             }
 
@@ -201,7 +235,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 PublicKey = server.PublicKey,
                 Code = server.Code,
                 Configuration = request.GameplayServerConfiguration,
-                ManagerId = session.UserId
+                ManagerId = "ziuMSceapEuNN7wRGQXrZg"
             };
         }
 
