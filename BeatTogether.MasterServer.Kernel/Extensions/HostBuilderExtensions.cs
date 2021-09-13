@@ -1,5 +1,4 @@
-﻿using System.Security.Cryptography;
-using Autobus;
+﻿using Autobus;
 using BeatTogether.DedicatedServer.Interface;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions.Providers;
@@ -12,6 +11,7 @@ using BeatTogether.MasterServer.Messaging.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Org.BouncyCastle.Security;
+using System.Security.Cryptography;
 
 namespace BeatTogether.Extensions
 {
@@ -46,6 +46,7 @@ namespace BeatTogether.Extensions
                         .AddSingleton<MasterServerMessageSource>()
                         .AddSingleton<MasterServerMessageDispatcher>()
                         .AddServiceClient<IMatchmakingService>()
+                        .AddHostedService<DedicatedServerEventHandler>()
                         .AddHostedService<MasterServer>()
                         .AddHostedService<MasterServerSessionTickService>()
                         .AddHostedService<HandshakeMessageHandler>()
