@@ -26,11 +26,29 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
             return Task.FromResult(server);
         }
 
-        public Task<Server> GetAvailablePublicServer()
+        public Task<Server> GetAvailablePublicServer(
+            InvitePolicy invitePolicy, 
+            GameplayServerMode serverMode, 
+            SongSelectionMode songMode, 
+            GameplayServerControlSettings serverControlSettings, 
+            BeatmapDifficultyMask difficultyMask, 
+            GameplayModifiersMask modifiersMask, 
+            ulong songPackTop, 
+            ulong songPackBottom)
         {
             if (!_servers.Any())
                 return Task.FromResult<Server>(null);
-            var publicServers = _servers.Values.Where(server => server.DiscoveryPolicy == DiscoveryPolicy.Public);
+            var publicServers = _servers.Values.Where(server => 
+                server.DiscoveryPolicy == DiscoveryPolicy.Public &&
+                server.InvitePolicy == invitePolicy &&
+                server.GameplayServerConfiguration.GameplayServerMode == serverMode &&
+                server.GameplayServerConfiguration.SongSelectionMode == songMode &&
+                server.GameplayServerConfiguration.GameplayServerControlSettings == serverControlSettings &&
+                server.BeatmapDifficultyMask == difficultyMask &&
+                server.GameplayModifiersMask == modifiersMask &&
+                server.SongPackBloomFilterTop == songPackTop &&
+                server.SongPackBloomFilterBottom == songPackBottom
+            );
             if (!publicServers.Any())
                 return Task.FromResult<Server>(null);
             var server = publicServers.First();

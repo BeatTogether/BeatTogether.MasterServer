@@ -47,7 +47,14 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
             return await GetServer(secret);
         }
 
-        public async Task<Server> GetAvailablePublicServer()
+        public async Task<Server> GetAvailablePublicServer(InvitePolicy invitePolicy,
+            GameplayServerMode serverMode,
+            SongSelectionMode songMode,
+            GameplayServerControlSettings serverControlSettings,
+            BeatmapDifficultyMask difficultyMask,
+            GameplayModifiersMask modifiersMask,
+            ulong songPackTop,
+            ulong songPackBottom)
         {
             var database = _connectionMultiplexer.GetDatabase();
             var redisValues = await database.SortedSetRangeByScoreAsync(RedisKeys.PublicServersByPlayerCount, take: 1);

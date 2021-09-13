@@ -171,7 +171,16 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             }
             else
             {
-                server = await _serverRepository.GetAvailablePublicServer();
+                server = await _serverRepository.GetAvailablePublicServer(
+                    (Domain.Enums.InvitePolicy)request.GameplayServerConfiguration.InvitePolicy,
+                    (Domain.Enums.GameplayServerMode)request.GameplayServerConfiguration.GameplayServerMode,
+                    (Domain.Enums.SongSelectionMode)request.GameplayServerConfiguration.SongSelectionMode,
+                    (Domain.Enums.GameplayServerControlSettings)request.GameplayServerConfiguration.GameplayServerControlSettings,
+                    (Domain.Enums.BeatmapDifficultyMask)request.BeatmapLevelSelectionMask.BeatmapDifficultyMask,
+                    (Domain.Enums.GameplayModifiersMask)request.BeatmapLevelSelectionMask.GameplayModifiersMask,
+                    request.BeatmapLevelSelectionMask.SongPackMask.Top,
+                    request.BeatmapLevelSelectionMask.SongPackMask.Bottom
+                );
                 if (server is null)
                 {
                     var serverSecret = _secretProvider.GetSecret();
@@ -193,7 +202,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     (
                         request.GameplayServerConfiguration.MaxPlayerCount,
                         Domain.Enums.DiscoveryPolicy.Public,
-                        Domain.Enums.InvitePolicy.OnlyConnectionOwnerCanInvite,
+                        (Domain.Enums.InvitePolicy)request.GameplayServerConfiguration.InvitePolicy,
                         (Domain.Enums.GameplayServerMode)request.GameplayServerConfiguration.GameplayServerMode,
                         (Domain.Enums.SongSelectionMode)request.GameplayServerConfiguration.SongSelectionMode,
                         (Domain.Enums.GameplayServerControlSettings)request.GameplayServerConfiguration.GameplayServerControlSettings
