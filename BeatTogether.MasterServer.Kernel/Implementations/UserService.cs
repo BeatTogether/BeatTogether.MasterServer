@@ -21,6 +21,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 {
     public class UserService : IUserService
     {
+        public const int EncryptionAddDelay = 1500;
+
         private readonly IAutobus _autobus;
         private readonly IMapper _mapper;
         private readonly MasterServerMessageDispatcher _messageDispatcher;
@@ -237,10 +239,11 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 }
             }
 
-            _ = await _autobus.Publish<PlayerConnectedToMatchmakingServerEvent, PlayerConnectedToMatchmakingServerAck>(new PlayerConnectedToMatchmakingServerEvent(
+            _autobus.Publish(new PlayerConnectedToMatchmakingServerEvent(
                 session.EndPoint.ToString(), session.UserId, session.UserName,
                 request.Random, request.PublicKey
             ));
+            await Task.Delay(EncryptionAddDelay);
             _logger.Information("Connected to matchmaking server!");
             _logger.Information($"Random='{BitConverter.ToString(request.Random)}'");
             _logger.Information($"PublicKey='{BitConverter.ToString(request.PublicKey)}'");

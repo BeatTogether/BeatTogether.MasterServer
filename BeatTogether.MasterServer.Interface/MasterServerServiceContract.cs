@@ -8,6 +8,6 @@ namespace BeatTogether.MasterServer.Interface
         public override void Build(IServiceContractBuilder builder) =>
             builder
                 .UseName("MasterServer")
-                .AddRequest<PlayerConnectedToMatchmakingServerEvent, PlayerConnectedToMatchmakingServerAck>();
+                .AddEvent<PlayerConnectedToMatchmakingServerEvent>();
     }
 }
