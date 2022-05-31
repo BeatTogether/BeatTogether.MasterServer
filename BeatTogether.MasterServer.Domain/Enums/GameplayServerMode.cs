@@ -4,6 +4,7 @@
     {
         Countdown = 0,
         Managed = 1,
-        QuickStartOneSong = 2
+        QuickStartOneSong = 2,
+        Tournament = 3
     }
 }

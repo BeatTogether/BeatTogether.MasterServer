@@ -121,6 +121,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             {
                 // Create a new matchmaking server
 
+                // Creates a new dedicated instance
                 var createMatchmakingServerResponse = await _matchmakingService.CreateMatchmakingServer(
                     new CreateMatchmakingServerRequest(
                         request.Secret,
@@ -133,7 +134,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     {
                         Result = ConnectToServerResult.NoAvailableDedicatedServers
                     };
-
+                //Adds the server to the master server repository
                 var remoteEndPoint = IPEndPoint.Parse(createMatchmakingServerResponse.RemoteEndPoint);
                 server = new Server
                 {
@@ -173,6 +174,9 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             }
             else
             {
+                //Joins quickplay
+
+                //Finds a quickplay server, null if none found
                 server = await _serverRepository.GetAvailablePublicServer(
                     (Domain.Enums.InvitePolicy)request.GameplayServerConfiguration.InvitePolicy,
                     (Domain.Enums.GameplayServerMode)request.GameplayServerConfiguration.GameplayServerMode,
@@ -185,6 +189,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 );
                 if (server is null)
                 {
+                    //Creates a quickplay server
                     var serverSecret = _secretProvider.GetSecret();
 
                     var createMatchmakingServerResponse = await _matchmakingService.CreateMatchmakingServer(
@@ -209,16 +214,18 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                         (Domain.Enums.SongSelectionMode)request.GameplayServerConfiguration.SongSelectionMode,
                         (Domain.Enums.GameplayServerControlSettings)request.GameplayServerConfiguration.GameplayServerControlSettings
                     );
+                    string code = _serverCodeProvider.Generate();
                     server = new Server
                     {
+                        
                         Host = new Player
                         {
                             UserId = "ziuMSceapEuNN7wRGQXrZg",
-                            UserName = ""
+                            UserName = "QuickplayInstance:" + code//Server's name
                         },
                         RemoteEndPoint = remoteEndPoint,
                         Secret = serverSecret,
-                        Code = _serverCodeProvider.Generate(),
+                        Code = code,
                         IsPublic = true,
                         DiscoveryPolicy = serverConfiguration.DiscoveryPolicy,
                         InvitePolicy = serverConfiguration.InvitePolicy,
@@ -251,8 +258,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             _logger.Information($"session.ClientPublicKey='{BitConverter.ToString(session.ClientPublicKey)}'");
             return new ConnectToServerResponse
             {
-                UserId = "ziuMSceapEuNN7wRGQXrZg",
-                UserName = string.Empty,
+                UserId = server.Host.UserId,
+                UserName = server.Host.UserName,
                 Secret = server.Secret,
                 BeatmapLevelSelectionMask = new BeatmapLevelSelectionMask
                 {

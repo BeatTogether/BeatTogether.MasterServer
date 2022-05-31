@@ -59,7 +59,7 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
                 if (server.CurrentPlayerCount <= 1)
                     break;
             }
-            if (server.CurrentPlayerCount >= Server.MaximumPlayerCount)
+            if (server.CurrentPlayerCount >= server.GameplayServerConfiguration.MaxPlayerCount)
                 return Task.FromResult<Server>(null);
             return Task.FromResult(server);
         }

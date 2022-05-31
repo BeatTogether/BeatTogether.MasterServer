@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <PackageReference Include="Autobus.Abstractions" Version="0.1.5" />
+    <PackageReference Include="BeatTogether.DedicatedServer.Interface" Version="1.3.1" />
   </ItemGroup>
 
 </Project>

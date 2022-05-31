@@ -1,5 +1,7 @@
 ﻿using Autobus;
 using BeatTogether.DedicatedServer.Interface;
+using BeatTogether.MasterServer.Interface;
+using BeatTogether.MasterServer.Interface.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions.Providers;
 using BeatTogether.MasterServer.Kernel.Configuration;
@@ -52,6 +54,7 @@ namespace BeatTogether.Extensions
                         .AddHostedService<MasterServerSessionTickService>()
                         .AddHostedService<HandshakeMessageHandler>()
                         .AddHostedService<UserMessageHandler>()
+                        .AddScoped<IApiInterface, ApiInterface>()
                 );
     }
 }
