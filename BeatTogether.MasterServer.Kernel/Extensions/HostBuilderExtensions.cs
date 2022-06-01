@@ -1,9 +1,8 @@
 ﻿using Autobus;
 using BeatTogether.DedicatedServer.Interface;
-using BeatTogether.MasterServer.Interface;
-using BeatTogether.MasterServer.Interface.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions.Providers;
+using BeatTogether.MasterServer.Interface.ApiInterface.Abstractions;
 using BeatTogether.MasterServer.Kernel.Configuration;
 using BeatTogether.MasterServer.Kernel.Implementations;
 using BeatTogether.MasterServer.Kernel.Implementations.MessageReceivers;
@@ -14,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Org.BouncyCastle.Security;
 using System.Security.Cryptography;
+using BeatTogether.MasterServer.Kernal;
 
 namespace BeatTogether.Extensions
 {

@@ -27,6 +27,33 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
 
         #region Public Methods
 
+        public Task<string[]> GetPublicServerSecretsList()
+        {
+            return Task.FromResult(new string[0]);
+        }
+        public Task<Server[]> GetPublicServerList()
+        {
+            return Task.FromResult(new Server[0]);
+        }
+
+        public Task<string[]> GetServerSecretsList()
+        {
+            return Task.FromResult(new string[0]); //TODO ICBA to code this one, i could but only if its actually needed
+        }
+        public Task<Server[]> GetServerList()
+        {
+            return Task.FromResult(new Server[0]); //TODO will only impliment these if they are needed
+        }
+
+        public Task<int> GetPublicServerCount()
+        {
+            return Task.FromResult(0);
+        }
+        public Task<int> GetServerCount()
+        {
+            return Task.FromResult(0);
+        }
+
         public async Task<Server> GetServer(string secret)
         {
             var database = _connectionMultiplexer.GetDatabase();

@@ -12,6 +12,33 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
         private static ConcurrentDictionary<string, Server> _servers = new();
         private static ConcurrentDictionary<string, Server> _serversByCode = new();
 
+        public Task<string[]> GetPublicServerSecretsList()
+        {
+            return Task.FromResult(_servers.Keys.ToArray());
+        }
+        public Task<Server[]> GetPublicServerList()
+        {
+            return Task.FromResult(_servers.Values.ToArray());
+        }
+
+        public Task<string[]> GetServerSecretsList()
+        {
+            return Task.FromResult(((ConcurrentDictionary<string, Server>)_servers.Where(server => server.Value.IsPublic)).Keys.ToArray());
+        }
+        public Task<Server[]> GetServerList()
+        {
+            return Task.FromResult((_servers.Values.Where(value => value.IsPublic)).ToArray());
+        }
+
+        public Task<int> GetPublicServerCount()
+        {
+            return Task.FromResult((_servers.Values.Where(value => value.IsPublic)).Count());
+        }
+        public Task<int> GetServerCount()
+        {
+            return Task.FromResult(_servers.Count());
+        }
+
         public Task<Server> GetServer(string secret)
         {
             if (!_servers.TryGetValue(secret, out var server))

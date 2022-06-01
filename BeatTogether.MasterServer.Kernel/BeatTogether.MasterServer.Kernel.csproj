@@ -3,6 +3,10 @@
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
     <LangVersion>9</LangVersion>
+    <PackageId>BeatTogether.MasterServer.Kernel</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Pythonology, cubic</Authors>
+    <Company>Pythonology, cubic</Company>
   </PropertyGroup>
 
   <ItemGroup>
