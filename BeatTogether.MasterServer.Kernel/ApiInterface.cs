@@ -170,7 +170,7 @@ namespace BeatTogether.MasterServer.Kernal
                 Convert(server.GameplayServerConfiguration),
                 (BeatmapDifficultyMask)server.BeatmapDifficultyMask,
                 (GameplayModifiersMask)server.GameplayModifiersMask,
-                server.RemoteEndPoint
+                server.RemoteEndPoint.ToString()
                 );
             return simpleServer;
         }

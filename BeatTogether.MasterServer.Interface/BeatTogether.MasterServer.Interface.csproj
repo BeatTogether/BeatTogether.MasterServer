@@ -7,7 +7,7 @@
     <Authors>pythonology,cubic</Authors>
     <Company>pythonology,cubic</Company>
     <RepositoryUrl>https://github.com/pythonology/BeatTogether.MasterServer</RepositoryUrl>
-    <Version>1.1.0</Version>
+    <Version>1.1.1</Version>
     <PackageId>BeatTogether.MasterServer.Interface</PackageId>
   </PropertyGroup>
 
@@ -17,7 +17,7 @@
 
   <ItemGroup>
     <PackageReference Include="Autobus.Abstractions" Version="0.1.5" />
-    <PackageReference Include="BeatTogether.DedicatedServer.Interface" Version="1.3.1" />
+    <PackageReference Include="BeatTogether.DedicatedServer.Interface" Version="1.3.2" />
   </ItemGroup>
 
 </Project>
