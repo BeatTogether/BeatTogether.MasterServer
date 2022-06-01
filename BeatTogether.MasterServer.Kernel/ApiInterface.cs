@@ -15,8 +15,6 @@ using BeatTogether.DedicatedServer.Interface.Enums;
 using BeatTogether.MasterServer.Interface.ApiInterface.Enums;
 using System;
 
-//using BeatTogether.MasterServer.Messaging.Messages.User;
-
 namespace BeatTogether.MasterServer.Kernal
 {
     public class ApiInterface : IApiInterface
@@ -50,7 +48,7 @@ namespace BeatTogether.MasterServer.Kernal
                     Secret,
                     request.ManagerId,
                     request.GameplayServerConfiguration,
-                    request.PermenantManager,
+                    request.PermanantManager,
                     request.Timeout,
                     request.ServerName
                     )
