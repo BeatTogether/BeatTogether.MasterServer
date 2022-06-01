@@ -13,6 +13,7 @@ using BeatTogether.MasterServer.Interface.ApiInterface.Responses;
 using BeatTogether.MasterServer.Domain.Models;
 using BeatTogether.DedicatedServer.Interface.Enums;
 using BeatTogether.MasterServer.Interface.ApiInterface.Enums;
+using System;
 
 //using BeatTogether.MasterServer.Messaging.Messages.User;
 
@@ -150,6 +151,7 @@ namespace BeatTogether.MasterServer.Kernal
 
         public async Task<ServerListResponse> GetServers(GetSimpleServersRequest request)
         {
+            Console.WriteLine("Getting stuff");
             Server[] servers = await _serverRepository.GetServerList();
             SimpleServer[] simpleServers = new SimpleServer[servers.Length];
             for (int i = 0; i < servers.Length; i++)
@@ -196,6 +198,18 @@ namespace BeatTogether.MasterServer.Kernal
         public async Task<Interface.ApiInterface.Responses.ServerCountResponse> GetServerCount(GetServerCountRequest request)
         {
             return new Interface.ApiInterface.Responses.ServerCountResponse(await _serverRepository.GetServerCount());
+        }
+    
+        public async Task<ServerFromCodeResponse> GetServerFromCode(GetServerFromCodeRequest request)
+        {
+            var server = await _serverRepository.GetServerByCode(request.Code);
+            return new ServerFromCodeResponse(Simplify(server));
+        }
+
+        public async Task<ServerFromSecretResponse> GetServerFromSecret(GetServerFromSecretRequest request)
+        {
+            var server = await _serverRepository.GetServer(request.secret);
+            return new ServerFromSecretResponse(Simplify(server));
         }
     }
                 

@@ -25,5 +25,9 @@ namespace BeatTogether.MasterServer.Interface.ApiInterface.Abstractions
         Task<PublicServerCountResponse> GetPublicServerCount(GetPublicServerCountRequest request);
 
         Task<ServerCountResponse> GetServerCount(GetServerCountRequest request);
+
+        Task<ServerFromCodeResponse> GetServerFromCode(GetServerFromCodeRequest request);
+
+        Task<ServerFromSecretResponse> GetServerFromSecret(GetServerFromSecretRequest request);
     }
 }
