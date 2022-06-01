@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using BeatTogether.MasterServer.Data.Abstractions.Repositories;
@@ -23,8 +24,15 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
 
         public Task<string[]> GetServerSecretsList()
         {
-            return Task.FromResult(((ConcurrentDictionary<string, Server>)_servers.Where(server => server.Value.IsPublic)).Keys.ToArray());
+            List<string> secrets = new();
+            foreach (var server in _servers.Values)
+            {
+                if (server.IsPublic)
+                    secrets.Add(server.Secret);
+            }
+            return Task.FromResult(secrets.ToArray());
         }
+
         public Task<Server[]> GetServerList()
         {
             return Task.FromResult((_servers.Values.Where(value => value.IsPublic)).ToArray());

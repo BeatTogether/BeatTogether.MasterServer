@@ -6,13 +6,12 @@ using BeatTogether.DedicatedServer.Interface.Requests;
 using BeatTogether.DedicatedServer.Interface.Responses;
 using BeatTogether.MasterServer.Data.Abstractions.Repositories;
 using BeatTogether.MasterServer.Kernel.Abstractions.Providers;
-using BeatTogether.MasterServer.Interface.ApiInterface.Abstractions;
+using BeatTogether.MasterServer.Interface.ApiInterface;
+using BeatTogether.MasterServer.Interface.ApiInterface.Enums;
 using BeatTogether.MasterServer.Interface.ApiInterface.Models;
 using BeatTogether.MasterServer.Interface.ApiInterface.Requests;
 using BeatTogether.MasterServer.Interface.ApiInterface.Responses;
 using BeatTogether.MasterServer.Domain.Models;
-using BeatTogether.DedicatedServer.Interface.Enums;
-using BeatTogether.MasterServer.Interface.ApiInterface.Enums;
 using System;
 
 namespace BeatTogether.MasterServer.Kernal
@@ -37,6 +36,7 @@ namespace BeatTogether.MasterServer.Kernal
 
         public async Task<CreatedServerResponse> CreateServer(CreateServerRequest request)
         {
+            Console.WriteLine("CreatingServer");
             string Code = _serverCodeProvider.Generate();
             string Secret = _secretProvider.GetSecret();
             if (request.Code.Length == 5)
@@ -47,7 +47,14 @@ namespace BeatTogether.MasterServer.Kernal
                 new CreateMatchmakingServerRequest(
                     Secret,
                     request.ManagerId,
-                    request.GameplayServerConfiguration,
+                    new DedicatedServer.Interface.Models.GameplayServerConfiguration(
+                        request.GameplayServerConfiguration.MaxPlayerCount,
+                        (DedicatedServer.Interface.Enums.DiscoveryPolicy)request.GameplayServerConfiguration.DiscoveryPolicy,
+                        (DedicatedServer.Interface.Enums.InvitePolicy)request.GameplayServerConfiguration.InvitePolicy,
+                        (DedicatedServer.Interface.Enums.GameplayServerMode)request.GameplayServerConfiguration.GameplayServerMode,
+                        (DedicatedServer.Interface.Enums.SongSelectionMode)request.GameplayServerConfiguration.SongSelectionMode,
+                        (DedicatedServer.Interface.Enums.GameplayServerControlSettings)request.GameplayServerConfiguration.GameplayServerControlSettings
+                        ),
                     request.PermanantManager,
                     request.Timeout,
                     request.ServerName
@@ -69,12 +76,12 @@ namespace BeatTogether.MasterServer.Kernal
                 RemoteEndPoint = remoteEndPoint,
                 Secret = Secret,
                 Code = Code,
-                IsPublic = request.IsPublic,
+                IsPublic = request.GameplayServerConfiguration.DiscoveryPolicy == DiscoveryPolicy.Public,
                 DiscoveryPolicy = (Domain.Enums.DiscoveryPolicy)request.GameplayServerConfiguration.DiscoveryPolicy,
                 InvitePolicy = (Domain.Enums.InvitePolicy)request.GameplayServerConfiguration.InvitePolicy,
                 BeatmapDifficultyMask = (Domain.Enums.BeatmapDifficultyMask)request.BeatmapDifficultyMask,
                 GameplayModifiersMask = (Domain.Enums.GameplayModifiersMask)request.GameplayModifiersMask,
-                GameplayServerConfiguration = (new GameplayServerConfiguration(
+                GameplayServerConfiguration = (new Domain.Models.GameplayServerConfiguration(
                     request.GameplayServerConfiguration.MaxPlayerCount,
                     (Domain.Enums.DiscoveryPolicy)request.GameplayServerConfiguration.DiscoveryPolicy,
                     (Domain.Enums.InvitePolicy)request.GameplayServerConfiguration.InvitePolicy,
@@ -122,6 +129,7 @@ namespace BeatTogether.MasterServer.Kernal
 
         public async Task<PublicServerSecretListFromDedicatedResponse> GetPublicServerSecrets(GetPrivateServerSecretsListFromDedicatedRequest request)
         {
+            Console.WriteLine("Getting Secrets");
             PublicMatchmakingServerListResponse DediServers = await _matchmakingService.GetPublicMatchmakingServerList(new GetPublicMatchmakingServerListRequest());
             return new PublicServerSecretListFromDedicatedResponse(DediServers.PublicInstances);
         }
@@ -161,6 +169,9 @@ namespace BeatTogether.MasterServer.Kernal
 
         public SimpleServer Simplify(Server server)
         {
+            Console.WriteLine("dufbsdiufjb");
+            if(server == null)
+                return null;
             SimpleServer simpleServer = new(
                 server.Secret,
                 server.Code,
@@ -175,9 +186,9 @@ namespace BeatTogether.MasterServer.Kernal
             return simpleServer;
         }
 
-        private DedicatedServer.Interface.Models.GameplayServerConfiguration Convert(GameplayServerConfiguration Configuration)
+        private Interface.ApiInterface.Models.GameplayServerConfiguration Convert(Domain.Models.GameplayServerConfiguration Configuration)
         {
-            DedicatedServer.Interface.Models.GameplayServerConfiguration gameplayServerConfiguration = new(
+            Interface.ApiInterface.Models.GameplayServerConfiguration gameplayServerConfiguration = new(
                 Configuration.MaxPlayerCount,
                 (DiscoveryPolicy)Configuration.DiscoveryPolicy,
                 (InvitePolicy)Configuration.InvitePolicy,

@@ -2,7 +2,6 @@
 using BeatTogether.DedicatedServer.Interface;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions.Providers;
-using BeatTogether.MasterServer.Interface.ApiInterface.Abstractions;
 using BeatTogether.MasterServer.Kernel.Configuration;
 using BeatTogether.MasterServer.Kernel.Implementations;
 using BeatTogether.MasterServer.Kernel.Implementations.MessageReceivers;
@@ -14,6 +13,7 @@ using Microsoft.Extensions.Hosting;
 using Org.BouncyCastle.Security;
 using System.Security.Cryptography;
 using BeatTogether.MasterServer.Kernal;
+using BeatTogether.MasterServer.Interface.ApiInterface;
 
 namespace BeatTogether.Extensions
 {
@@ -30,6 +30,7 @@ namespace BeatTogether.Extensions
                 .ConfigureServices((hostBuilderContext, services) =>
                     services
                         .AddCoreSecurity()
+                        .AddServiceKernel<IApiInterface, ApiInterface>()
                         .AddMasterServerMessaging()
                         .AddAutoMapper(configuration =>
                         {
@@ -54,7 +55,6 @@ namespace BeatTogether.Extensions
                         .AddHostedService<MasterServerSessionTickService>()
                         .AddHostedService<HandshakeMessageHandler>()
                         .AddHostedService<UserMessageHandler>()
-                        .AddServiceKernel<IApiInterface, ApiInterface>()
                 );
     }
 }

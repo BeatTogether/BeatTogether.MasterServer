@@ -1,6 +1,4 @@
-﻿using BeatTogether.DedicatedServer.Interface.Models;
-using BeatTogether.MasterServer.Interface.ApiInterface.Enums;
-using System.Net;
+﻿using BeatTogether.MasterServer.Interface.ApiInterface.Enums;
 
 namespace BeatTogether.MasterServer.Interface.ApiInterface.Models
 {
