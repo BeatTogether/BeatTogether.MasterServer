@@ -36,7 +36,6 @@ namespace BeatTogether.MasterServer.Kernal
 
         public async Task<CreatedServerResponse> CreateServer(CreateServerRequest request)
         {
-            Console.WriteLine("CreatingServer");
             string Code = _serverCodeProvider.Generate();
             string Secret = _secretProvider.GetSecret();
             if (request.Code.Length == 5)
@@ -169,7 +168,6 @@ namespace BeatTogether.MasterServer.Kernal
 
         public SimpleServer Simplify(Server server)
         {
-            Console.WriteLine("dufbsdiufjb");
             if(server == null)
                 return null;
             SimpleServer simpleServer = new(
