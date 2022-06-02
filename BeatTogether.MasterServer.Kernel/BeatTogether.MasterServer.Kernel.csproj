@@ -9,7 +9,7 @@
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="11.0.0" />
     <PackageReference Include="BeatTogether.Core.Security" Version="1.1.0" />
     <PackageReference Include="BeatTogether.DedicatedServer.Interface" Version="1.3.6" />
-    <PackageReference Include="BeatTogether.Extensions.Autobus.RabbitMQ" Version="1.0.2" />
+    <PackageReference Include="BeatTogether.Extensions.Autobus.RabbitMQ" Version="1.0.3" />
     <PackageReference Include="BeatTogether.Extensions.Serilog" Version="2.0.0" />
   </ItemGroup>
 

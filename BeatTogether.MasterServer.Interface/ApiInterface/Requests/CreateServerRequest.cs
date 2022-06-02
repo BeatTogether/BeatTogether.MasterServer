@@ -5,7 +5,7 @@ namespace BeatTogether.MasterServer.Interface.ApiInterface.Requests
 {
     public record CreateServerRequest(string ManagerId, 
         GameplayServerConfiguration GameplayServerConfiguration,
-        bool PermanantManager,
+        bool PermanentManager,
         float Timeout,
         string ServerName,
         BeatmapDifficultyMask BeatmapDifficultyMask,

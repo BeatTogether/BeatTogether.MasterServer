@@ -55,7 +55,7 @@ namespace BeatTogether.MasterServer.Kernal
                         (DedicatedServer.Interface.Enums.SongSelectionMode)request.GameplayServerConfiguration.SongSelectionMode,
                         (DedicatedServer.Interface.Enums.GameplayServerControlSettings)request.GameplayServerConfiguration.GameplayServerControlSettings
                         ),
-                    request.PermanantManager,
+                    request.PermanentManager,
                     request.Timeout,
                     request.ServerName
                     )
