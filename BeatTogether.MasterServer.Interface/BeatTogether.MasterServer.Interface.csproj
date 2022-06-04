@@ -4,8 +4,8 @@
     <TargetFramework>net5.0</TargetFramework>
     <LangVersion>9</LangVersion>
     <PackageIcon>icon.png</PackageIcon>
-    <Authors>pythonology, cubic</Authors>
-    <Company>pythonology, cubic</Company>
+    <Authors>pythonology,cubic</Authors>
+    <Company>pythonology,cubic</Company>
     <RepositoryUrl>https://github.com/beattogether/BeatTogether.MasterServer</RepositoryUrl>
     <Version>1.1.13</Version>
     <PackageId>BeatTogether.MasterServer.Interface</PackageId>

@@ -193,12 +193,12 @@ namespace BeatTogether.MasterServer.Kernal
             return gameplayServerConfiguration;
         }
     
-        public async Task<Interface.ApiInterface.Responses.PublicServerCountResponse> GetPublicServerCount(GetPublicServerCountRequest request)
+        public async Task<PublicServerCountResponse> GetPublicServerCount(GetPublicServerCountRequest request)
         {
             return new Interface.ApiInterface.Responses.PublicServerCountResponse(await _serverRepository.GetPublicServerCount());
         }
 
-        public async Task<Interface.ApiInterface.Responses.ServerCountResponse> GetServerCount(GetServerCountRequest request)
+        public async Task<ServerCountResponse> GetServerCount(GetServerCountRequest request)
         {
             return new Interface.ApiInterface.Responses.ServerCountResponse(await _serverRepository.GetServerCount());
         }
