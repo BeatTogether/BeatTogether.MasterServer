@@ -1,7 +1,5 @@
 ﻿namespace BeatTogether.MasterServer.Interface.ApiInterface.Requests
 {
-    public record GetPrivateServerSecretsListFromDedicatedRequest();
-
     public record GetPublicServerSecretsListRequest();
 
     public record GetPublicSimpleServersRequest();

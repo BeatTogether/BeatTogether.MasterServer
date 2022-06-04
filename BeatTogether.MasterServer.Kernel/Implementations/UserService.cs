@@ -259,7 +259,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             return new ConnectToServerResponse
             {
                 UserId = "ziuMSceapEuNN7wRGQXrZg",
-                UserName = server.Host.UserName,//string.empty, //TODO these values could be preventing the player from joining the server
+                UserName = server.Host.UserName,
                 Secret = server.Secret,
                 BeatmapLevelSelectionMask = new BeatmapLevelSelectionMask
                 {

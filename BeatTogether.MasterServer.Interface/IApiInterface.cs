@@ -8,10 +8,9 @@ namespace BeatTogether.MasterServer.Interface.ApiInterface
 {
     public interface IApiInterface
     {
-        Task<CreatedServerResponse> CreateServer(CreateServerRequest request); //TODO this causes a crash when called on the API server
+        Task<CreatedServerResponse> CreateServer(CreateServerRequest request);
         Task<RemoveSecretServerResponse> RemoveServer(RemoveSecretServerRequest request);
         Task<RemoveCodeServerResponse> RemoveServer(RemoveCodeServerCodeRequest request);
-        Task<PublicServerSecretListFromDedicatedResponse> GetPublicServerSecrets(GetPrivateServerSecretsListFromDedicatedRequest request);
         Task<PublicServerSecretListResponse> GetPublicServerSecrets(GetPublicServerSecretsListRequest request);
         Task<ServerSecretListResponse> GetServerSecretsList(GetServerSecretsListRequest request);
         Task<PublicServerListResponse> GetPublicServers(GetPublicSimpleServersRequest request);
@@ -20,6 +19,7 @@ namespace BeatTogether.MasterServer.Interface.ApiInterface
         Task<ServerCountResponse> GetServerCount(GetServerCountRequest request);
         Task<ServerFromCodeResponse> GetServerFromCode(GetServerFromCodeRequest request);
         Task<ServerFromSecretResponse> GetServerFromSecret(GetServerFromSecretRequest request);
+        Task<PlayersFromMasterServerResponse> GetAllPlayers(PlayersFromMasterServerRequest request); //TODO add this to the api
 
         public class MasterServerServiceContract : BaseServiceContract
         {

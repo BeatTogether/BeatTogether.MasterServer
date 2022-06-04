@@ -13,6 +13,8 @@ using BeatTogether.MasterServer.Interface.ApiInterface.Requests;
 using BeatTogether.MasterServer.Interface.ApiInterface.Responses;
 using BeatTogether.MasterServer.Domain.Models;
 using System;
+using BeatTogether.MasterServer.Kernel.Abstractions;
+using BeatTogether.MasterServer.Kernel.Implementations;
 
 namespace BeatTogether.MasterServer.Kernal
 {
@@ -23,15 +25,17 @@ namespace BeatTogether.MasterServer.Kernal
         private readonly IServerRepository _serverRepository;
         private readonly ISecretProvider _secretProvider;
         private readonly IServerCodeProvider _serverCodeProvider;
+        private readonly IMasterServerSessionService _masterServerSessionService;
 
         public ApiInterface(
-            IMatchmakingService matchmakingService, IAutobus autobus, IServerRepository serverRepository, ISecretProvider secretProvider, IServerCodeProvider serverCodeProvider)
+            IMatchmakingService matchmakingService, IAutobus autobus, IServerRepository serverRepository, ISecretProvider secretProvider, IServerCodeProvider serverCodeProvider, IMasterServerSessionService masterServerSessionService)
         {
             _matchmakingService = matchmakingService;
             _autobus = autobus;
             _serverRepository = serverRepository;
             _secretProvider = secretProvider;
             _serverCodeProvider = serverCodeProvider;
+            _masterServerSessionService = masterServerSessionService;
         }
 
         public async Task<CreatedServerResponse> CreateServer(CreateServerRequest request)
@@ -126,13 +130,6 @@ namespace BeatTogether.MasterServer.Kernal
             return new RemoveCodeServerResponse(response.Success);
         }
 
-        public async Task<PublicServerSecretListFromDedicatedResponse> GetPublicServerSecrets(GetPrivateServerSecretsListFromDedicatedRequest request)
-        {
-            Console.WriteLine("Getting Secrets");
-            PublicMatchmakingServerListResponse DediServers = await _matchmakingService.GetPublicMatchmakingServerList(new GetPublicMatchmakingServerListRequest());
-            return new PublicServerSecretListFromDedicatedResponse(DediServers.PublicInstances);
-        }
-
         public async Task<PublicServerSecretListResponse> GetPublicServerSecrets(GetPublicServerSecretsListRequest request)
         {
             return new PublicServerSecretListResponse(await _serverRepository.GetPublicServerSecretsList());
@@ -218,6 +215,18 @@ namespace BeatTogether.MasterServer.Kernal
             var server = await _serverRepository.GetServer(request.secret);
             return new ServerFromSecretResponse(Simplify(server));
         }
+
+        public Task<PlayersFromMasterServerResponse> GetAllPlayers(PlayersFromMasterServerRequest request)
+        {
+            MasterServerSession[] sessions = _masterServerSessionService.GetMasterServerSessions();
+            MServerPlayer[] players = new MServerPlayer[sessions.Length];
+            for (int i = 0; i < players.Length; i++)
+            {
+                players[i] = new MServerPlayer(sessions[i].Platform, sessions[i].UserId, sessions[i].UserName, sessions[i].Secret);
+            }
+            return Task.FromResult(new PlayersFromMasterServerResponse(players));
+        }
+
     }
-                
+
 }

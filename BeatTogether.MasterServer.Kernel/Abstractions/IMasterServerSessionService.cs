@@ -8,6 +8,7 @@ namespace BeatTogether.MasterServer.Kernel.Abstractions
     public interface IMasterServerSessionService
     {
         IEnumerable<MasterServerSession> GetInactiveSessions(int timeToLive);
+        MasterServerSession[] GetMasterServerSessions();
         MasterServerSession GetOrAddSession(EndPoint endPoint);
         MasterServerSession GetSession(EndPoint endPoint);
         bool TryGetSession(EndPoint endPoint, [MaybeNullWhen(false)] out MasterServerSession session);
