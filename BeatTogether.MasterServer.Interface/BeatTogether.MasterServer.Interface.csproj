@@ -6,7 +6,7 @@
     <PackageIcon>icon.png</PackageIcon>
     <Authors>pythonology,cubic</Authors>
     <Company>pythonology,cubic</Company>
-    <RepositoryUrl>https://github.com/pythonology/BeatTogether.MasterServer</RepositoryUrl>
+    <RepositoryUrl>https://github.com/beattogether/BeatTogether.MasterServer</RepositoryUrl>
     <Version>1.1.13</Version>
     <PackageId>BeatTogether.MasterServer.Interface</PackageId>
   </PropertyGroup>
