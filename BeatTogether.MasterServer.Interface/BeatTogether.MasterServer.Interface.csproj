@@ -1,13 +1,14 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
     <LangVersion>9</LangVersion>
     <PackageIcon>icon.png</PackageIcon>
-    <Authors>pythonology</Authors>
-    <Company>pythonology</Company>
+    <Authors>pythonology,cubic</Authors>
+    <Company>pythonology,cubic</Company>
     <RepositoryUrl>https://github.com/pythonology/BeatTogether.MasterServer</RepositoryUrl>
-    <Version>1.0.4</Version>
+    <Version>1.1.13</Version>
+    <PackageId>BeatTogether.MasterServer.Interface</PackageId>
   </PropertyGroup>
 
   <ItemGroup>

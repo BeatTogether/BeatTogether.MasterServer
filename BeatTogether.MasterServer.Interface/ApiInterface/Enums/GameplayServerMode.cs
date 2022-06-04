@@ -1,4 +1,4 @@
-﻿namespace BeatTogether.MasterServer.Messaging.Enums
+﻿namespace BeatTogether.MasterServer.Interface.ApiInterface.Enums
 {
     public enum GameplayServerMode
     {

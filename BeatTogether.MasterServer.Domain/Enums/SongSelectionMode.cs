@@ -4,7 +4,8 @@
     {
         Vote = 0,
         Random = 1,
-        OwnerPicks = 2,
-        RandomPlayerPicks = 3
+        ManagerPicks = 2,
+        RandomPlayerPicks = 3,
+        ServerPicks = 4
     }
 }

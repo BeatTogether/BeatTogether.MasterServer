@@ -12,6 +12,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Org.BouncyCastle.Security;
 using System.Security.Cryptography;
+using BeatTogether.MasterServer.Kernal;
+using BeatTogether.MasterServer.Interface.ApiInterface;
 
 namespace BeatTogether.Extensions
 {
@@ -28,6 +30,7 @@ namespace BeatTogether.Extensions
                 .ConfigureServices((hostBuilderContext, services) =>
                     services
                         .AddCoreSecurity()
+                        .AddServiceKernel<IApiInterface, ApiInterface>()
                         .AddMasterServerMessaging()
                         .AddAutoMapper(configuration =>
                         {

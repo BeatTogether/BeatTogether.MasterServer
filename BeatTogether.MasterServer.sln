@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29926.136
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.32414.318
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BeatTogether.MasterServer", "BeatTogether.MasterServer\BeatTogether.MasterServer.csproj", "{D6AD4A9E-BC48-4D3A-A953-43C4DC57CE30}"
 EndProject
@@ -13,7 +13,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BeatTogether.MasterServer.K
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BeatTogether.MasterServer.Domain", "BeatTogether.MasterServer.Domain\BeatTogether.MasterServer.Domain.csproj", "{6BCD1B23-4EAE-478A-AFC8-53DE393E1413}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BeatTogether.MasterServer.Interface", "BeatTogether.MasterServer.Interface\BeatTogether.MasterServer.Interface.csproj", "{91037874-E18D-45EA-8429-77789D135621}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BeatTogether.MasterServer.Interface", "BeatTogether.MasterServer.Interface\BeatTogether.MasterServer.Interface.csproj", "{91037874-E18D-45EA-8429-77789D135621}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

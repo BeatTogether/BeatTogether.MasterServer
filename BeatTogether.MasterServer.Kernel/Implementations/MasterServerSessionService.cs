@@ -26,6 +26,11 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         #region Public Methods
 
+        public MasterServerSession[] GetMasterServerSessions()
+        {
+            return _sessions.Values.ToArray();
+        }
+
         public IEnumerable<MasterServerSession> GetInactiveSessions(int timeToLive) =>
             _sessions.Values.ToList()
                 .Where(session => (DateTimeOffset.UtcNow - session.LastKeepAlive).TotalSeconds > timeToLive);

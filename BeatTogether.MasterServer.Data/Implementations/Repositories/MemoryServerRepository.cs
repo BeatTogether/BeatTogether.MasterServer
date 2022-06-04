@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using BeatTogether.MasterServer.Data.Abstractions.Repositories;
@@ -11,6 +12,40 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
     {
         private static ConcurrentDictionary<string, Server> _servers = new();
         private static ConcurrentDictionary<string, Server> _serversByCode = new();
+
+        public Task<string[]> GetPublicServerSecretsList()
+        {
+            return Task.FromResult(_servers.Keys.ToArray());
+        }
+        public Task<Server[]> GetPublicServerList()
+        {
+            return Task.FromResult(_servers.Values.ToArray());
+        }
+
+        public Task<string[]> GetServerSecretsList()
+        {
+            List<string> secrets = new();
+            foreach (var server in _servers.Values)
+            {
+                if (server.IsPublic)
+                    secrets.Add(server.Secret);
+            }
+            return Task.FromResult(secrets.ToArray());
+        }
+
+        public Task<Server[]> GetServerList()
+        {
+            return Task.FromResult((_servers.Values.Where(value => value.IsPublic)).ToArray());
+        }
+
+        public Task<int> GetPublicServerCount()
+        {
+            return Task.FromResult((_servers.Values.Where(value => value.IsPublic)).Count());
+        }
+        public Task<int> GetServerCount()
+        {
+            return Task.FromResult(_servers.Count());
+        }
 
         public Task<Server> GetServer(string secret)
         {
@@ -59,7 +94,7 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
                 if (server.CurrentPlayerCount <= 1)
                     break;
             }
-            if (server.CurrentPlayerCount >= Server.MaximumPlayerCount)
+            if (server.CurrentPlayerCount >= server.GameplayServerConfiguration.MaxPlayerCount)
                 return Task.FromResult<Server>(null);
             return Task.FromResult(server);
         }
