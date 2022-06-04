@@ -38,7 +38,7 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
 
         public Task<string[]> GetServerSecretsList()
         {
-            return Task.FromResult(new string[0]); //TODO ICBA to code this one, i could but only if its actually needed
+            return Task.FromResult(new string[0]); 
         }
         public Task<Server[]> GetServerList()
         {

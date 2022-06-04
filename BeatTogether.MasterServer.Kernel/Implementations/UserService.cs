@@ -221,7 +221,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                         Host = new Player
                         {
                             UserId = "ziuMSceapEuNN7wRGQXrZg",
-                            UserName = "QuickplayInstance: " + code//Server's name
+                            UserName = "QuickplayInstance: " + ((Domain.Enums.BeatmapDifficultyMask)request.BeatmapLevelSelectionMask.BeatmapDifficultyMask).ToString()//Server's name
                         },
                         RemoteEndPoint = remoteEndPoint,
                         Secret = serverSecret,
