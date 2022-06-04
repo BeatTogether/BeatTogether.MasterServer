@@ -140,8 +140,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 {
                     Host = new Player
                     {
-                        UserId = session.UserId,
-                        UserName = session.UserName
+                        UserId = "ziuMSceapEuNN7wRGQXrZg", //server id is the host, server id is alwase the host
+                        UserName = session.UserName + "'s server"
                     },
                     RemoteEndPoint = remoteEndPoint,
                     Secret = request.Secret,
@@ -195,7 +195,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     var createMatchmakingServerResponse = await _matchmakingService.CreateMatchmakingServer(
                         new CreateMatchmakingServerRequest(
                             serverSecret,
-                            "ziuMSceapEuNN7wRGQXrZg",
+                            "ziuMSceapEuNN7wRGQXrZg", //manager id is the servers id
                             _mapper.Map<DedicatedServer.Interface.Models.GameplayServerConfiguration>(request.GameplayServerConfiguration)
                         )
                     );
@@ -221,7 +221,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                         Host = new Player
                         {
                             UserId = "ziuMSceapEuNN7wRGQXrZg",
-                            UserName = "QuickplayInstance:" + code//Server's name
+                            UserName = "QuickplayInstance: " + code//Server's name
                         },
                         RemoteEndPoint = remoteEndPoint,
                         Secret = serverSecret,
@@ -258,8 +258,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             _logger.Information($"session.ClientPublicKey='{BitConverter.ToString(session.ClientPublicKey)}'");
             return new ConnectToServerResponse
             {
-                UserId = server.Host.UserId,
-                UserName = server.Host.UserName,
+                UserId = "ziuMSceapEuNN7wRGQXrZg",
+                UserName = server.Host.UserName,//string.empty, //TODO these values could be preventing the player from joining the server
                 Secret = server.Secret,
                 BeatmapLevelSelectionMask = new BeatmapLevelSelectionMask
                 {
