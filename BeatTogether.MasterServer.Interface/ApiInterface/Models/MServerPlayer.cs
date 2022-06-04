@@ -1,4 +1,5 @@
-﻿using BeatTogether.MasterServer.Messaging.Enums;
+﻿
+using BeatTogether.MasterServer.Interface.ApiInterface.Enums;
 
 namespace BeatTogether.MasterServer.Interface.ApiInterface.Models
 {

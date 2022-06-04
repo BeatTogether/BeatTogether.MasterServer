@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Autobus;
 using BeatTogether.DedicatedServer.Interface;
 using BeatTogether.DedicatedServer.Interface.Requests;
-using BeatTogether.DedicatedServer.Interface.Responses;
 using BeatTogether.MasterServer.Data.Abstractions.Repositories;
 using BeatTogether.MasterServer.Kernel.Abstractions.Providers;
 using BeatTogether.MasterServer.Interface.ApiInterface;
@@ -222,7 +221,7 @@ namespace BeatTogether.MasterServer.Kernal
             MServerPlayer[] players = new MServerPlayer[sessions.Length];
             for (int i = 0; i < players.Length; i++)
             {
-                players[i] = new MServerPlayer(sessions[i].Platform, sessions[i].UserId, sessions[i].UserName, sessions[i].Secret);
+                players[i] = new MServerPlayer((Platform)sessions[i].Platform, sessions[i].UserId, sessions[i].UserName, sessions[i].Secret);
             }
             return Task.FromResult(new PlayersFromMasterServerResponse(players));
         }
