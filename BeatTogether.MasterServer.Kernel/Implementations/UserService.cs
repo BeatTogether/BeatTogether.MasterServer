@@ -7,8 +7,10 @@ using Autobus;
 using AutoMapper;
 using BeatTogether.DedicatedServer.Interface;
 using BeatTogether.DedicatedServer.Interface.Requests;
+using BeatTogether.DedicatedServer.Interface.Responses;
 using BeatTogether.MasterServer.Data.Abstractions.Repositories;
 using BeatTogether.MasterServer.Domain.Models;
+using BeatTogether.MasterServer.Interface.ApiInterface;
 using BeatTogether.MasterServer.Interface.Events;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions.Providers;
@@ -32,6 +34,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         private readonly IServerCodeProvider _serverCodeProvider;
         private readonly ISecretProvider _secretProvider;
         private readonly ILogger _logger;
+        private readonly IApiInterface _apiInterface;
 
         public UserService(
             IAutobus autobus,
@@ -41,7 +44,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             IServerRepository serverRepository,
             IMasterServerSessionService sessionService,
             IServerCodeProvider serverCodeProvider,
-            ISecretProvider secretProvider)
+            ISecretProvider secretProvider,
+            IApiInterface apiInterface)
         {
             _autobus = autobus;
             _mapper = mapper;
@@ -52,6 +56,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             _serverCodeProvider = serverCodeProvider;
             _secretProvider = secretProvider;
             _logger = Log.ForContext<UserService>();
+            _apiInterface = apiInterface;
         }
 
         public Task<AuthenticateUserResponse> Authenticate(MasterServerSession session, AuthenticateUserRequest request)
@@ -93,169 +98,54 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             });
         }
 
-        public async Task<ConnectToServerResponse> ConnectToMatchmakingServer(MasterServerSession session, ConnectToMatchmakingServerRequest request)
+
+        private async Task<Server> GetServerToConnectTo(ConnectToMatchmakingServerRequest request, bool IsQuickplay)
         {
-            _logger.Verbose(
-                $"Handling {nameof(ConnectToMatchmakingServerRequest)} " +
-                $"(UserId='{request.UserId}', " +
-                $"UserName='{request.UserName}', " +
-                $"Random='{BitConverter.ToString(request.Random)}', " +
-                $"PublicKey='{BitConverter.ToString(request.PublicKey)}', " +
-                $"BeatmapDifficultyMask={request.BeatmapLevelSelectionMask.BeatmapDifficultyMask}, " +
-                $"GameplayModifiersMask={request.BeatmapLevelSelectionMask.GameplayModifiersMask}, " +
-                $"Secret='{request.Secret}', " +
-                $"Code='{request.Code}')."
-            );
-
-            Server server;
-            if (!string.IsNullOrEmpty(request.Code))
+            if (IsQuickplay)
             {
-                server = await _serverRepository.GetServerByCode(request.Code);
-                if (server is null)
-                    return new ConnectToServerResponse
-                    {
-                        Result = ConnectToServerResult.InvalidCode
-                    };
+                Server server = await _serverRepository.GetServerByCode(request.Code);
+                if(server == null)
+                    server = await _serverRepository.GetServer(request.Secret);
+                return server;
             }
-            else if (!string.IsNullOrEmpty(request.Secret))
-            {
-                // Create a new matchmaking server
+            return  await _serverRepository.GetAvailablePublicServer(
+                (Domain.Enums.InvitePolicy)request.GameplayServerConfiguration.InvitePolicy,
+                (Domain.Enums.GameplayServerMode)request.GameplayServerConfiguration.GameplayServerMode,
+                (Domain.Enums.SongSelectionMode)request.GameplayServerConfiguration.SongSelectionMode,
+                (Domain.Enums.GameplayServerControlSettings)request.GameplayServerConfiguration.GameplayServerControlSettings,
+                (Domain.Enums.BeatmapDifficultyMask)request.BeatmapLevelSelectionMask.BeatmapDifficultyMask,
+                (Domain.Enums.GameplayModifiersMask)request.BeatmapLevelSelectionMask.GameplayModifiersMask,
+                request.BeatmapLevelSelectionMask.SongPackMask.Top,
+                request.BeatmapLevelSelectionMask.SongPackMask.Bottom);
+        }
 
-                // Creates a new dedicated instance
-                var createMatchmakingServerResponse = await _matchmakingService.CreateMatchmakingServer(
-                    new CreateMatchmakingServerRequest(
-                        request.Secret,
-                        session.GameId,
-                        _mapper.Map<DedicatedServer.Interface.Models.GameplayServerConfiguration>(request.GameplayServerConfiguration)
-                    )
-                );
-                if (!createMatchmakingServerResponse.Success)
-                    return new ConnectToServerResponse
-                    {
-                        Result = ConnectToServerResult.NoAvailableDedicatedServers
-                    };
-                //Adds the server to the master server repository
-                var remoteEndPoint = IPEndPoint.Parse(createMatchmakingServerResponse.RemoteEndPoint);
-                server = new Server
-                {
-                    Host = new Player
-                    {
-                        UserId = "ziuMSceapEuNN7wRGQXrZg", //server id is the host, server id is alwase the host
-                        UserName = session.UserName + "'s server"
-                    },
-                    RemoteEndPoint = remoteEndPoint,
-                    Secret = request.Secret,
-                    Code = _serverCodeProvider.Generate(),
-                    IsPublic = false,
-                    DiscoveryPolicy = (Domain.Enums.DiscoveryPolicy)request.GameplayServerConfiguration.DiscoveryPolicy,
-                    InvitePolicy = (Domain.Enums.InvitePolicy)request.GameplayServerConfiguration.InvitePolicy,
-                    BeatmapDifficultyMask = (Domain.Enums.BeatmapDifficultyMask)request.BeatmapLevelSelectionMask.BeatmapDifficultyMask,
-                    GameplayModifiersMask = (Domain.Enums.GameplayModifiersMask)request.BeatmapLevelSelectionMask.GameplayModifiersMask,
-                    GameplayServerConfiguration = new Domain.Models.GameplayServerConfiguration
-                    (
-                        request.GameplayServerConfiguration.MaxPlayerCount,
-                        (Domain.Enums.DiscoveryPolicy)request.GameplayServerConfiguration.DiscoveryPolicy,
-                        (Domain.Enums.InvitePolicy)request.GameplayServerConfiguration.InvitePolicy,
-                        (Domain.Enums.GameplayServerMode)request.GameplayServerConfiguration.GameplayServerMode,
-                        (Domain.Enums.SongSelectionMode)request.GameplayServerConfiguration.SongSelectionMode,
-                        (Domain.Enums.GameplayServerControlSettings)request.GameplayServerConfiguration.GameplayServerControlSettings
-                    ),
-                    SongPackBloomFilterTop = request.BeatmapLevelSelectionMask.SongPackMask.Top,
-                    SongPackBloomFilterBottom = request.BeatmapLevelSelectionMask.SongPackMask.Bottom,
-                    CurrentPlayerCount = 1,
-                    Random = createMatchmakingServerResponse.Random,
-                    PublicKey = createMatchmakingServerResponse.PublicKey
-                };
-                if (!await _serverRepository.AddServer(server))
-                    return new ConnectToServerResponse
-                    {
-                        Result = ConnectToServerResult.InvalidSecret
-                    };
-            }
-            else
-            {
-                //Joins quickplay
+        private async Task<bool> DoesServerExist(Server server)
+        {
+            DoesServerExistResponse response = await _matchmakingService.DoesServerExist(new DoesServerExistRequest(server.Secret));
+            return response.Success;
+        }
 
-                //Finds a quickplay server, null if none found
-                server = await _serverRepository.GetAvailablePublicServer(
-                    (Domain.Enums.InvitePolicy)request.GameplayServerConfiguration.InvitePolicy,
-                    (Domain.Enums.GameplayServerMode)request.GameplayServerConfiguration.GameplayServerMode,
-                    (Domain.Enums.SongSelectionMode)request.GameplayServerConfiguration.SongSelectionMode,
-                    (Domain.Enums.GameplayServerControlSettings)request.GameplayServerConfiguration.GameplayServerControlSettings,
-                    (Domain.Enums.BeatmapDifficultyMask)request.BeatmapLevelSelectionMask.BeatmapDifficultyMask,
-                    (Domain.Enums.GameplayModifiersMask)request.BeatmapLevelSelectionMask.GameplayModifiersMask,
-                    request.BeatmapLevelSelectionMask.SongPackMask.Top,
-                    request.BeatmapLevelSelectionMask.SongPackMask.Bottom
-                );
-                if (server is null)
-                {
-                    //Creates a quickplay server
-                    var serverSecret = _secretProvider.GetSecret();
-
-                    var createMatchmakingServerResponse = await _matchmakingService.CreateMatchmakingServer(
-                        new CreateMatchmakingServerRequest(
-                            serverSecret,
-                            "ziuMSceapEuNN7wRGQXrZg", //manager id is the servers id
-                            _mapper.Map<DedicatedServer.Interface.Models.GameplayServerConfiguration>(request.GameplayServerConfiguration)
-                        )
-                    );
-                    if (!createMatchmakingServerResponse.Success)
-                        return new ConnectToServerResponse
-                        {
-                            Result = ConnectToServerResult.NoAvailableDedicatedServers
-                        };
-                    var remoteEndPoint = IPEndPoint.Parse(createMatchmakingServerResponse.RemoteEndPoint);
-                    var serverConfiguration = new Domain.Models.GameplayServerConfiguration
-                    (
-                        request.GameplayServerConfiguration.MaxPlayerCount,
-                        Domain.Enums.DiscoveryPolicy.Public,
-                        (Domain.Enums.InvitePolicy)request.GameplayServerConfiguration.InvitePolicy,
-                        (Domain.Enums.GameplayServerMode)request.GameplayServerConfiguration.GameplayServerMode,
-                        (Domain.Enums.SongSelectionMode)request.GameplayServerConfiguration.SongSelectionMode,
-                        (Domain.Enums.GameplayServerControlSettings)request.GameplayServerConfiguration.GameplayServerControlSettings
-                    );
-                    string code = _serverCodeProvider.Generate();
-                    server = new Server
-                    {
-                        
-                        Host = new Player
-                        {
-                            UserId = "ziuMSceapEuNN7wRGQXrZg",
-                            UserName = "QuickplayInstance: " + ((Domain.Enums.BeatmapDifficultyMask)request.BeatmapLevelSelectionMask.BeatmapDifficultyMask).ToString()//Server's name
-                        },
-                        RemoteEndPoint = remoteEndPoint,
-                        Secret = serverSecret,
-                        Code = code,
-                        IsPublic = true,
-                        DiscoveryPolicy = serverConfiguration.DiscoveryPolicy,
-                        InvitePolicy = serverConfiguration.InvitePolicy,
-                        BeatmapDifficultyMask = (Domain.Enums.BeatmapDifficultyMask)request.BeatmapLevelSelectionMask.BeatmapDifficultyMask,
-                        GameplayModifiersMask = (Domain.Enums.GameplayModifiersMask)request.BeatmapLevelSelectionMask.GameplayModifiersMask,
-                        GameplayServerConfiguration = serverConfiguration,
-                        SongPackBloomFilterTop = request.BeatmapLevelSelectionMask.SongPackMask.Top,
-                        SongPackBloomFilterBottom = request.BeatmapLevelSelectionMask.SongPackMask.Bottom,
-                        CurrentPlayerCount = 1,
-                        Random = createMatchmakingServerResponse.Random,
-                        PublicKey = createMatchmakingServerResponse.PublicKey
-                    };
-                    if (!await _serverRepository.AddServer(server))
-                        return new ConnectToServerResponse
-                        {
-                            Result = ConnectToServerResult.InvalidSecret
-                        };
-                }
-            }
+        private async Task<ConnectToServerResponse> ConnectPlayer(MasterServerSession session, Server server, byte[] Random, byte[] PublicKey)
+        {
+            await _serverRepository.IncrementCurrentPlayerCount(server.Secret);
 
             _autobus.Publish(new PlayerConnectedToMatchmakingServerEvent(
                 session.EndPoint.ToString(), session.UserId, session.UserName,
-                request.Random, request.PublicKey
+                Random, PublicKey
             ));
             await Task.Delay(EncryptionAddDelay);
             _logger.Information("Connected to matchmaking server!");
-            _logger.Information($"Random='{BitConverter.ToString(request.Random)}'");
-            _logger.Information($"PublicKey='{BitConverter.ToString(request.PublicKey)}'");
+            _logger.Information($"Random='{BitConverter.ToString(Random)}'");
+            _logger.Information($"PublicKey='{BitConverter.ToString(PublicKey)}'");
             _logger.Information($"session.ClientRandom='{BitConverter.ToString(session.ClientRandom)}'");
             _logger.Information($"session.ClientPublicKey='{BitConverter.ToString(session.ClientPublicKey)}'");
+            server = await _serverRepository.GetServer(server.Secret);
+            if (server.CurrentPlayerCount > server.GameplayServerConfiguration.MaxPlayerCount)
+                return new ConnectToServerResponse()
+                {
+                    Result = ConnectToServerResult.ServerAtCapacity
+                };
+
             return new ConnectToServerResponse
             {
                 UserId = "ziuMSceapEuNN7wRGQXrZg",
@@ -288,6 +178,122 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 },
                 ManagerId = server.Host.UserId
             };
+        }
+
+        public Server CreateServer(ConnectToMatchmakingServerRequest request ,string ManagerName,string secret, IPEndPoint DediEndpoint, bool IsQuickplay, byte[] random, byte[] publicKey)
+        {
+            string ServerName = ManagerName + "'s server";
+            if (IsQuickplay)
+                ServerName = "BeatTogether Quickplay: " + ((Domain.Enums.BeatmapDifficultyMask)request.BeatmapLevelSelectionMask.BeatmapDifficultyMask).ToString();
+            return new Server
+            {
+                Host = new Player
+                {
+                    UserId = "ziuMSceapEuNN7wRGQXrZg", //server id is the host, server id is alwase the host
+                    UserName = ServerName
+                },
+                RemoteEndPoint = DediEndpoint,
+                Secret = secret,
+                Code = _serverCodeProvider.Generate(),
+                IsPublic = IsQuickplay,
+                DiscoveryPolicy = (Domain.Enums.DiscoveryPolicy)request.GameplayServerConfiguration.DiscoveryPolicy,
+                InvitePolicy = (Domain.Enums.InvitePolicy)request.GameplayServerConfiguration.InvitePolicy,
+                BeatmapDifficultyMask = (Domain.Enums.BeatmapDifficultyMask)request.BeatmapLevelSelectionMask.BeatmapDifficultyMask,
+                GameplayModifiersMask = (Domain.Enums.GameplayModifiersMask)request.BeatmapLevelSelectionMask.GameplayModifiersMask,
+                GameplayServerConfiguration = new Domain.Models.GameplayServerConfiguration
+                    (
+                        request.GameplayServerConfiguration.MaxPlayerCount,
+                        (Domain.Enums.DiscoveryPolicy)request.GameplayServerConfiguration.DiscoveryPolicy,
+                        (Domain.Enums.InvitePolicy)request.GameplayServerConfiguration.InvitePolicy,
+                        (Domain.Enums.GameplayServerMode)request.GameplayServerConfiguration.GameplayServerMode,
+                        (Domain.Enums.SongSelectionMode)request.GameplayServerConfiguration.SongSelectionMode,
+                        (Domain.Enums.GameplayServerControlSettings)request.GameplayServerConfiguration.GameplayServerControlSettings
+                    ),
+                SongPackBloomFilterTop = request.BeatmapLevelSelectionMask.SongPackMask.Top,
+                SongPackBloomFilterBottom = request.BeatmapLevelSelectionMask.SongPackMask.Bottom,
+                CurrentPlayerCount = 0,
+                Random = random,
+                PublicKey = publicKey
+            };
+ 
+        }
+
+        public async Task<ConnectToServerResponse> ConnectToMatchmakingServer(MasterServerSession session, ConnectToMatchmakingServerRequest request)
+        {
+            _logger.Verbose(
+                $"Handling {nameof(ConnectToMatchmakingServerRequest)} " +
+                $"(UserId='{request.UserId}', " +
+                $"UserName='{request.UserName}', " +
+                $"Random='{BitConverter.ToString(request.Random)}', " +
+                $"PublicKey='{BitConverter.ToString(request.PublicKey)}', " +
+                $"BeatmapDifficultyMask={request.BeatmapLevelSelectionMask.BeatmapDifficultyMask}, " +
+                $"GameplayModifiersMask={request.BeatmapLevelSelectionMask.GameplayModifiersMask}, " +
+                $"Secret='{request.Secret}', " +
+                $"Code='{request.Code}')."
+            );
+            bool IsQuickplay = true;
+
+            if (!string.IsNullOrEmpty(request.Code) || !string.IsNullOrEmpty(request.Secret))
+            {
+                IsQuickplay = false;
+            }
+
+            Server server = await GetServerToConnectTo(request, IsQuickplay);
+            string secret = request.Secret;
+            if(server == null && !IsQuickplay)
+            {
+                if (!string.IsNullOrEmpty(request.Code))
+                    return new ConnectToServerResponse
+                    {
+                        Result = ConnectToServerResult.InvalidCode
+                    };
+                return new ConnectToServerResponse
+                {
+                    Result = ConnectToServerResult.InvalidSecret
+                };
+            }
+            if(server != null)
+            {
+                if(!await DoesServerExist(server))
+                {
+                    await _serverRepository.RemoveServer(server.Secret);
+                    server = null;
+                }
+            }
+
+            string ManagerId = "ziuMSceapEuNN7wRGQXrZg";
+            if (!IsQuickplay)
+                ManagerId = session.GameId;
+            else
+                secret = _secretProvider.GetSecret();
+
+            if(server == null)
+            {
+                var createMatchmakingServerResponse = await _matchmakingService.CreateMatchmakingServer(
+                    new CreateMatchmakingServerRequest(
+                        secret,
+                        ManagerId,
+                        _mapper.Map<DedicatedServer.Interface.Models.GameplayServerConfiguration>(request.GameplayServerConfiguration)
+                     ));
+
+                if (!createMatchmakingServerResponse.Success)
+                    return new ConnectToServerResponse
+                    {
+                        Result = ConnectToServerResult.NoAvailableDedicatedServers
+                    };
+
+                var remoteEndPoint = IPEndPoint.Parse(createMatchmakingServerResponse.RemoteEndPoint);
+
+                server = CreateServer(request, session.UserName, secret, remoteEndPoint, IsQuickplay, createMatchmakingServerResponse.Random, createMatchmakingServerResponse.PublicKey);
+
+                if (!await _serverRepository.AddServer(server))
+                    return new ConnectToServerResponse
+                    {
+                        Result = ConnectToServerResult.InvalidSecret
+                    };
+            }
+
+            return await ConnectPlayer(session, server, request.Random, request.PublicKey);
         }
 
         public Task SessionKeepalive(MasterServerSession session, SessionKeepaliveMessage message)

@@ -149,6 +149,16 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
                 database.SortedSetIncrement(RedisKeys.PublicServersByPlayerCount, secret, 1.0);
             return true;
         }
+        public async Task<bool> DecrementCurrentPlayerCount(string secret)
+        {
+            var database = _connectionMultiplexer.GetDatabase();
+            var server = await GetServer(secret);
+            if (server == null)
+                return false;
+            if (server.IsPublic)
+                database.SortedSetDecrement(RedisKeys.PublicServersByPlayerCount, secret, 1.0);
+            return true;
+        }
 
         public void UpdateCurrentPlayerCount(string secret, int currentPlayerCount)
         {

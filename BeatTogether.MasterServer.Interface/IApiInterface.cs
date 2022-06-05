@@ -19,7 +19,7 @@ namespace BeatTogether.MasterServer.Interface.ApiInterface
         Task<ServerCountResponse> GetServerCount(GetServerCountRequest request);
         Task<ServerFromCodeResponse> GetServerFromCode(GetServerFromCodeRequest request);
         Task<ServerFromSecretResponse> GetServerFromSecret(GetServerFromSecretRequest request);
-        Task<PlayersFromMasterServerResponse> GetAllPlayers(PlayersFromMasterServerRequest request); //TODO add this to the api
+        Task<PlayersFromMasterServerResponse> GetAllPlayers(PlayersFromMasterServerRequest request);
 
         public class MasterServerServiceContract : BaseServiceContract
         {

@@ -123,6 +123,14 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
             return Task.FromResult(true);
         }
 
+        public Task<bool> DecrementCurrentPlayerCount(string secret)
+        {
+            if (!_servers.TryGetValue(secret, out var server))
+                return Task.FromResult(false);
+            server.CurrentPlayerCount--;
+            return Task.FromResult(true);
+        }
+
         public void UpdateCurrentPlayerCount(string secret, int currentPlayerCount)
         {
             if (!_servers.TryGetValue(secret, out var server))
