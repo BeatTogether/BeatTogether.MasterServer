@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
 using Autobus;
+using BeatTogether.MasterServer.Data.Abstractions.Repositories;
 using BeatTogether.MasterServer.Interface.Events;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Enums;
@@ -16,12 +18,14 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
     {
         private readonly IAutobus _autobus;
         private readonly ILogger _logger = Log.ForContext<MasterServerSessionService>();
+        private readonly IServerRepository _serverRepository;
 
         private readonly ConcurrentDictionary<EndPoint, MasterServerSession> _sessions = new();
 
-        public MasterServerSessionService(IAutobus autobus)
+        public MasterServerSessionService(IAutobus autobus, IServerRepository serverRepository)
         {
             _autobus = autobus;
+            _serverRepository = serverRepository;
         }
 
         #region Public Methods
@@ -70,8 +74,29 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 );
             else
                 _logger.Information($"Closing session (EndPoint='{session.EndPoint}').");
+            _serverRepository.DecrementCurrentPlayerCount(session.Secret);
             session.State = MasterServerSessionState.None;
             return true;
+        }
+
+        public Task<bool> CloseSession(EndPoint sessionEndpoint)
+        {
+            if (!_sessions.TryRemove(sessionEndpoint, out var serverSession))
+                return Task.FromResult(false);
+
+            if (serverSession.State == MasterServerSessionState.Authenticated)
+                _logger.Information(
+                    "Closing session " +
+                    $"(EndPoint='{serverSession.EndPoint}', " +
+                    $"Platform={serverSession.Platform}, " +
+                    $"UserId='{serverSession.UserId}', " +
+                    $"UserName='{serverSession.UserName}')."
+                );
+            else
+                _logger.Information($"Closing session (EndPoint='{serverSession.EndPoint}').");
+            _serverRepository.DecrementCurrentPlayerCount(serverSession.Secret);
+            serverSession.State = MasterServerSessionState.None;
+            return Task.FromResult(true);
         }
 
         #endregion

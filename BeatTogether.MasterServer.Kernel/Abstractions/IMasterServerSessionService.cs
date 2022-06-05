@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
+using System.Threading.Tasks;
 using BeatTogether.MasterServer.Kernel.Implementations;
 
 namespace BeatTogether.MasterServer.Kernel.Abstractions
@@ -13,5 +14,6 @@ namespace BeatTogether.MasterServer.Kernel.Abstractions
         MasterServerSession GetSession(EndPoint endPoint);
         bool TryGetSession(EndPoint endPoint, [MaybeNullWhen(false)] out MasterServerSession session);
         bool CloseSession(MasterServerSession session);
+        Task<bool> CloseSession(EndPoint sessionEndPoint);
     }
 }
