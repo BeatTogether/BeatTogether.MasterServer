@@ -67,12 +67,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         {
             if (!_sessions.TryRemove(session.EndPoint, out var ServerSession))
                 return false;
-
-            if (ServerSession.Secret != "" && ServerSession.Secret != null)
-            {
-                _autobus.Publish(new DisconnectPlayerFromMatchmakingServerEvent(ServerSession.Secret, ServerSession.UserId));
-            }
-
             if (session.State == MasterServerSessionState.Authenticated)
                 _logger.Information(
                     "Closing session " +
@@ -83,7 +77,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 );
             else
                 _logger.Information($"Closing session (EndPoint='{session.EndPoint}').");
-            _serverRepository.DecrementCurrentPlayerCount(ServerSession.Secret);
             session.State = MasterServerSessionState.None;
             return true;
         }
@@ -92,11 +85,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         {
             if (!_sessions.TryRemove(sessionEndpoint, out var ServerSession))
                 return false;
-
-            if (ServerSession.Secret != "" && ServerSession.Secret != null)
-            {
-                _autobus.Publish(new DisconnectPlayerFromMatchmakingServerEvent(ServerSession.Secret, ServerSession.UserId));
-            }
             if (ServerSession.State == MasterServerSessionState.Authenticated)
                 _logger.Information(
                     "Closing session " +
@@ -107,7 +95,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 );
             else
                 _logger.Information($"Closing session (EndPoint='{ServerSession.EndPoint}').");
-            _serverRepository.DecrementCurrentPlayerCount(ServerSession.Secret);
             ServerSession.State = MasterServerSessionState.None;
             return true;
         }
@@ -116,11 +103,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         {
             if (_sessions.ContainsKey(sessionEndpoint))
                 _sessions[sessionEndpoint].Secret = "";
-        }
-        public void SetSessionJoining(EndPoint sessionEndpoint, bool InQue)
-        {
-            if(_sessions.ContainsKey(sessionEndpoint))
-                _sessions[sessionEndpoint].InQue = InQue;
         }
 
         #endregion

@@ -12,7 +12,6 @@ namespace BeatTogether.MasterServer.Kernel.Abstractions
         MasterServerSession[] GetMasterServerSessions();
         MasterServerSession GetOrAddSession(EndPoint endPoint);
         void AddSession(EndPoint endPoint, string Secret);
-        void SetSessionJoining(EndPoint sessionEndpoint, bool InQue);
         MasterServerSession GetSession(EndPoint endPoint);
         bool TryGetSession(EndPoint endPoint, [MaybeNullWhen(false)] out MasterServerSession session);
         bool CloseSession(MasterServerSession session);

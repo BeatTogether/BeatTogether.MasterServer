@@ -137,12 +137,6 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
                 return;
             server.CurrentPlayerCount = currentPlayerCount;
         }
-        public void SetLastPlayerTime(string Secret)
-        {
-            if (!_servers.TryGetValue(Secret, out var server))
-                return;
-            server.LastPlayerJoinTime = System.DateTime.Now;
-        }
 
     }
 }
