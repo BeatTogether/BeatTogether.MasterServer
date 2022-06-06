@@ -63,10 +63,9 @@ namespace BeatTogether.MasterServer.Data.Abstractions.Repositories
             _nodes[endPoint].Online = true;
         }
         public void SetNodeOffline(IPAddress endPoint)
-        {
+        { 
             if (!_nodes.ContainsKey(endPoint))
-                _nodes.TryAdd(endPoint, new Node(endPoint));
-            _nodes[endPoint].Online = false;
+                _nodes[endPoint].Online = false;
         }
 
         public void ReceivedOK(IPAddress endPoint)
@@ -83,7 +82,7 @@ namespace BeatTogether.MasterServer.Data.Abstractions.Repositories
             bool found = false;
             foreach(var node in GetNodes())
             {
-                if(endPoint.Address == node.Key && node.Value.Online)
+                if(endPoint.Address.ToString() == node.Key.ToString() && node.Value.Online)
                 {
                     found = true; break;
                 }

@@ -129,27 +129,13 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         private async Task<ConnectToServerResponse> ConnectPlayer(MasterServerSession session, Server server, byte[] Random, byte[] PublicKey)
         {
-            if (_sessionService.TryGetSession(session.EndPoint, out var QueSession))
+            Server serverFromRepo = await _serverRepository.GetServer(server.Secret);
+            if (serverFromRepo.CurrentPlayerCount + 1 > serverFromRepo.GameplayServerConfiguration.MaxPlayerCount)
             {
-                if(QueSession.InQue)
-                    return new ConnectToServerResponse()
-                    {
-                        Result = ConnectToServerResult.UnknownError
-                    };
-            }
-            _sessionService.SetSessionJoining(session.EndPoint, true);
-            server = await _serverRepository.GetServer(server.Secret);
-            if (server.CurrentPlayerCount+1 > server.GameplayServerConfiguration.MaxPlayerCount)
                 return new ConnectToServerResponse()
                 {
                     Result = ConnectToServerResult.ServerAtCapacity
                 };
-            if(_sessionService.TryGetSession(session.EndPoint, out var ExistingSession))
-            {
-                if (ExistingSession.Secret != "" && ExistingSession.Secret != null)
-                {
-                    _autobus.Publish(new DisconnectPlayerFromMatchmakingServerEvent(ExistingSession.Secret, ExistingSession.UserId));
-                }
             }
             await _serverRepository.IncrementCurrentPlayerCount(server.Secret);
             _sessionService.AddSession(session.EndPoint, server.Secret);
@@ -157,33 +143,11 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 session.EndPoint.ToString(), session.UserId, session.UserName,
                 Random, PublicKey
             ));
-            //TODO temp queing systemm replace with checking all clients at some point 
-            DateTime initial = DateTime.Now;
-            bool connect = false;
-            while (DateTime.Now.Subtract(server.LastPlayerJoinTime).Milliseconds < 8000 && DateTime.Now.Subtract(server.LastPlayerJoinTime).Milliseconds > 0 && DateTime.Now.Subtract(initial).Seconds > 0 && DateTime.Now.Subtract(initial).Seconds < 16)
-            {
-                await Task.Delay(DateTime.Now.Subtract(server.LastPlayerJoinTime).Milliseconds);
-                connect = true;
-            }
-            if (DateTime.Now.Subtract(server.LastPlayerJoinTime).Seconds > 8)
-            {
-                connect = true;
-            }
-            if (!connect)
-            {
-                return new ConnectToServerResponse
-                {
-                    Result = ConnectToServerResult.UnknownError
-                };
-            }
-            _serverRepository.SetLastPlayerTime(server.Secret);
-
             _logger.Information("Connected to matchmaking server!");
             _logger.Information($"Random='{BitConverter.ToString(Random)}'");
             _logger.Information($"PublicKey='{BitConverter.ToString(PublicKey)}'");
             _logger.Information($"session.ClientRandom='{BitConverter.ToString(session.ClientRandom)}'");
             _logger.Information($"session.ClientPublicKey='{BitConverter.ToString(session.ClientPublicKey)}'");
-            _sessionService.SetSessionJoining(session.EndPoint, false);
             return new ConnectToServerResponse
             {
                 UserId = "ziuMSceapEuNN7wRGQXrZg",
@@ -252,7 +216,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 CurrentPlayerCount = 0,
                 Random = random,
                 PublicKey = publicKey,
-                LastPlayerJoinTime = DateTime.Now.AddSeconds(-10)
             };
  
         }
@@ -280,23 +243,32 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             Server server = await GetServerToConnectTo(request, IsQuickplay);
             if (server == null && !IsQuickplay)
             {
-                if (!string.IsNullOrEmpty(request.Code)) //if code was incorrect
+                if (!string.IsNullOrEmpty(request.Code)) //if code was incorrect{
+                {
                     return new ConnectToServerResponse
                     {
                         Result = ConnectToServerResult.InvalidCode
                     };
-                if (string.IsNullOrEmpty(request.Secret)) //If secret is empty(cannot make server then)
+                }
+                if (string.IsNullOrEmpty(request.Secret))//If secret is empty(cannot make server then)
+                {
                     return new ConnectToServerResponse
                     {
                         Result = ConnectToServerResult.InvalidSecret
                     };
+                } 
+
             }
             if(server != null)
             {
-                if(!DoesServerExist(server))
+                if (!DoesServerExist(server))
                 {
+                    _logger.Information("NODE OFFLINE removing server");
                     await _serverRepository.RemoveServer(server.Secret);
-                    server = null;
+                    return new ConnectToServerResponse
+                    {
+                        Result = ConnectToServerResult.UnknownError
+                    };
                 }
             }
             string secret = request.Secret;
@@ -322,9 +294,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     };
 
                 var remoteEndPoint = IPEndPoint.Parse(createMatchmakingServerResponse.RemoteEndPoint);
-
                 server = CreateServer(request, session.UserName, secret, remoteEndPoint, IsQuickplay, createMatchmakingServerResponse.Random, createMatchmakingServerResponse.PublicKey);
-
                 if (!await _serverRepository.AddServer(server))
                     return new ConnectToServerResponse
                     {

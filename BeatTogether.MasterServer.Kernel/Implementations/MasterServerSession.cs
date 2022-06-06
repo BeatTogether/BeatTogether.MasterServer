@@ -24,7 +24,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         public ECPrivateKeyParameters ServerPrivateKeyParameters { get; set; }
         public byte[] PreMasterSecret { get; set; }
         public DateTimeOffset LastKeepAlive { get; set; }
-        public bool InQue { get; set; }
 
         public MasterServerSession(EndPoint endPoint)
             : base(endPoint)
