@@ -129,6 +129,15 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         private async Task<ConnectToServerResponse> ConnectPlayer(MasterServerSession session, Server server, byte[] Random, byte[] PublicKey)
         {
+            if (_sessionService.TryGetSession(session.EndPoint, out var QueSession))
+            {
+                if(QueSession.InQue)
+                    return new ConnectToServerResponse()
+                    {
+                        Result = ConnectToServerResult.UnknownError
+                    };
+            }
+            _sessionService.SetSessionJoining(session.EndPoint, true);
             server = await _serverRepository.GetServer(server.Secret);
             if (server.CurrentPlayerCount+1 > server.GameplayServerConfiguration.MaxPlayerCount)
                 return new ConnectToServerResponse()
@@ -148,7 +157,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 session.EndPoint.ToString(), session.UserId, session.UserName,
                 Random, PublicKey
             ));
-            //TODO temp queing systemm replace with checking all clients at some point
+            //TODO temp queing systemm replace with checking all clients at some point 
             DateTime initial = DateTime.Now;
             bool connect = false;
             while (DateTime.Now.Subtract(server.LastPlayerJoinTime).Milliseconds < 8000 && DateTime.Now.Subtract(server.LastPlayerJoinTime).Milliseconds > 0 && DateTime.Now.Subtract(initial).Seconds > 0 && DateTime.Now.Subtract(initial).Seconds < 16)
@@ -174,7 +183,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             _logger.Information($"PublicKey='{BitConverter.ToString(PublicKey)}'");
             _logger.Information($"session.ClientRandom='{BitConverter.ToString(session.ClientRandom)}'");
             _logger.Information($"session.ClientPublicKey='{BitConverter.ToString(session.ClientPublicKey)}'");
-
+            _sessionService.SetSessionJoining(session.EndPoint, false);
             return new ConnectToServerResponse
             {
                 UserId = "ziuMSceapEuNN7wRGQXrZg",
