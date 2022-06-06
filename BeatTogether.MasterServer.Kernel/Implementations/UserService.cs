@@ -104,16 +104,13 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         private async Task<Server> GetServerToConnectTo(ConnectToMatchmakingServerRequest request, bool IsQuickplay)
         {
-            Console.WriteLine("Getting server to connect to");
             if (!IsQuickplay)
             {
-                Console.WriteLine("finding code/secret server");
                 Server server = await _serverRepository.GetServerByCode(request.Code);
                 if(server == null)
                     server = await _serverRepository.GetServer(request.Secret);
                 return server;
             }
-            Console.WriteLine("finding quickplay server");
             return  await _serverRepository.GetAvailablePublicServer(
                 (Domain.Enums.InvitePolicy)request.GameplayServerConfiguration.InvitePolicy,
                 (Domain.Enums.GameplayServerMode)request.GameplayServerConfiguration.GameplayServerMode,
@@ -138,6 +135,13 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 {
                     Result = ConnectToServerResult.ServerAtCapacity
                 };
+            if(_sessionService.TryGetSession(session.EndPoint, out var ExistingSession))
+            {
+                if (ExistingSession.Secret != "" && ExistingSession.Secret != null)
+                {
+                    _autobus.Publish(new DisconnectPlayerFromMatchmakingServerEvent(ExistingSession.Secret, ExistingSession.UserId));
+                }
+            }
             await _serverRepository.IncrementCurrentPlayerCount(server.Secret);
             _sessionService.AddSession(session.EndPoint, server.Secret);
             _autobus.Publish(new PlayerConnectedToMatchmakingServerEvent(
@@ -147,9 +151,13 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             //TODO temp queing systemm replace with checking all clients at some point
             DateTime initial = DateTime.Now;
             bool connect = false;
-            while (DateTime.Now.Subtract(server.LastPlayerJoinTime).Milliseconds < 8000 && DateTime.Now.Subtract(initial).Seconds < 25)
+            while (DateTime.Now.Subtract(server.LastPlayerJoinTime).Milliseconds < 8000 && DateTime.Now.Subtract(server.LastPlayerJoinTime).Milliseconds > 0 && DateTime.Now.Subtract(initial).Seconds > 0 && DateTime.Now.Subtract(initial).Seconds < 16)
             {
                 await Task.Delay(DateTime.Now.Subtract(server.LastPlayerJoinTime).Milliseconds);
+                connect = true;
+            }
+            if (DateTime.Now.Subtract(server.LastPlayerJoinTime).Seconds > 8)
+            {
                 connect = true;
             }
             if (!connect)
@@ -234,7 +242,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 SongPackBloomFilterBottom = request.BeatmapLevelSelectionMask.SongPackMask.Bottom,
                 CurrentPlayerCount = 0,
                 Random = random,
-                PublicKey = publicKey
+                PublicKey = publicKey,
+                LastPlayerJoinTime = DateTime.Now.AddSeconds(-10)
             };
  
         }

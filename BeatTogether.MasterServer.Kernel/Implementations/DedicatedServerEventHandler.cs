@@ -73,6 +73,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             MasterServerSession session = _masterServerSessionService.GetSession((EndPoint)IPEndPoint.Parse(integrationEvent.endPoint));
             _serverRepository.DecrementCurrentPlayerCount(session.Secret);
             _serverRepository.SetLastPlayerTime(session.Secret);
+            _masterServerSessionService.RemoveSecretFromSession(session.EndPoint);
             return Task.CompletedTask;
         }
 

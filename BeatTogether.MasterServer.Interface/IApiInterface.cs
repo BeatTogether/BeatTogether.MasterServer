@@ -30,6 +30,7 @@ namespace BeatTogether.MasterServer.Interface.ApiInterface
                     .UseName("MasterServer")
                     .AddInterface<IApiInterface>()
                     .AddEvent<CheckNodesEvent>()
+                    .AddEvent<DisconnectPlayerFromMatchmakingServerEvent>()
                     .AddEvent<PlayerConnectedToMatchmakingServerEvent>();
         }
     }

@@ -68,6 +68,11 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             if (!_sessions.TryRemove(session.EndPoint, out var ServerSession))
                 return false;
 
+            if (ServerSession.Secret != "" && ServerSession.Secret != null)
+            {
+                _autobus.Publish(new DisconnectPlayerFromMatchmakingServerEvent(ServerSession.Secret, ServerSession.UserId));
+            }
+
             if (session.State == MasterServerSessionState.Authenticated)
                 _logger.Information(
                     "Closing session " +
@@ -85,22 +90,32 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         public bool CloseSession(EndPoint sessionEndpoint)
         {
-            if (!_sessions.TryRemove(sessionEndpoint, out var serverSession))
+            if (!_sessions.TryRemove(sessionEndpoint, out var ServerSession))
                 return false;
 
-            if (serverSession.State == MasterServerSessionState.Authenticated)
+            if (ServerSession.Secret != "" && ServerSession.Secret != null)
+            {
+                _autobus.Publish(new DisconnectPlayerFromMatchmakingServerEvent(ServerSession.Secret, ServerSession.UserId));
+            }
+            if (ServerSession.State == MasterServerSessionState.Authenticated)
                 _logger.Information(
                     "Closing session " +
-                    $"(EndPoint='{serverSession.EndPoint}', " +
-                    $"Platform={serverSession.Platform}, " +
-                    $"UserId='{serverSession.UserId}', " +
-                    $"UserName='{serverSession.UserName}')."
+                    $"(EndPoint='{ServerSession.EndPoint}', " +
+                    $"Platform={ServerSession.Platform}, " +
+                    $"UserId='{ServerSession.UserId}', " +
+                    $"UserName='{ServerSession.UserName}')."
                 );
             else
-                _logger.Information($"Closing session (EndPoint='{serverSession.EndPoint}').");
-            _serverRepository.DecrementCurrentPlayerCount(serverSession.Secret);
-            serverSession.State = MasterServerSessionState.None;
+                _logger.Information($"Closing session (EndPoint='{ServerSession.EndPoint}').");
+            _serverRepository.DecrementCurrentPlayerCount(ServerSession.Secret);
+            ServerSession.State = MasterServerSessionState.None;
             return true;
+        }
+
+        public void RemoveSecretFromSession(EndPoint sessionEndpoint)
+        {
+            if (_sessions.ContainsKey(sessionEndpoint))
+                _sessions[sessionEndpoint].Secret = "";
         }
 
         #endregion

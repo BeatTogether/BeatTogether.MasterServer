@@ -16,5 +16,6 @@ namespace BeatTogether.MasterServer.Kernel.Abstractions
         bool TryGetSession(EndPoint endPoint, [MaybeNullWhen(false)] out MasterServerSession session);
         bool CloseSession(MasterServerSession session);
         bool CloseSession(EndPoint sessionEndPoint);
+        void RemoveSecretFromSession(EndPoint sessionEndpoint);
     }
 }
