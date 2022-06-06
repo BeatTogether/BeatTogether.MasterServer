@@ -31,5 +31,6 @@ namespace BeatTogether.MasterServer.Data.Abstractions.Repositories
         Task<bool> IncrementCurrentPlayerCount(string secret);
         Task<bool> DecrementCurrentPlayerCount(string secret);
         void UpdateCurrentPlayerCount(string secret, int currentPlayerCount);
+        void SetLastPlayerTime(string Secret);
     }
 }

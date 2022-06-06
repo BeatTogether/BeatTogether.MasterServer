@@ -53,6 +53,10 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
         {
             return Task.FromResult(0);
         }
+        public void SetLastPlayerTime(string Secret)
+        {
+            return;
+        }
 
         public async Task<Server> GetServer(string secret)
         {
