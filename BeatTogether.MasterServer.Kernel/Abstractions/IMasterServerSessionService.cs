@@ -11,9 +11,10 @@ namespace BeatTogether.MasterServer.Kernel.Abstractions
         IEnumerable<MasterServerSession> GetInactiveSessions(int timeToLive);
         MasterServerSession[] GetMasterServerSessions();
         MasterServerSession GetOrAddSession(EndPoint endPoint);
+        void AddSession(EndPoint endPoint, string Secret);
         MasterServerSession GetSession(EndPoint endPoint);
         bool TryGetSession(EndPoint endPoint, [MaybeNullWhen(false)] out MasterServerSession session);
         bool CloseSession(MasterServerSession session);
-        Task<bool> CloseSession(EndPoint sessionEndPoint);
+        bool CloseSession(EndPoint sessionEndPoint);
     }
 }

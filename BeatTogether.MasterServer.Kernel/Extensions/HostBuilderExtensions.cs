@@ -14,6 +14,7 @@ using Org.BouncyCastle.Security;
 using System.Security.Cryptography;
 using BeatTogether.MasterServer.Kernal;
 using BeatTogether.MasterServer.Interface.ApiInterface;
+using BeatTogether.MasterServer.Data.Abstractions.Repositories;
 
 namespace BeatTogether.Extensions
 {
@@ -47,6 +48,7 @@ namespace BeatTogether.Extensions
                         .AddScoped<IHandshakeService, HandshakeService>()
                         .AddScoped<IUserService, UserService>()
                         .AddSingleton<IMasterServerSessionService, MasterServerSessionService>()
+                        .AddSingleton<INodeRepository, NodeRepository>()
                         .AddSingleton<MasterServerMessageSource>()
                         .AddSingleton<MasterServerMessageDispatcher>()
                         .AddServiceClient<IMatchmakingService>()

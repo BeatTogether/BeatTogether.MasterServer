@@ -36,6 +36,10 @@ namespace BeatTogether.MasterServer.Kernal
             _serverCodeProvider = serverCodeProvider;
             _masterServerSessionService = masterServerSessionService;
         }
+        //TODO swap everything over to broadcasts
+        //TODO send a broadcast when the master starts so the dedicateds can say if they are started, incase master is started after dedicateds
+
+
 
         public async Task<CreatedServerResponse> CreateServer(CreateServerRequest request)
         {
@@ -116,8 +120,10 @@ namespace BeatTogether.MasterServer.Kernal
             return new CreatedServerResponse(true, server.Secret, server.Code);
         }
 
+        /*
         public async Task<RemoveSecretServerResponse> RemoveServer(RemoveSecretServerRequest request)
         {
+            //TODO change to a broadcast event
             var response = await _matchmakingService.StopMatchmakingServer(new StopMatchmakingServerRequest(request.Secret));
             return new RemoveSecretServerResponse(response.Success);
         }
@@ -125,10 +131,11 @@ namespace BeatTogether.MasterServer.Kernal
         public async Task<RemoveCodeServerResponse> RemoveServer(RemoveCodeServerCodeRequest request)
         {
             Server server = await _serverRepository.GetServerByCode(request.Secret);
+            //TODO change to a broadcast event
             var response = await _matchmakingService.StopMatchmakingServer(new StopMatchmakingServerRequest(server.Secret));
             return new RemoveCodeServerResponse(response.Success);
         }
-
+        */
         public async Task<PublicServerSecretListResponse> GetPublicServerSecrets(GetPublicServerSecretsListRequest request)
         {
             return new PublicServerSecretListResponse(await _serverRepository.GetPublicServerSecretsList());
@@ -152,7 +159,6 @@ namespace BeatTogether.MasterServer.Kernal
 
         public async Task<ServerListResponse> GetServers(GetSimpleServersRequest request)
         {
-            Console.WriteLine("Getting stuff");
             Server[] servers = await _serverRepository.GetServerList();
             SimpleServer[] simpleServers = new SimpleServer[servers.Length];
             for (int i = 0; i < servers.Length; i++)

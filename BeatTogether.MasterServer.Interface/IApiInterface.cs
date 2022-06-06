@@ -9,8 +9,10 @@ namespace BeatTogether.MasterServer.Interface.ApiInterface
     public interface IApiInterface
     {
         Task<CreatedServerResponse> CreateServer(CreateServerRequest request);
+        /*
         Task<RemoveSecretServerResponse> RemoveServer(RemoveSecretServerRequest request);
         Task<RemoveCodeServerResponse> RemoveServer(RemoveCodeServerCodeRequest request);
+        */
         Task<PublicServerSecretListResponse> GetPublicServerSecrets(GetPublicServerSecretsListRequest request);
         Task<ServerSecretListResponse> GetServerSecretsList(GetServerSecretsListRequest request);
         Task<PublicServerListResponse> GetPublicServers(GetPublicSimpleServersRequest request);
@@ -27,6 +29,7 @@ namespace BeatTogether.MasterServer.Interface.ApiInterface
                 builder
                     .UseName("MasterServer")
                     .AddInterface<IApiInterface>()
+                    .AddEvent<CheckNodesEvent>()
                     .AddEvent<PlayerConnectedToMatchmakingServerEvent>();
         }
     }

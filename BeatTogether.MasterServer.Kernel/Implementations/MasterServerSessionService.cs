@@ -52,7 +52,11 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     };
                 }
             );
-
+        public void AddSession(EndPoint endPoint, string Secret)
+        {
+            _ = GetOrAddSession(endPoint);
+            _sessions[endPoint].Secret = Secret;
+        }
         public MasterServerSession GetSession(EndPoint endPoint) =>
             _sessions[endPoint];
 
@@ -61,7 +65,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         public bool CloseSession(MasterServerSession session)
         {
-            if (!_sessions.TryRemove(session.EndPoint, out _))
+            if (!_sessions.TryRemove(session.EndPoint, out var ServerSession))
                 return false;
 
             if (session.State == MasterServerSessionState.Authenticated)
@@ -74,15 +78,15 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 );
             else
                 _logger.Information($"Closing session (EndPoint='{session.EndPoint}').");
-            _serverRepository.DecrementCurrentPlayerCount(session.Secret);
+            _serverRepository.DecrementCurrentPlayerCount(ServerSession.Secret);
             session.State = MasterServerSessionState.None;
             return true;
         }
 
-        public Task<bool> CloseSession(EndPoint sessionEndpoint)
+        public bool CloseSession(EndPoint sessionEndpoint)
         {
             if (!_sessions.TryRemove(sessionEndpoint, out var serverSession))
-                return Task.FromResult(false);
+                return false;
 
             if (serverSession.State == MasterServerSessionState.Authenticated)
                 _logger.Information(
@@ -96,7 +100,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 _logger.Information($"Closing session (EndPoint='{serverSession.EndPoint}').");
             _serverRepository.DecrementCurrentPlayerCount(serverSession.Secret);
             serverSession.State = MasterServerSessionState.None;
-            return Task.FromResult(true);
+            return true;
         }
 
         #endregion

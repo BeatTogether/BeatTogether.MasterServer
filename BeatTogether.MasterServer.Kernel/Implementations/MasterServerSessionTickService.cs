@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Autobus;
+using BeatTogether.MasterServer.Data.Abstractions.Repositories;
+using BeatTogether.MasterServer.Interface.Events;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -14,17 +17,23 @@ namespace BeatTogether.MasterServer.Kernel.Implementations.Sessions
         private readonly MasterServerConfiguration _configuration;
         private readonly IMasterServerSessionService _sessionService;
         private readonly ILogger _logger;
+        private readonly IAutobus _autobus;
+        private readonly INodeRepository _nodeRepository;
 
         private Task _task;
         private CancellationTokenSource _cancellationTokenSource;
 
         public MasterServerSessionTickService(
             MasterServerConfiguration configuration,
-            IMasterServerSessionService sessionService)
+            IMasterServerSessionService sessionService,
+            IAutobus autobus,
+            INodeRepository nodeRepository)
         {
             _configuration = configuration;
             _sessionService = sessionService;
             _logger = Log.ForContext<MasterServerSessionTickService>();
+            _autobus = autobus;
+            _nodeRepository = nodeRepository;
         }
 
         #region Public Methods
@@ -62,7 +71,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations.Sessions
         #endregion
 
         #region Private Methods
-
         private async Task Tick(CancellationToken cancellationToken)
         {
             while (!cancellationToken.IsCancellationRequested)
@@ -71,7 +79,13 @@ namespace BeatTogether.MasterServer.Kernel.Implementations.Sessions
 
                 try
                 {
-                    // Prune inactive sessions
+                    if(!_nodeRepository.WaitingForResponses)
+                    {
+                        _nodeRepository.StartWaitForAllNodesTask();
+                        _nodeRepository.WaitingForResponses = true;
+                        _autobus.Publish(new CheckNodesEvent());
+                    }
+                    // Prune inactive sessions every 10 seconds, a session must be over 4 min old to be removed
                     var inactiveSessions = _sessionService
                         .GetInactiveSessions(_configuration.SessionTimeToLive);
                     foreach (var session in inactiveSessions)
@@ -83,7 +97,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations.Sessions
                 }
                 finally
                 {
-                    await Task.Delay(1000, cancellationToken);
+                    await Task.Delay(10000, cancellationToken);
                 }
             }
         }

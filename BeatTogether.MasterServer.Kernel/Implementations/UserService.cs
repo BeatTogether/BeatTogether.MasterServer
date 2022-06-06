@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
@@ -7,7 +8,6 @@ using Autobus;
 using AutoMapper;
 using BeatTogether.DedicatedServer.Interface;
 using BeatTogether.DedicatedServer.Interface.Requests;
-using BeatTogether.DedicatedServer.Interface.Responses;
 using BeatTogether.MasterServer.Data.Abstractions.Repositories;
 using BeatTogether.MasterServer.Domain.Models;
 using BeatTogether.MasterServer.Interface.ApiInterface;
@@ -35,6 +35,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         private readonly ISecretProvider _secretProvider;
         private readonly ILogger _logger;
         private readonly IApiInterface _apiInterface;
+        private readonly INodeRepository _nodeRepository;
 
         public UserService(
             IAutobus autobus,
@@ -45,7 +46,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             IMasterServerSessionService sessionService,
             IServerCodeProvider serverCodeProvider,
             ISecretProvider secretProvider,
-            IApiInterface apiInterface)
+            IApiInterface apiInterface,
+            INodeRepository nodeRepository)
         {
             _autobus = autobus;
             _mapper = mapper;
@@ -57,6 +59,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             _secretProvider = secretProvider;
             _logger = Log.ForContext<UserService>();
             _apiInterface = apiInterface;
+            _nodeRepository = nodeRepository;
         }
 
         public Task<AuthenticateUserResponse> Authenticate(MasterServerSession session, AuthenticateUserRequest request)
@@ -101,13 +104,16 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         private async Task<Server> GetServerToConnectTo(ConnectToMatchmakingServerRequest request, bool IsQuickplay)
         {
-            if (IsQuickplay)
+            Console.WriteLine("Getting server to connect to");
+            if (!IsQuickplay)
             {
+                Console.WriteLine("finding code/secret server");
                 Server server = await _serverRepository.GetServerByCode(request.Code);
                 if(server == null)
                     server = await _serverRepository.GetServer(request.Secret);
                 return server;
             }
+            Console.WriteLine("finding quickplay server");
             return  await _serverRepository.GetAvailablePublicServer(
                 (Domain.Enums.InvitePolicy)request.GameplayServerConfiguration.InvitePolicy,
                 (Domain.Enums.GameplayServerMode)request.GameplayServerConfiguration.GameplayServerMode,
@@ -119,32 +125,47 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 request.BeatmapLevelSelectionMask.SongPackMask.Bottom);
         }
 
-        private async Task<bool> DoesServerExist(Server server)
+        private bool DoesServerExist(Server server)
         {
-            DoesServerExistResponse response = await _matchmakingService.DoesServerExist(new DoesServerExistRequest(server.Secret));
-            return response.Success;
+            return _nodeRepository.EndpointExists(server.RemoteEndPoint);
         }
 
         private async Task<ConnectToServerResponse> ConnectPlayer(MasterServerSession session, Server server, byte[] Random, byte[] PublicKey)
         {
+            server = await _serverRepository.GetServer(server.Secret);
+            if (server.CurrentPlayerCount+1 > server.GameplayServerConfiguration.MaxPlayerCount)
+                return new ConnectToServerResponse()
+                {
+                    Result = ConnectToServerResult.ServerAtCapacity
+                };
             await _serverRepository.IncrementCurrentPlayerCount(server.Secret);
-
+            _sessionService.AddSession(session.EndPoint, server.Secret);
             _autobus.Publish(new PlayerConnectedToMatchmakingServerEvent(
                 session.EndPoint.ToString(), session.UserId, session.UserName,
                 Random, PublicKey
             ));
-            await Task.Delay(EncryptionAddDelay);
+            //TODO temp queing systemm replace with checking all clients at some point
+            DateTime initial = DateTime.Now;
+            bool connect = false;
+            while (DateTime.Now.Subtract(server.LastPlayerJoinTime).Milliseconds < 8000 && DateTime.Now.Subtract(initial).Seconds < 25)
+            {
+                await Task.Delay(DateTime.Now.Subtract(server.LastPlayerJoinTime).Milliseconds);
+                connect = true;
+            }
+            if (!connect)
+            {
+                return new ConnectToServerResponse
+                {
+                    Result = ConnectToServerResult.UnknownError
+                };
+            }
+            _serverRepository.SetLastPlayerTime(server.Secret);
+
             _logger.Information("Connected to matchmaking server!");
             _logger.Information($"Random='{BitConverter.ToString(Random)}'");
             _logger.Information($"PublicKey='{BitConverter.ToString(PublicKey)}'");
             _logger.Information($"session.ClientRandom='{BitConverter.ToString(session.ClientRandom)}'");
             _logger.Information($"session.ClientPublicKey='{BitConverter.ToString(session.ClientPublicKey)}'");
-            server = await _serverRepository.GetServer(server.Secret);
-            if (server.CurrentPlayerCount > server.GameplayServerConfiguration.MaxPlayerCount)
-                return new ConnectToServerResponse()
-                {
-                    Result = ConnectToServerResult.ServerAtCapacity
-                };
 
             return new ConnectToServerResponse
             {
@@ -239,35 +260,35 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             }
 
             Server server = await GetServerToConnectTo(request, IsQuickplay);
-            string secret = request.Secret;
-            if(server == null && !IsQuickplay)
+            if (server == null && !IsQuickplay)
             {
-                if (!string.IsNullOrEmpty(request.Code))
+                if (!string.IsNullOrEmpty(request.Code)) //if code was incorrect
                     return new ConnectToServerResponse
                     {
                         Result = ConnectToServerResult.InvalidCode
                     };
-                return new ConnectToServerResponse
-                {
-                    Result = ConnectToServerResult.InvalidSecret
-                };
+                if (string.IsNullOrEmpty(request.Secret)) //If secret is empty(cannot make server then)
+                    return new ConnectToServerResponse
+                    {
+                        Result = ConnectToServerResult.InvalidSecret
+                    };
             }
             if(server != null)
             {
-                if(!await DoesServerExist(server))
+                if(!DoesServerExist(server))
                 {
                     await _serverRepository.RemoveServer(server.Secret);
                     server = null;
                 }
             }
-
+            string secret = request.Secret;
             string ManagerId = "ziuMSceapEuNN7wRGQXrZg";
             if (!IsQuickplay)
                 ManagerId = session.GameId;
             else
                 secret = _secretProvider.GetSecret();
 
-            if(server == null)
+            if(server == null) //Creates the server, then the player can join
             {
                 var createMatchmakingServerResponse = await _matchmakingService.CreateMatchmakingServer(
                     new CreateMatchmakingServerRequest(

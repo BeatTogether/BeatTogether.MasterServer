@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System;
+using System.Net;
 using BeatTogether.MasterServer.Domain.Enums;
 
 namespace BeatTogether.MasterServer.Domain.Models
@@ -10,6 +11,7 @@ namespace BeatTogether.MasterServer.Domain.Models
         public string Secret { get; set; }
         public string Code { get; set; }
         public bool IsPublic { get; set; }
+        public DateTime LastPlayerJoinTime { get; set; }
         public DiscoveryPolicy DiscoveryPolicy { get; set; }
         public InvitePolicy InvitePolicy { get; set; }
         public BeatmapDifficultyMask BeatmapDifficultyMask { get; set; }
