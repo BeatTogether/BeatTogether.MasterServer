@@ -117,6 +117,11 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             if (_sessions.ContainsKey(sessionEndpoint))
                 _sessions[sessionEndpoint].Secret = "";
         }
+        public void SetSessionJoining(EndPoint sessionEndpoint, bool InQue)
+        {
+            if(_sessions.ContainsKey(sessionEndpoint))
+                _sessions[sessionEndpoint].InQue = InQue;
+        }
 
         #endregion
     }
