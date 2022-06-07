@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Net;
+using System.Threading.Tasks;
 using BeatTogether.MasterServer.Domain.Enums;
 using BeatTogether.MasterServer.Domain.Models;
 
@@ -27,10 +28,10 @@ namespace BeatTogether.MasterServer.Data.Abstractions.Repositories
 
         Task<bool> AddServer(Server server);
         Task<bool> RemoveServer(string secret);
+        Task<bool> RemoveServersWithEndpoint(IPAddress EndPoint);
 
         Task<bool> IncrementCurrentPlayerCount(string secret);
         Task<bool> DecrementCurrentPlayerCount(string secret);
         void UpdateCurrentPlayerCount(string secret, int currentPlayerCount);
-        void SetLastPlayerTime(string Secret);
     }
 }

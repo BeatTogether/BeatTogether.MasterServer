@@ -53,10 +53,6 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
         {
             return Task.FromResult(0);
         }
-        public void SetLastPlayerTime(string Secret)
-        {
-            return;
-        }
 
         public async Task<Server> GetServer(string secret)
         {
@@ -141,6 +137,11 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
                 flags: CommandFlags.DemandMaster
             );
             return (bool)redisResult;
+        }
+
+        public Task<bool> RemoveServersWithEndpoint(IPAddress EndPoint)
+        {
+            return Task.FromResult(false);
         }
 
         public async Task<bool> IncrementCurrentPlayerCount(string secret)

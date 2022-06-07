@@ -4,7 +4,6 @@ using BeatTogether.MasterServer.Data.Abstractions.Repositories;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using Microsoft.Extensions.Hosting;
 using Serilog;
-using System;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -72,7 +71,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         {
             MasterServerSession session = _masterServerSessionService.GetSession((EndPoint)IPEndPoint.Parse(integrationEvent.endPoint));
             _serverRepository.DecrementCurrentPlayerCount(session.Secret);
-            _serverRepository.SetLastPlayerTime(session.Secret);
             _masterServerSessionService.RemoveSecretFromSession(session.EndPoint);
             return Task.CompletedTask;
         }
@@ -80,7 +78,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         private Task NodeStartedHandler(NodeStartedEvent startedEvent)
         {
             _logger.Information(
-                $"Handling {nameof(NodeStartedEvent)} " +
                 $"Node is online: " + startedEvent.endPoint);
             _nodeRepository.SetNodeOnline(IPAddress.Parse(startedEvent.endPoint));
             return Task.CompletedTask;

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using BeatTogether.MasterServer.Data.Abstractions.Repositories;
 using BeatTogether.MasterServer.Domain.Enums;
@@ -114,12 +115,29 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
             _serversByCode.TryRemove(server.Code, out _);
             return Task.FromResult(true);
         }
+        public Task<bool> RemoveServersWithEndpoint(IPAddress EndPoint)
+        {
+            List<string> secrets = new();
+            foreach (var server in _servers)
+            {
+                if(server.Value.RemoteEndPoint.Address.ToString() == EndPoint.ToString())
+                {
+                    secrets.Add(server.Key);
+                }
+            }
+            foreach (string secret in secrets)
+            {
+                RemoveServer(secret);
+            }
+            return Task.FromResult(true);
+        }
 
         public Task<bool> IncrementCurrentPlayerCount(string secret)
         {
             if (!_servers.TryGetValue(secret, out var server))
                 return Task.FromResult(false);
             server.CurrentPlayerCount++;
+            _serversByCode[server.Code].CurrentPlayerCount++;
             return Task.FromResult(true);
         }
 
@@ -128,6 +146,7 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
             if (!_servers.TryGetValue(secret, out var server))
                 return Task.FromResult(false);
             server.CurrentPlayerCount--;
+            _serversByCode[server.Code].CurrentPlayerCount--;
             return Task.FromResult(true);
         }
 
@@ -136,12 +155,7 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
             if (!_servers.TryGetValue(secret, out var server))
                 return;
             server.CurrentPlayerCount = currentPlayerCount;
-        }
-        public void SetLastPlayerTime(string Secret)
-        {
-            if (!_servers.TryGetValue(Secret, out var server))
-                return;
-            server.LastPlayerJoinTime = System.DateTime.Now;
+            _serversByCode[server.Code].CurrentPlayerCount = currentPlayerCount;
         }
 
     }

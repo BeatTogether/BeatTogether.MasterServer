@@ -79,7 +79,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations.Sessions
 
                 try
                 {
-                    if(!_nodeRepository.WaitingForResponses)
+                    // Remove servers that are hosted on a node if that node is not responsive every 10 seconds
+                    if (!_nodeRepository.WaitingForResponses)
                     {
                         _nodeRepository.StartWaitForAllNodesTask();
                         _nodeRepository.WaitingForResponses = true;

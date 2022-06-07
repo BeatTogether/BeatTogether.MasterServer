@@ -1,5 +1,4 @@
 ﻿using BeatTogether.MasterServer.Domain.Models;
-using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,6 +18,13 @@ namespace BeatTogether.MasterServer.Data.Abstractions.Repositories
         private readonly ConcurrentDictionary<IPAddress, TaskCompletionSource> _EndpointsReceived = new();
 
         private readonly int EndpointRecieveTimeout = 4000;
+
+        private readonly IServerRepository _serverRepository;
+
+        public NodeRepository(IServerRepository serverRepository)
+        {
+            _serverRepository = serverRepository;
+        }
 
         public void StartWaitForAllNodesTask()
         {
@@ -44,7 +50,14 @@ namespace BeatTogether.MasterServer.Data.Abstractions.Repositories
             foreach (var node in ReceivedOk)
             {
                 if (!node.Value)
+                {
                     SetNodeOffline(node.Key);
+                    if (!_nodes[node.Key].RemovedServerInstances)
+                    {
+                        await _serverRepository.RemoveServersWithEndpoint(node.Key);
+                        _nodes[node.Key].RemovedServerInstances = true;
+                    }
+                }
             }
             WaitingForResponses = false;
             _EndpointsReceived.Clear();
@@ -58,15 +71,17 @@ namespace BeatTogether.MasterServer.Data.Abstractions.Repositories
 
         public void SetNodeOnline(IPAddress endPoint)
         {
-            if (!_nodes.ContainsKey(endPoint))
+            if (_nodes.ContainsKey(endPoint))
+                _serverRepository.RemoveServersWithEndpoint(endPoint);
+            else
                 _nodes.TryAdd(endPoint, new Node(endPoint));
             _nodes[endPoint].Online = true;
+            _nodes[endPoint].RemovedServerInstances = false;
         }
         public void SetNodeOffline(IPAddress endPoint)
-        {
+        { 
             if (!_nodes.ContainsKey(endPoint))
-                _nodes.TryAdd(endPoint, new Node(endPoint));
-            _nodes[endPoint].Online = false;
+                _nodes[endPoint].Online = false;
         }
 
         public void ReceivedOK(IPAddress endPoint)
@@ -83,7 +98,7 @@ namespace BeatTogether.MasterServer.Data.Abstractions.Repositories
             bool found = false;
             foreach(var node in GetNodes())
             {
-                if(endPoint.Address == node.Key && node.Value.Online)
+                if(endPoint.Address.ToString() == node.Key.ToString() && node.Value.Online)
                 {
                     found = true; break;
                 }
