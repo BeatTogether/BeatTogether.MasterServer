@@ -139,6 +139,11 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
             return (bool)redisResult;
         }
 
+        public Task<bool> RemoveServersWithEndpoint(IPAddress EndPoint)
+        {
+            return Task.FromResult(false);
+        }
+
         public async Task<bool> IncrementCurrentPlayerCount(string secret)
         {
             var database = _connectionMultiplexer.GetDatabase();
