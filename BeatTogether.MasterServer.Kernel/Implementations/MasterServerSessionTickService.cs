@@ -86,7 +86,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations.Sessions
                         _nodeRepository.WaitingForResponses = true;
                         _autobus.Publish(new CheckNodesEvent());
                     }
-                    // Prune inactive sessions every 10 seconds, a session must be over 4 min old to be removed
+                    // Prune inactive sessions every 10 seconds, a session must be over 3 min old to be removed
                     var inactiveSessions = _sessionService
                         .GetInactiveSessions(_configuration.SessionTimeToLive);
                     foreach (var session in inactiveSessions)
