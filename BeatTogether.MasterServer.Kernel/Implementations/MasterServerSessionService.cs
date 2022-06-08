@@ -65,7 +65,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         public bool CloseSession(MasterServerSession session)
         {
-            if (!_sessions.TryRemove(session.EndPoint, out var ServerSession))
+            if (!_sessions.TryRemove(session.EndPoint, out var _))
                 return false;
             if (session.State == MasterServerSessionState.Authenticated)
                 _logger.Information(
@@ -78,24 +78,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             else
                 _logger.Information($"Closing session (EndPoint='{session.EndPoint}').");
             session.State = MasterServerSessionState.None;
-            return true;
-        }
-
-        public bool CloseSession(EndPoint sessionEndpoint)
-        {
-            if (!_sessions.TryRemove(sessionEndpoint, out var ServerSession))
-                return false;
-            if (ServerSession.State == MasterServerSessionState.Authenticated)
-                _logger.Information(
-                    "Closing session " +
-                    $"(EndPoint='{ServerSession.EndPoint}', " +
-                    $"Platform={ServerSession.Platform}, " +
-                    $"UserId='{ServerSession.UserId}', " +
-                    $"UserName='{ServerSession.UserName}')."
-                );
-            else
-                _logger.Information($"Closing session (EndPoint='{ServerSession.EndPoint}').");
-            ServerSession.State = MasterServerSessionState.None;
             return true;
         }
 

@@ -23,7 +23,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 {
     public class UserService : IUserService
     {
-        public const int EncryptionAddDelay = 1500;
+        //public const int EncryptionAddDelay = 1500;
 
         private readonly IAutobus _autobus;
         private readonly IMapper _mapper;
@@ -34,7 +34,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         private readonly IServerCodeProvider _serverCodeProvider;
         private readonly ISecretProvider _secretProvider;
         private readonly ILogger _logger;
-        private readonly IApiInterface _apiInterface;
         private readonly INodeRepository _nodeRepository;
 
         public UserService(
@@ -46,7 +45,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             IMasterServerSessionService sessionService,
             IServerCodeProvider serverCodeProvider,
             ISecretProvider secretProvider,
-            IApiInterface apiInterface,
             INodeRepository nodeRepository)
         {
             _autobus = autobus;
@@ -58,7 +56,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             _serverCodeProvider = serverCodeProvider;
             _secretProvider = secretProvider;
             _logger = Log.ForContext<UserService>();
-            _apiInterface = apiInterface;
             _nodeRepository = nodeRepository;
         }
 
@@ -275,7 +272,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     await _serverRepository.RemoveServer(server.Secret);
                     return new ConnectToServerResponse
                     {
-                        Result = ConnectToServerResult.UnknownError
+                        Result = ConnectToServerResult.ConfigMismatch //there is no specific error result for this so im using this one
                     };
                 }
             }
