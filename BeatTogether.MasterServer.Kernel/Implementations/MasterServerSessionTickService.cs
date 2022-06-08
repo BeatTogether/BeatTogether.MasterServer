@@ -98,7 +98,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations.Sessions
                 }
                 finally
                 {
-                    await Task.Delay(10000, cancellationToken);
+                    await Task.Delay(10000, cancellationToken);//waits 10 seconds
                 }
             }
         }

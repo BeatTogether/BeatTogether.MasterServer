@@ -12,7 +12,7 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
     public sealed class MemoryServerRepository : IServerRepository
     {
         private static ConcurrentDictionary<string, Server> _servers = new();
-        private static ConcurrentDictionary<string, Server> _serversByCode = new();
+        private static ConcurrentDictionary<string, string> _secretsByCode = new();
 
         public Task<string[]> GetPublicServerSecretsList()
         {
@@ -57,7 +57,9 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
 
         public Task<Server> GetServerByCode(string code)
         {
-            if (!_serversByCode.TryGetValue(code, out var server))
+            if (!_secretsByCode.TryGetValue(code, out var secret))
+                return Task.FromResult<Server>(null);
+            if (!_servers.TryGetValue(secret, out var server))
                 return Task.FromResult<Server>(null);
             return Task.FromResult(server);
         }
@@ -104,7 +106,7 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
         {
             if (!_servers.TryAdd(server.Secret, server))
                 return Task.FromResult(false);
-            _serversByCode[server.Code] = server;
+            _secretsByCode[server.Code] = server.Secret;
             return Task.FromResult(true);
         }
 
@@ -112,7 +114,7 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
         {
             if (!_servers.TryRemove(secret, out var server))
                 return Task.FromResult(false);
-            _serversByCode.TryRemove(server.Code, out _);
+            _secretsByCode.TryRemove(server.Code, out _);
             return Task.FromResult(true);
         }
         public Task<bool> RemoveServersWithEndpoint(IPAddress EndPoint)
@@ -137,7 +139,6 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
             if (!_servers.TryGetValue(secret, out var server))
                 return Task.FromResult(false);
             server.CurrentPlayerCount++;
-            _serversByCode[server.Code].CurrentPlayerCount++;
             return Task.FromResult(true);
         }
 
@@ -146,7 +147,6 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
             if (!_servers.TryGetValue(secret, out var server))
                 return Task.FromResult(false);
             server.CurrentPlayerCount--;
-            _serversByCode[server.Code].CurrentPlayerCount--;
             return Task.FromResult(true);
         }
 
@@ -155,7 +155,6 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
             if (!_servers.TryGetValue(secret, out var server))
                 return;
             server.CurrentPlayerCount = currentPlayerCount;
-            _serversByCode[server.Code].CurrentPlayerCount = currentPlayerCount;
         }
 
     }
