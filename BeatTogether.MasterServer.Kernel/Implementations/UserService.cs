@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
@@ -10,8 +9,7 @@ using BeatTogether.DedicatedServer.Interface;
 using BeatTogether.DedicatedServer.Interface.Requests;
 using BeatTogether.MasterServer.Data.Abstractions.Repositories;
 using BeatTogether.MasterServer.Domain.Models;
-using BeatTogether.MasterServer.Interface.ApiInterface;
-using BeatTogether.MasterServer.Interface.Events;
+using BeatTogether.MasterServer.Kernal.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions.Providers;
 using BeatTogether.MasterServer.Messaging.Enums;
@@ -23,7 +21,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 {
     public class UserService : IUserService
     {
-        public const int EncryptionAddDelay = 1500;
+        public const int EncryptionRecieveTimeout = 2000;
 
         private readonly IAutobus _autobus;
         private readonly IMapper _mapper;
@@ -34,7 +32,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         private readonly IServerCodeProvider _serverCodeProvider;
         private readonly ISecretProvider _secretProvider;
         private readonly ILogger _logger;
-        private readonly IApiInterface _apiInterface;
         private readonly INodeRepository _nodeRepository;
 
         public UserService(
@@ -46,7 +43,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             IMasterServerSessionService sessionService,
             IServerCodeProvider serverCodeProvider,
             ISecretProvider secretProvider,
-            IApiInterface apiInterface,
             INodeRepository nodeRepository)
         {
             _autobus = autobus;
@@ -58,7 +54,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             _serverCodeProvider = serverCodeProvider;
             _secretProvider = secretProvider;
             _logger = Log.ForContext<UserService>();
-            _apiInterface = apiInterface;
             _nodeRepository = nodeRepository;
         }
 
@@ -130,6 +125,10 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         private async Task<ConnectToServerResponse> ConnectPlayer(MasterServerSession session, Server server, byte[] Random, byte[] PublicKey)
         {
             Server serverFromRepo = await _serverRepository.GetServer(server.Secret);
+            if(serverFromRepo.CurrentPlayerCount < 0 || serverFromRepo.CurrentPlayerCount > serverFromRepo.GameplayServerConfiguration.MaxPlayerCount)
+            {
+                _logger.Error("WARNING CURRENT PLAYER COUNT IS IMPOSSIBLE, WARNING 1, YELL AT CUBIC, count is: " + serverFromRepo.CurrentPlayerCount);
+            }
             if (serverFromRepo.CurrentPlayerCount + 1 > serverFromRepo.GameplayServerConfiguration.MaxPlayerCount)
             {
                 return new ConnectToServerResponse()
@@ -139,10 +138,18 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             }
             await _serverRepository.IncrementCurrentPlayerCount(server.Secret);
             _sessionService.AddSession(session.EndPoint, server.Secret);
-            _autobus.Publish(new PlayerConnectedToMatchmakingServerEvent(
-                session.EndPoint.ToString(), session.UserId, session.UserName,
-                Random, PublicKey
-            ));
+
+            if (!await _nodeRepository.SendAndAwaitPlayerEncryptionRecievedFromNode(server.RemoteEndPoint, session.EndPoint, session.UserId, session.UserName, Random, PublicKey, EncryptionRecieveTimeout))
+                return new ConnectToServerResponse()
+                {
+                    Result = ConnectToServerResult.NoAvailableDedicatedServers
+                };
+            
+
+            if (serverFromRepo.CurrentPlayerCount < 0 || serverFromRepo.CurrentPlayerCount > serverFromRepo.GameplayServerConfiguration.MaxPlayerCount)
+            {
+                _logger.Error("WARNING CURRENT PLAYER COUNT IS IMPOSSIBLE, WARNING 2, YELL AT CUBIC, count is: " + serverFromRepo.CurrentPlayerCount);
+            }
             _logger.Information("Connected to matchmaking server!");
             _logger.Information($"Random='{BitConverter.ToString(Random)}'");
             _logger.Information($"PublicKey='{BitConverter.ToString(PublicKey)}'");
@@ -267,7 +274,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     await _serverRepository.RemoveServer(server.Secret);
                     return new ConnectToServerResponse
                     {
-                        Result = ConnectToServerResult.UnknownError
+                        Result = ConnectToServerResult.ConfigMismatch //there is no specific error result for this so im using this one
                     };
                 }
             }
