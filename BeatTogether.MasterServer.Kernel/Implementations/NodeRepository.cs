@@ -3,6 +3,7 @@ using BeatTogether.MasterServer.Data.Abstractions.Repositories;
 using BeatTogether.MasterServer.Domain.Models;
 using BeatTogether.MasterServer.Interface.Events;
 using BeatTogether.MasterServer.Kernal.Abstractions;
+using Serilog;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,6 +26,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         private readonly IServerRepository _serverRepository;
         private readonly IAutobus _autobus;
+        private readonly ILogger _logger = Log.ForContext<NodeRepository>();
 
         public NodeRepository(IServerRepository serverRepository, IAutobus autobus)
         {
@@ -57,11 +59,14 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             {
                 if (!node.Value)
                 {
+                    _logger.Error("SERVER NODE IS OFFLINE or has not responded in 5 seconds: " + node.Key);
+
                     SetNodeOffline(node.Key);
                     if (!_nodes[node.Key].RemovedServerInstances)
                     {
                         await _serverRepository.RemoveServersWithEndpoint(node.Key);
                         _nodes[node.Key].RemovedServerInstances = true;
+                        _logger.Error("Removed servers that are on node from master repository");
                     }
                 }
             }
