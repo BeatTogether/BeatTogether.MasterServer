@@ -23,7 +23,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 {
     public class UserService : IUserService
     {
-        //public const int EncryptionAddDelay = 1500;
+        public const int EncryptionAddDelay = 1500;
 
         private readonly IAutobus _autobus;
         private readonly IMapper _mapper;
@@ -144,6 +144,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 session.EndPoint.ToString(), session.UserId, session.UserName,
                 Random, PublicKey
             ));
+            await Task.Delay(EncryptionAddDelay);//TODO use this untill i finish my direct server messaging libary
             if (serverFromRepo.CurrentPlayerCount < 0 || serverFromRepo.CurrentPlayerCount > serverFromRepo.GameplayServerConfiguration.MaxPlayerCount)
             {
                 _logger.Error("WARNING CURRENT PLAYER COUNT IS IMPOSSIBLE, WARNING 2, YELL AT CUBIC, count is: " + serverFromRepo.CurrentPlayerCount);
