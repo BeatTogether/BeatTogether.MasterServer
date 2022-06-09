@@ -83,7 +83,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         public void RemoveSecretFromSession(EndPoint sessionEndpoint)
         {
-            if (_sessions.ContainsKey(sessionEndpoint))
+            if (_sessions.TryGetValue(sessionEndpoint, out _))
                 _sessions[sessionEndpoint].Secret = "";
         }
 
