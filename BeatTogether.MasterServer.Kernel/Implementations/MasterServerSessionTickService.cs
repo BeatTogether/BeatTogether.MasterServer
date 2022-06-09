@@ -2,8 +2,8 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Autobus;
-using BeatTogether.MasterServer.Data.Abstractions.Repositories;
 using BeatTogether.MasterServer.Interface.Events;
+using BeatTogether.MasterServer.Kernal.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Configuration;
 using Microsoft.Extensions.Hosting;

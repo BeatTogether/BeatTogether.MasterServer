@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
@@ -10,8 +9,7 @@ using BeatTogether.DedicatedServer.Interface;
 using BeatTogether.DedicatedServer.Interface.Requests;
 using BeatTogether.MasterServer.Data.Abstractions.Repositories;
 using BeatTogether.MasterServer.Domain.Models;
-using BeatTogether.MasterServer.Interface.ApiInterface;
-using BeatTogether.MasterServer.Interface.Events;
+using BeatTogether.MasterServer.Kernal.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions.Providers;
 using BeatTogether.MasterServer.Messaging.Enums;
@@ -23,7 +21,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 {
     public class UserService : IUserService
     {
-        public const int EncryptionAddDelay = 1500;
+        public const int EncryptionRecieveTimeout = 2000;
 
         private readonly IAutobus _autobus;
         private readonly IMapper _mapper;
@@ -140,11 +138,14 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             }
             await _serverRepository.IncrementCurrentPlayerCount(server.Secret);
             _sessionService.AddSession(session.EndPoint, server.Secret);
-            _autobus.Publish(new PlayerConnectedToMatchmakingServerEvent(
-                session.EndPoint.ToString(), session.UserId, session.UserName,
-                Random, PublicKey
-            ));
-            await Task.Delay(EncryptionAddDelay);//TODO use this untill i finish my direct server messaging libary
+
+            if (!await _nodeRepository.SendAndAwaitPlayerEncryptionRecievedFromNode(server.RemoteEndPoint, session.EndPoint, session.UserId, session.UserName, Random, PublicKey, EncryptionRecieveTimeout))
+                return new ConnectToServerResponse()
+                {
+                    Result = ConnectToServerResult.NoAvailableDedicatedServers
+                };
+            
+
             if (serverFromRepo.CurrentPlayerCount < 0 || serverFromRepo.CurrentPlayerCount > serverFromRepo.GameplayServerConfiguration.MaxPlayerCount)
             {
                 _logger.Error("WARNING CURRENT PLAYER COUNT IS IMPOSSIBLE, WARNING 2, YELL AT CUBIC, count is: " + serverFromRepo.CurrentPlayerCount);

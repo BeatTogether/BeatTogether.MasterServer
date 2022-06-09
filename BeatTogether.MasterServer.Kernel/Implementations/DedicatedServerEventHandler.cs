@@ -1,6 +1,7 @@
 ﻿using Autobus;
 using BeatTogether.DedicatedServer.Interface.Events;
 using BeatTogether.MasterServer.Data.Abstractions.Repositories;
+using BeatTogether.MasterServer.Kernal.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -37,6 +38,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             _autobus.Subscribe<MatchmakingServerStoppedEvent>(HandleServerStop);
             _autobus.Subscribe<PlayerLeaveServerEvent>(HandlePlayerDisconnect);
             _autobus.Subscribe<NodeStartedEvent>(NodeStartedHandler);
+            _autobus.Subscribe<NodeReceivedPlayerEncryptionEvent>(NodeReceivedPlayerEncryptionHandler);
             _autobus.Subscribe<NodeOnlineEvent>(NodeOnlineHandler);
 
             return Task.CompletedTask;
@@ -47,6 +49,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             _autobus.Unsubscribe<MatchmakingServerStoppedEvent>(HandleServerStop);
             _autobus.Unsubscribe<PlayerLeaveServerEvent>(HandlePlayerDisconnect);
             _autobus.Unsubscribe<NodeStartedEvent>(NodeStartedHandler);
+            _autobus.Unsubscribe<NodeReceivedPlayerEncryptionEvent>(NodeReceivedPlayerEncryptionHandler);
             _autobus.Unsubscribe<NodeOnlineEvent>(NodeOnlineHandler);
 
 
@@ -90,6 +93,11 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             return Task.CompletedTask;
         }
 
+        private Task NodeReceivedPlayerEncryptionHandler(NodeReceivedPlayerEncryptionEvent RecievedEvent)
+        {
+            _nodeRepository.OnNodeRecievedEncryptionParameters(IPEndPoint.Parse(RecievedEvent.endPoint), (EndPoint)IPEndPoint.Parse(RecievedEvent.PlayerEndPoint));
+            return Task.CompletedTask;
+        }
         #endregion
     }
 }

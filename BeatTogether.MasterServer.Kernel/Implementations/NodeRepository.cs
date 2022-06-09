@@ -1,4 +1,8 @@
-﻿using BeatTogether.MasterServer.Domain.Models;
+﻿using Autobus;
+using BeatTogether.MasterServer.Data.Abstractions.Repositories;
+using BeatTogether.MasterServer.Domain.Models;
+using BeatTogether.MasterServer.Interface.Events;
+using BeatTogether.MasterServer.Kernal.Abstractions;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,7 +10,7 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace BeatTogether.MasterServer.Data.Abstractions.Repositories
+namespace BeatTogether.MasterServer.Kernel.Implementations
 {
     public class NodeRepository : INodeRepository
         //Stores the currently active nodes and whether they are online or not
@@ -20,10 +24,12 @@ namespace BeatTogether.MasterServer.Data.Abstractions.Repositories
         private readonly int EndpointRecieveTimeout = 4000;
 
         private readonly IServerRepository _serverRepository;
+        private readonly IAutobus _autobus;
 
-        public NodeRepository(IServerRepository serverRepository)
+        public NodeRepository(IServerRepository serverRepository, IAutobus autobus)
         {
             _serverRepository = serverRepository;
+            _autobus = autobus;
         }
 
         public void StartWaitForAllNodesTask()
@@ -34,18 +40,18 @@ namespace BeatTogether.MasterServer.Data.Abstractions.Repositories
             }
             var EndpointsTimeout = new CancellationTokenSource();
             var LinkedTask = CancellationTokenSource.CreateLinkedTokenSource(EndpointsTimeout.Token);
-            IEnumerable<Task> sceneReadyTasks = _nodes.Values.Select(p => {
+            IEnumerable<Task> ServerRecieveTasks = _nodes.Values.Select(p => {
                 var task = _EndpointsReceived.GetOrAdd(p.endpoint, _ => new());
                 LinkedTask.Token.Register(() => task.TrySetResult());
                 return task.Task;
             });
-            _ = Task.Run(()=> AsyncStartWaitForAllNodesTask(EndpointsTimeout, sceneReadyTasks));
+            _ = Task.Run(()=> AsyncStartWaitForAllNodesTask(EndpointsTimeout, ServerRecieveTasks));
         }
 
-        private async void AsyncStartWaitForAllNodesTask(CancellationTokenSource EndpointsTimeout, IEnumerable<Task> sceneReadyTasks)
+        private async void AsyncStartWaitForAllNodesTask(CancellationTokenSource EndpointsTimeout, IEnumerable<Task> ServerRecieveTasks)
         {
             EndpointsTimeout.CancelAfter(EndpointRecieveTimeout);
-            await Task.WhenAll(sceneReadyTasks);
+            await Task.WhenAll(ServerRecieveTasks);
 
             foreach (var node in ReceivedOk)
             {
@@ -74,7 +80,10 @@ namespace BeatTogether.MasterServer.Data.Abstractions.Repositories
             if (_nodes.ContainsKey(endPoint))
                 _serverRepository.RemoveServersWithEndpoint(endPoint);
             else
+            {
                 _nodes.TryAdd(endPoint, new Node(endPoint));
+                AwaitNodeResponses.TryAdd(endPoint, new());
+            }
             _nodes[endPoint].Online = true;
             _nodes[endPoint].RemovedServerInstances = false;
         }
@@ -105,5 +114,52 @@ namespace BeatTogether.MasterServer.Data.Abstractions.Repositories
             }
             return found;
         }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ConcurrentDictionary<IPAddress, ConcurrentDictionary<EndPoint, TaskCompletionSource<bool>>> AwaitNodeResponses = new();
+
+        public async Task<bool> SendAndAwaitPlayerEncryptionRecievedFromNode(IPEndPoint NodeEndPoint,EndPoint SessionEndPoint, string UserId, string UserName, byte[] Random, byte[] PublicKey, int TimeOut)
+        {
+            if (!EndpointExists(NodeEndPoint))
+                return false;
+            if (!AwaitNodeResponses.TryGetValue(NodeEndPoint.Address, out var NodeResponses))
+                return false;
+
+            var task = new TaskCompletionSource<bool>();
+            var EndpointsTimeout = new CancellationTokenSource();
+            var LinkedTask = CancellationTokenSource.CreateLinkedTokenSource(EndpointsTimeout.Token);
+            LinkedTask.Token.Register(() => task.TrySetResult(false));
+
+            if (!NodeResponses.TryAdd(SessionEndPoint, task))
+                return false;
+
+            _autobus.Publish(new PlayerConnectedToMatchmakingServerEvent(NodeEndPoint.Address.ToString(),
+                SessionEndPoint.ToString(), UserId, UserName,
+                Random, PublicKey
+            ));
+
+            EndpointsTimeout.CancelAfter(TimeOut);
+            bool PlayerAdded = await AwaitNodeResponses[NodeEndPoint.Address][SessionEndPoint].Task;
+            AwaitNodeResponses[NodeEndPoint.Address].TryRemove(SessionEndPoint, out _);
+            return PlayerAdded;
+        }
+
+        public void OnNodeRecievedEncryptionParameters(IPEndPoint NodeEndPoint, EndPoint PlayerEndpoint)
+        {
+            AwaitNodeResponses[NodeEndPoint.Address][PlayerEndpoint].SetResult(true);
+        }
+
     }
 }

@@ -2,8 +2,9 @@
 using BeatTogether.MasterServer.Domain.Models;
 using System.Collections.Concurrent;
 using System.Net;
+using System.Threading.Tasks;
 
-namespace BeatTogether.MasterServer.Data.Abstractions.Repositories
+namespace BeatTogether.MasterServer.Kernal.Abstractions
 {
     public interface INodeRepository
     {
@@ -16,5 +17,8 @@ namespace BeatTogether.MasterServer.Data.Abstractions.Repositories
 
         public void StartWaitForAllNodesTask();
         public bool EndpointExists(IPEndPoint endPoint);
+
+        Task<bool> SendAndAwaitPlayerEncryptionRecievedFromNode(IPEndPoint NodeEndPoint, EndPoint SessionEndPoint, string UserId, string UserName, byte[] Random, byte[] PublicKey, int TimeOut);
+        void OnNodeRecievedEncryptionParameters(IPEndPoint NodeEndPoint, EndPoint PlayerEndpoint);
     }
 }
