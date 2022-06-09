@@ -2,7 +2,7 @@
 {
     public class MasterServerConfiguration
     {
-        public string EndPoint { get; set; } = "127.0.0.1:2328";
+        public string EndPoint { get; set; } = "192.168.1.227:2328";
         public int SessionTimeToLive { get; set; } = 180;
     }
 }

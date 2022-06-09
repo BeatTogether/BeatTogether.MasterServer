@@ -14,7 +14,7 @@ using Org.BouncyCastle.Security;
 using System.Security.Cryptography;
 using BeatTogether.MasterServer.Kernal;
 using BeatTogether.MasterServer.Interface.ApiInterface;
-using BeatTogether.MasterServer.Data.Abstractions.Repositories;
+using BeatTogether.MasterServer.Kernal.Abstractions;
 
 namespace BeatTogether.Extensions
 {
