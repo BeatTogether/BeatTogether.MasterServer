@@ -16,10 +16,10 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
     public class NodeRepository : INodeRepository
         //Stores the currently active nodes and whether they are online or not
     {
-        private ConcurrentDictionary<IPAddress, Node> _nodes = new();
+        private readonly ConcurrentDictionary<IPAddress, Node> _nodes = new();
         public bool WaitingForResponses { get; set; }
 
-        private ConcurrentDictionary<IPAddress, bool> ReceivedOk = new();
+        private readonly ConcurrentDictionary<IPAddress, bool> ReceivedOk = new();
         private readonly ConcurrentDictionary<IPAddress, TaskCompletionSource> _EndpointsReceived = new();
 
         private readonly int EndpointRecieveTimeout = 4000;
@@ -122,18 +122,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-        ConcurrentDictionary<IPAddress, ConcurrentDictionary<EndPoint, TaskCompletionSource<bool>>> AwaitNodeResponses = new();
+        readonly ConcurrentDictionary<IPAddress, ConcurrentDictionary<EndPoint, TaskCompletionSource<bool>>> AwaitNodeResponses = new();
 
         public async Task<bool> SendAndAwaitPlayerEncryptionRecievedFromNode(IPEndPoint NodeEndPoint,EndPoint SessionEndPoint, string UserId, string UserName, byte[] Random, byte[] PublicKey, int TimeOut)
         {

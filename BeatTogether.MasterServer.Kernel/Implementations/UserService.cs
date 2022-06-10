@@ -88,7 +88,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 _ => ""
             };
 
-            session.GameId = Convert.ToBase64String(SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(platformStr + session.UserId))).Substring(0, 22);
+            session.GameId = Convert.ToBase64String(SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(platformStr + session.UserId)))[..22];
 
             return Task.FromResult(new AuthenticateUserResponse
             {
@@ -150,11 +150,14 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             {
                 _logger.Error("WARNING CURRENT PLAYER COUNT IS IMPOSSIBLE, WARNING 2, YELL AT CUBIC, count is: " + serverFromRepo.CurrentPlayerCount);
             }
-            _logger.Information("Connected to matchmaking server!");
+            _logger.Information("Player Connected to matchmaking server: " + session.UserId);
+            _logger.Information("Sending player to node: " + server.RemoteEndPoint);
+/*
             _logger.Information($"Random='{BitConverter.ToString(Random)}'");
             _logger.Information($"PublicKey='{BitConverter.ToString(PublicKey)}'");
             _logger.Information($"session.ClientRandom='{BitConverter.ToString(session.ClientRandom)}'");
             _logger.Information($"session.ClientPublicKey='{BitConverter.ToString(session.ClientPublicKey)}'");
+*/
             return new ConnectToServerResponse
             {
                 UserId = "ziuMSceapEuNN7wRGQXrZg",
