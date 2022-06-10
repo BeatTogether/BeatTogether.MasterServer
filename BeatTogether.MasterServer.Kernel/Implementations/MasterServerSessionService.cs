@@ -16,17 +16,19 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 {
     public class MasterServerSessionService : IMasterServerSessionService
     {
-        private readonly IAutobus _autobus;
+        //private readonly IAutobus _autobus;
         private readonly ILogger _logger = Log.ForContext<MasterServerSessionService>();
-        private readonly IServerRepository _serverRepository;
+        //private readonly IServerRepository _serverRepository;
 
         private readonly ConcurrentDictionary<EndPoint, MasterServerSession> _sessions = new();
 
+        /*
         public MasterServerSessionService(IAutobus autobus, IServerRepository serverRepository)
         {
             _autobus = autobus;
             _serverRepository = serverRepository;
         }
+        */
 
         #region Public Methods
 
