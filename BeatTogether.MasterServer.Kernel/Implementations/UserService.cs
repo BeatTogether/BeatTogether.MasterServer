@@ -150,7 +150,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             {
                 _logger.Error("WARNING CURRENT PLAYER COUNT IS IMPOSSIBLE, WARNING 2, YELL AT CUBIC, count is: " + serverFromRepo.CurrentPlayerCount);
             }
-            _logger.Information("Player Connected to matchmaking server: " + session.UserId);
+            _logger.Information("Player Connected to matchmaking server: " + session.GameId);
             _logger.Information("Sending player to node: " + server.RemoteEndPoint);
 /*
             _logger.Information($"Random='{BitConverter.ToString(Random)}'");
@@ -321,7 +321,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 $"Handling {nameof(SessionKeepalive)} " +
                 $"(EndPoint='{session.EndPoint}', " +
                 $"Platform={session.Platform}, " +
-                $"UserId='{session.UserId}', " +
+                $"UserId='{session.GameId}', " +
                 $"UserName='{session.UserName}')."
             );
             session.LastKeepAlive = DateTimeOffset.UtcNow;

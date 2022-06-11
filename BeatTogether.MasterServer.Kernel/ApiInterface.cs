@@ -227,7 +227,7 @@ namespace BeatTogether.MasterServer.Kernal
             MServerPlayer[] players = new MServerPlayer[sessions.Length];
             for (int i = 0; i < players.Length; i++)
             {
-                players[i] = new MServerPlayer((Platform)sessions[i].Platform, sessions[i].UserId, sessions[i].UserName, sessions[i].Secret);
+                players[i] = new MServerPlayer((Platform)sessions[i].Platform, sessions[i].GameId, sessions[i].UserName, sessions[i].Secret);
             }
             return Task.FromResult(new PlayersFromMasterServerResponse(players));
         }
