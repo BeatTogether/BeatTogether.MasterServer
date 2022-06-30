@@ -277,7 +277,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     await _serverRepository.RemoveServer(server.Secret);
                     return new ConnectToServerResponse
                     {
-                        Result = ConnectToServerResult.ConfigMismatch //there is no specific error result for this so im using this one
+                        Result = ConnectToServerResult.NoAvailableDedicatedServers //there is no specific error result for this so im using this one
                     };
                 }
             }
