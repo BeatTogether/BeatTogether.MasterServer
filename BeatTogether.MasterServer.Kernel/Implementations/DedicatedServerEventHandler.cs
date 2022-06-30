@@ -74,7 +74,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         {
             if (!_masterServerSessionService.TryGetSession((EndPoint)IPEndPoint.Parse(integrationEvent.endPoint), out var session))
                 return Task.CompletedTask;
-            _serverRepository.DecrementCurrentPlayerCount(session.Secret);
+            _serverRepository.UpdateCurrentPlayerCount(session.Secret, integrationEvent.NewPlayerCount);
             _masterServerSessionService.RemoveSecretFromSession(session.EndPoint);
             return Task.CompletedTask;
         }
