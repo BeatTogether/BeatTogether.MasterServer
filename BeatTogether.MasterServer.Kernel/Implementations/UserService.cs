@@ -201,7 +201,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             {
                 Host = new Player
                 {
-                    UserId = "ziuMSceapEuNN7wRGQXrZg", //server id is the host, server id is alwase the host
+                    UserId = "ziuMSceapEuNN7wRGQXrZg", //Server UserId is the host, always
                     UserName = ServerName
                 },
                 RemoteEndPoint = DediEndpoint,
@@ -214,7 +214,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 GameplayModifiersMask = (Domain.Enums.GameplayModifiersMask)request.BeatmapLevelSelectionMask.GameplayModifiersMask,
                 GameplayServerConfiguration = new Domain.Models.GameplayServerConfiguration
                     (
-                        request.GameplayServerConfiguration.MaxPlayerCount,
+                        Math.Min(request.GameplayServerConfiguration.MaxPlayerCount, 254), //New max player count
                         (Domain.Enums.DiscoveryPolicy)request.GameplayServerConfiguration.DiscoveryPolicy,
                         (Domain.Enums.InvitePolicy)request.GameplayServerConfiguration.InvitePolicy,
                         (Domain.Enums.GameplayServerMode)request.GameplayServerConfiguration.GameplayServerMode,
@@ -277,7 +277,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     await _serverRepository.RemoveServer(server.Secret);
                     return new ConnectToServerResponse
                     {
-                        Result = ConnectToServerResult.ConfigMismatch //there is no specific error result for this so im using this one
+                        Result = ConnectToServerResult.NoAvailableDedicatedServers //there is no specific error result for this so im using this one
                     };
                 }
             }
