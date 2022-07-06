@@ -11,9 +11,8 @@ using BeatTogether.MasterServer.Interface.ApiInterface.Models;
 using BeatTogether.MasterServer.Interface.ApiInterface.Requests;
 using BeatTogether.MasterServer.Interface.ApiInterface.Responses;
 using BeatTogether.MasterServer.Domain.Models;
-using System;
-using BeatTogether.MasterServer.Kernel.Abstractions;
-using BeatTogether.MasterServer.Kernel.Implementations;
+using BeatTogether.MasterServer.Interface.Events;
+using BeatTogether.MasterServer.Kernal.Abstractions;
 
 namespace BeatTogether.MasterServer.Kernal
 {
@@ -24,22 +23,17 @@ namespace BeatTogether.MasterServer.Kernal
         private readonly IServerRepository _serverRepository;
         private readonly ISecretProvider _secretProvider;
         private readonly IServerCodeProvider _serverCodeProvider;
-        private readonly IMasterServerSessionService _masterServerSessionService;
+        private readonly INodeRepository _nodeRepository;
 
-        public ApiInterface(
-            IMatchmakingService matchmakingService, IAutobus autobus, IServerRepository serverRepository, ISecretProvider secretProvider, IServerCodeProvider serverCodeProvider, IMasterServerSessionService masterServerSessionService)
+        public ApiInterface(IMatchmakingService matchmakingService, IAutobus autobus, IServerRepository serverRepository, ISecretProvider secretProvider, IServerCodeProvider serverCodeProvider, INodeRepository nodeRepository)
         {
             _matchmakingService = matchmakingService;
             _autobus = autobus;
             _serverRepository = serverRepository;
             _secretProvider = secretProvider;
             _serverCodeProvider = serverCodeProvider;
-            _masterServerSessionService = masterServerSessionService;
+            _nodeRepository = nodeRepository;
         }
-        //TODO swap everything over to broadcasts
-        //TODO send a broadcast when the master starts so the dedicateds can say if they are started, incase master is started after dedicateds
-
-
 
         public async Task<CreatedServerResponse> CreateServer(CreateServerRequest request)
         {
@@ -63,7 +57,16 @@ namespace BeatTogether.MasterServer.Kernal
                         ),
                     request.PermanentManager,
                     request.Timeout,
-                    request.ServerName
+                    request.ServerName,
+                    request.resultScreenTime,
+                    request.BeatmapStartTime,
+                    request.PlayersReadyCountdownTime,
+                    request.AllowPerPlayerModifiers,
+                    request.AllowPerPlayerDifficulties,
+                    request.AllowPerPlayerBeatmaps,
+                    request.AllowChroma,
+                    request.AllowME,
+                    request.AllowNE
                     )
                 );
             if (!createMatchmakingServerResponse.Success)
@@ -87,27 +90,16 @@ namespace BeatTogether.MasterServer.Kernal
                 InvitePolicy = (Domain.Enums.InvitePolicy)request.GameplayServerConfiguration.InvitePolicy,
                 BeatmapDifficultyMask = (Domain.Enums.BeatmapDifficultyMask)request.BeatmapDifficultyMask,
                 GameplayModifiersMask = (Domain.Enums.GameplayModifiersMask)request.GameplayModifiersMask,
-                GameplayServerConfiguration = (new Domain.Models.GameplayServerConfiguration(
+                GameplayServerConfiguration = new Domain.Models.GameplayServerConfiguration(
                     request.GameplayServerConfiguration.MaxPlayerCount,
                     (Domain.Enums.DiscoveryPolicy)request.GameplayServerConfiguration.DiscoveryPolicy,
                     (Domain.Enums.InvitePolicy)request.GameplayServerConfiguration.InvitePolicy,
                     (Domain.Enums.GameplayServerMode)request.GameplayServerConfiguration.GameplayServerMode,
                     (Domain.Enums.SongSelectionMode)request.GameplayServerConfiguration.SongSelectionMode,
                     (Domain.Enums.GameplayServerControlSettings)request.GameplayServerConfiguration.GameplayServerControlSettings
-                    )),
+                    ),
                 SongPackBloomFilterTop = request.SongPackMask.Top,
                 SongPackBloomFilterBottom = request.SongPackMask.Bottom,
-                /* 
-                * For Built-In songs
-                * 1441169510525575168 Top Level Selection mask
-                * 9799832799948046336 Bottom Level Selection mask
-                * For All Songs
-                * 4366328120852363808 Top Level Selection mask
-                * 14411518887094911232 Bottom Level Selection mask
-                * For CUSTOM SONGS
-                * 18446744073709551615 Top
-                * 18446744073709551615 Bottom
-                */
                 CurrentPlayerCount = 0,
                 Random = createMatchmakingServerResponse.Random,
                 PublicKey = createMatchmakingServerResponse.PublicKey
@@ -120,44 +112,26 @@ namespace BeatTogether.MasterServer.Kernal
             return new CreatedServerResponse(true, server.Secret, server.Code);
         }
 
-        /*
-        public async Task<RemoveSecretServerResponse> RemoveServer(RemoveSecretServerRequest request)
+        public Task<DisconnectPlayerResponse> KickPlayer(DisconnectPlayerRequest request)
         {
-            //TODO change to a broadcast event
-            var response = await _matchmakingService.StopMatchmakingServer(new StopMatchmakingServerRequest(request.Secret));
-            return new RemoveSecretServerResponse(response.Success);
+            _autobus.Publish(new DisconnectPlayerFromMatchmakingServerEvent(request.Secret, request.UserId));
+            return Task.FromResult(new DisconnectPlayerResponse());
         }
 
-        public async Task<RemoveCodeServerResponse> RemoveServer(RemoveCodeServerCodeRequest request)
+        public async Task<RemoveServerResponse> StopServer(RemoveServerRequest request)
         {
-            Server server = await _serverRepository.GetServerByCode(request.Secret);
-            //TODO change to a broadcast event
-            var response = await _matchmakingService.StopMatchmakingServer(new StopMatchmakingServerRequest(server.Secret));
-            return new RemoveCodeServerResponse(response.Success);
-        }
-        */
-        public async Task<PublicServerSecretListResponse> GetPublicServerSecrets(GetPublicServerSecretsListRequest request)
-        {
-            return new PublicServerSecretListResponse(await _serverRepository.GetPublicServerSecretsList());
-        }
-
-        public async Task<ServerSecretListResponse> GetServerSecretsList(GetServerSecretsListRequest request)
-        {
-            return new ServerSecretListResponse(await _serverRepository.GetServerSecretsList());
+            Server ToRemove;
+            if (request.IsCode)
+                ToRemove = await _serverRepository.GetServerByCode(request.SecretOrCode);
+            else
+                ToRemove = await _serverRepository.GetServer(request.SecretOrCode);
+            if (ToRemove == null)
+                return new RemoveServerResponse(false);
+            _autobus.Publish(new CloseServerInstanceEvent(ToRemove.Secret));
+            return new RemoveServerResponse(true);
         }
 
-        public async Task<PublicServerListResponse> GetPublicServers(GetPublicSimpleServersRequest request)
-        {
-            Server[] servers = await _serverRepository.GetPublicServerList();
-            SimpleServer[] simpleServers = new SimpleServer[servers.Length];
-            for (int i = 0; i < servers.Length; i++)
-            {
-                simpleServers[i] = Simplify(servers[i]);
-            }
-            return new PublicServerListResponse(simpleServers);
-        }
-
-        public async Task<ServerListResponse> GetServers(GetSimpleServersRequest request)
+        public async Task<ServerListResponse> GetServers(GetServersRequest request)
         {
             Server[] servers = await _serverRepository.GetServerList();
             SimpleServer[] simpleServers = new SimpleServer[servers.Length];
@@ -166,6 +140,23 @@ namespace BeatTogether.MasterServer.Kernal
                 simpleServers[i] = Simplify(servers[i]);
             }
             return new ServerListResponse(simpleServers);
+        }
+
+        public Task<GetServerNodesResponse> GetNodes(GetServerNodesRequest request)
+        {
+            ServerNode[] serverNodes = new ServerNode[_nodeRepository.GetNodes().Count];
+            int i = 0;
+            foreach (var node in _nodeRepository.GetNodes().Values)
+            {
+                serverNodes[i] = node.Convert();
+                i++;
+            }
+            return Task.FromResult(new GetServerNodesResponse(serverNodes));
+        }
+
+        public async Task<ServerJoinsCountResponse> GetPlayerJoins(GetPlayerJoins request)
+        {
+            return new ServerJoinsCountResponse(await _serverRepository.TotalPlayerJoins());
         }
 
         public SimpleServer Simplify(Server server)
@@ -198,39 +189,7 @@ namespace BeatTogether.MasterServer.Kernal
                 );
             return gameplayServerConfiguration;
         }
-    
-        public async Task<PublicServerCountResponse> GetPublicServerCount(GetPublicServerCountRequest request)
-        {
-            return new Interface.ApiInterface.Responses.PublicServerCountResponse(await _serverRepository.GetPublicServerCount());
-        }
 
-        public async Task<ServerCountResponse> GetServerCount(GetServerCountRequest request)
-        {
-            return new Interface.ApiInterface.Responses.ServerCountResponse(await _serverRepository.GetServerCount());
-        }
-    
-        public async Task<ServerFromCodeResponse> GetServerFromCode(GetServerFromCodeRequest request)
-        {
-            var server = await _serverRepository.GetServerByCode(request.Code);
-            return new ServerFromCodeResponse(Simplify(server));
-        }
-
-        public async Task<ServerFromSecretResponse> GetServerFromSecret(GetServerFromSecretRequest request)
-        {
-            var server = await _serverRepository.GetServer(request.secret);
-            return new ServerFromSecretResponse(Simplify(server));
-        }
-
-        public Task<PlayersFromMasterServerResponse> GetAllPlayers(PlayersFromMasterServerRequest request)
-        {
-            MasterServerSession[] sessions = _masterServerSessionService.GetMasterServerSessions();
-            MServerPlayer[] players = new MServerPlayer[sessions.Length];
-            for (int i = 0; i < players.Length; i++)
-            {
-                players[i] = new MServerPlayer((Platform)sessions[i].Platform, sessions[i].GameId, sessions[i].UserName, sessions[i].Secret);
-            }
-            return Task.FromResult(new PlayersFromMasterServerResponse(players));
-        }
 
     }
 

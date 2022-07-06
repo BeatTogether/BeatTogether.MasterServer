@@ -3,8 +3,10 @@ using BeatTogether.DedicatedServer.Interface.Events;
 using BeatTogether.MasterServer.Data.Abstractions.Repositories;
 using BeatTogether.MasterServer.Kernal.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions;
+using BeatTogether.MasterServer.Kernel.Configuration;
 using Microsoft.Extensions.Hosting;
 using Serilog;
+using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,17 +20,20 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         private readonly ILogger _logger = Log.ForContext<DedicatedServerEventHandler>();
         private readonly IMasterServerSessionService _masterServerSessionService;
         private readonly INodeRepository _nodeRepository;
+        private readonly MasterServerConfiguration _configuration;
 
         public DedicatedServerEventHandler(
             IAutobus autobus,
             IServerRepository serverRepository,
             IMasterServerSessionService masterServerSessionService,
-            INodeRepository nodeRepository)
+            INodeRepository nodeRepository,
+            MasterServerConfiguration configuration)
         {
             _autobus = autobus;
             _serverRepository = serverRepository;
             _masterServerSessionService = masterServerSessionService;
             _nodeRepository = nodeRepository;
+            _configuration = configuration;
         }
 
         #region Public Methods
@@ -72,18 +77,27 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         private Task HandlePlayerDisconnect(PlayerLeaveServerEvent integrationEvent)
         {
-            if (!_masterServerSessionService.TryGetSession((EndPoint)IPEndPoint.Parse(integrationEvent.endPoint), out var session))
-                return Task.CompletedTask;
-            _serverRepository.UpdateCurrentPlayerCount(session.Secret, integrationEvent.NewPlayerCount);
-            _masterServerSessionService.RemoveSecretFromSession(session.EndPoint);
+            if(_serverRepository.GetServer(integrationEvent.Secret) != null)
+            {
+                _serverRepository.UpdateCurrentPlayerCount(integrationEvent.Secret, integrationEvent.NewPlayerCount);
+                if (!_masterServerSessionService.TryGetSession((EndPoint)IPEndPoint.Parse(integrationEvent.endPoint), out var session))
+                    return Task.CompletedTask;
+                _masterServerSessionService.RemoveSecretFromSession(session.EndPoint);
+            }
             return Task.CompletedTask;
         }
 
         private Task NodeStartedHandler(NodeStartedEvent startedEvent)
         {
-            _logger.Information(
-                $"Node is online: " + startedEvent.endPoint);
-            _nodeRepository.SetNodeOnline(IPAddress.Parse(startedEvent.endPoint));
+            if (_configuration.SupportedDediServerVersions.Contains(startedEvent.NodeVersion))
+            {
+                _logger.Information($"Node is online: " + startedEvent.endPoint);
+                _nodeRepository.SetNodeOnline(IPAddress.Parse(startedEvent.endPoint), startedEvent.NodeVersion);
+            }
+            else
+            {
+                _logger.Information($"Node is an incompatable version: " + startedEvent.endPoint + " Please check the master and dedicated servers are up to date");
+            }
             return Task.CompletedTask;
         }
 

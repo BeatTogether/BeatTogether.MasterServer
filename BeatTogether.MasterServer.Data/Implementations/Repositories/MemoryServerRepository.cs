@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using BeatTogether.MasterServer.Data.Abstractions.Repositories;
 using BeatTogether.MasterServer.Domain.Enums;
@@ -13,6 +14,12 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
     {
         private static ConcurrentDictionary<string, Server> _servers = new();
         private static ConcurrentDictionary<string, string> _secretsByCode = new();
+        private long TotalJoins = 0;
+
+        public Task<long> TotalPlayerJoins()
+        {
+            return Task.FromResult(TotalJoins);
+        }
 
         public Task<string[]> GetPublicServerSecretsList()
         {
@@ -139,6 +146,7 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
             if (!_servers.TryGetValue(secret, out var server))
                 return Task.FromResult(false);
             server.CurrentPlayerCount++;
+            Interlocked.Increment(ref TotalJoins);
             return Task.FromResult(true);
         }
 
