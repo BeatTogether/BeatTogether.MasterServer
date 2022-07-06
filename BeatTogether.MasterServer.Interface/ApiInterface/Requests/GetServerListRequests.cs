@@ -1,14 +1,8 @@
 ﻿namespace BeatTogether.MasterServer.Interface.ApiInterface.Requests
 {
-    public record GetPublicServerSecretsListRequest();
+    public record GetServersRequest();
 
-    public record GetPublicSimpleServersRequest();
+    public record GetServerNodesRequest();
 
-    public record GetServerSecretsListRequest();
-
-    public record GetSimpleServersRequest();
-
-    public record GetPublicServerCountRequest();
-
-    public record GetServerCountRequest();
+    public record GetPlayerJoins();
 }

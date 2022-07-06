@@ -125,10 +125,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         private async Task<ConnectToServerResponse> ConnectPlayer(MasterServerSession session, Server server, byte[] Random, byte[] PublicKey)
         {
             Server serverFromRepo = await _serverRepository.GetServer(server.Secret);
-            if(serverFromRepo.CurrentPlayerCount < 0 || serverFromRepo.CurrentPlayerCount > serverFromRepo.GameplayServerConfiguration.MaxPlayerCount)
-            {
-                _logger.Error("WARNING CURRENT PLAYER COUNT IS IMPOSSIBLE, WARNING 1, YELL AT CUBIC, count is: " + serverFromRepo.CurrentPlayerCount);
-            }
             if (serverFromRepo.CurrentPlayerCount + 1 > serverFromRepo.GameplayServerConfiguration.MaxPlayerCount)
             {
                 return new ConnectToServerResponse()
@@ -144,12 +140,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 {
                     Result = ConnectToServerResult.NoAvailableDedicatedServers
                 };
-            
 
-            if (serverFromRepo.CurrentPlayerCount < 0 || serverFromRepo.CurrentPlayerCount > serverFromRepo.GameplayServerConfiguration.MaxPlayerCount)
-            {
-                _logger.Error("WARNING CURRENT PLAYER COUNT IS IMPOSSIBLE, WARNING 2, YELL AT CUBIC, count is: " + serverFromRepo.CurrentPlayerCount);
-            }
             _logger.Information("Player Connected to matchmaking server: " + session.GameId);
             _logger.Information("Sending player to node: " + server.RemoteEndPoint);
 /*
@@ -284,7 +275,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             string secret = request.Secret;
             string ManagerId = "ziuMSceapEuNN7wRGQXrZg";
             if (!IsQuickplay)
-                ManagerId = session.GameId;
+                ManagerId = session.GameId;//sets the manager to the 
             else
                 secret = _secretProvider.GetSecret();
 
