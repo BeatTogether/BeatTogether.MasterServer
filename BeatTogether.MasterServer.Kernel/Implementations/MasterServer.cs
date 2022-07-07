@@ -33,7 +33,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            _logger.Information($"Starting master server, Version: " + _configuration.MasterServerVersion  +" (EndPoint='{Endpoint}').");
+            _logger.Information($"Starting master server, Version: {_configuration.MasterServerVersion} (EndPoint='{Endpoint}').");
             Start();
             return Task.CompletedTask;
         }
