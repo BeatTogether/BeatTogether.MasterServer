@@ -15,6 +15,7 @@ using System.Security.Cryptography;
 using BeatTogether.MasterServer.Kernal;
 using BeatTogether.MasterServer.Interface.ApiInterface;
 using BeatTogether.MasterServer.Kernal.Abstractions;
+using System.Net.Http;
 
 namespace BeatTogether.Extensions
 {
@@ -41,6 +42,7 @@ namespace BeatTogether.Extensions
                         .AddConfiguration<MasterServerConfiguration>("MasterServer")
                         .AddTransient<SecureRandom>()
                         .AddTransient<RNGCryptoServiceProvider>()
+                        .AddSingleton<HttpClient>()
                         .AddSingleton<ICookieProvider, CookieProvider>()
                         .AddSingleton<IRandomProvider, RandomProvider>()
                         .AddSingleton<IServerCodeProvider, ServerCodeProvider>()

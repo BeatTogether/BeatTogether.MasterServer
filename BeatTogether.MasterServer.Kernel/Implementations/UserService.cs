@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Net;
+using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Autobus;
 using AutoMapper;
@@ -21,6 +23,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 {
     public class UserService : IUserService
     {
+        public const string VerifyUserURL = "https://api.beatsaver.com/users/verify";
         public const int EncryptionRecieveTimeout = 2000;
 
         private readonly IAutobus _autobus;
@@ -33,6 +36,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         private readonly ISecretProvider _secretProvider;
         private readonly ILogger _logger;
         private readonly INodeRepository _nodeRepository;
+        private readonly HttpClient _httpClient;
 
         public UserService(
             IAutobus autobus,
@@ -43,7 +47,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             IMasterServerSessionService sessionService,
             IServerCodeProvider serverCodeProvider,
             ISecretProvider secretProvider,
-            INodeRepository nodeRepository)
+            INodeRepository nodeRepository,
+            HttpClient httpClient)
         {
             _autobus = autobus;
             _mapper = mapper;
@@ -55,9 +60,10 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             _secretProvider = secretProvider;
             _logger = Log.ForContext<UserService>();
             _nodeRepository = nodeRepository;
+            _httpClient = httpClient;
         }
 
-        public Task<AuthenticateUserResponse> Authenticate(MasterServerSession session, AuthenticateUserRequest request)
+        public async Task<AuthenticateUserResponse> Authenticate(MasterServerSession session, AuthenticateUserRequest request)
         {
             _logger.Verbose(
                 $"Handling {nameof(AuthenticateUserRequest)} " +
@@ -65,15 +71,68 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 $"UserId='{request.AuthenticationToken.UserId}', " +
                 $"UserName='{request.AuthenticationToken.UserName}')."
             );
-            // TODO: Verify that there aren't any other sessions with the same user ID
-            // TODO: Validate session token?
-            _logger.Information(
-                "Session authenticated " +
-                $"(EndPoint='{session.EndPoint}', " +
-                $"Platform={request.AuthenticationToken.Platform}, " +
-                $"UserId='{request.AuthenticationToken.UserId}', " +
-                $"UserName='{request.AuthenticationToken.UserName}')."
-            );
+
+            var platform = request.AuthenticationToken.Platform;
+            if (platform != Platform.OculusQuest) {
+                var requestContent = new 
+                { 
+                    proof = BitConverter.ToString(request.AuthenticationToken.SessionToken).Replace("-", ""), 
+                    oculusId = platform == Platform.Oculus ? request.AuthenticationToken.UserId : "",
+                    steamId = platform == Platform.Steam ? request.AuthenticationToken.UserId : ""
+                };
+
+                using var verifyResponse = await _httpClient.PostAsync(VerifyUserURL, new StringContent(JsonSerializer.Serialize(requestContent), null, "application/json"));
+
+                if (verifyResponse.StatusCode == HttpStatusCode.OK)
+                {
+                    var stringContent = await verifyResponse.Content.ReadAsStringAsync();
+                    if (stringContent.Contains("\"success\": false"))
+                    {
+                        _logger.Information(
+                            "Session authentication failed " +
+                            $"(EndPoint='{session.EndPoint}', " +
+                            $"Platform='{request.AuthenticationToken.Platform}', " +
+                            $"UserId='{request.AuthenticationToken.UserId}', " +
+                            $"UserName='{request.AuthenticationToken.UserName}').");
+
+                        return new AuthenticateUserResponse
+                        {
+                            Result = AuthenticateUserResult.Failed
+                        };
+                    }
+                    else
+                    {
+                        _logger.Information(
+                            "Session authenticated " +
+                            $"(EndPoint='{session.EndPoint}', " +
+                            $"Platform='{request.AuthenticationToken.Platform}', " +
+                            $"UserId='{request.AuthenticationToken.UserId}', " +
+                            $"UserName='{request.AuthenticationToken.UserName}')."
+                        );
+                    }
+                }
+                else
+                {
+                    _logger.Information(
+                        "Skipping session authentication (BeatSaverDown)" +
+                        $"(EndPoint='{session.EndPoint}', " +
+                        $"Platform='{request.AuthenticationToken.Platform}', " +
+                        $"UserId='{request.AuthenticationToken.UserId}', " +
+                        $"UserName='{request.AuthenticationToken.UserName}')."
+                    );
+                }
+            }
+            else
+            {
+                _logger.Information(
+                    "Skipping session authentication (OculusQuest)" +
+                    $"(EndPoint='{session.EndPoint}', " +
+                    $"Platform='{request.AuthenticationToken.Platform}', " +
+                    $"UserId='{request.AuthenticationToken.UserId}', " +
+                    $"UserName='{request.AuthenticationToken.UserName}')."
+                );
+            }
+               
             session.Platform = request.AuthenticationToken.Platform;
             session.UserId = request.AuthenticationToken.UserId;
             session.UserName = request.AuthenticationToken.UserName;
@@ -90,10 +149,10 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
             session.GameId = Convert.ToBase64String(SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(platformStr + session.UserId)))[..22];
 
-            return Task.FromResult(new AuthenticateUserResponse
+            return new AuthenticateUserResponse
             {
                 Result = AuthenticateUserResult.Success
-            });
+            };
         }
 
 
