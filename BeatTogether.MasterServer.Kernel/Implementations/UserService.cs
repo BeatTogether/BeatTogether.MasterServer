@@ -14,6 +14,7 @@ using BeatTogether.MasterServer.Domain.Models;
 using BeatTogether.MasterServer.Kernal.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions.Providers;
+using BeatTogether.MasterServer.Kernel.Configuration;
 using BeatTogether.MasterServer.Messaging.Enums;
 using BeatTogether.MasterServer.Messaging.Messages.User;
 using BeatTogether.MasterServer.Messaging.Models;
@@ -37,6 +38,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         private readonly ILogger _logger;
         private readonly INodeRepository _nodeRepository;
         private readonly HttpClient _httpClient;
+        private readonly MasterServerConfiguration _configuration;
 
         public UserService(
             IAutobus autobus,
@@ -48,7 +50,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             IServerCodeProvider serverCodeProvider,
             ISecretProvider secretProvider,
             INodeRepository nodeRepository,
-            HttpClient httpClient)
+            HttpClient httpClient,
+            MasterServerConfiguration configuration)
         {
             _autobus = autobus;
             _mapper = mapper;
@@ -61,6 +64,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             _logger = Log.ForContext<UserService>();
             _nodeRepository = nodeRepository;
             _httpClient = httpClient;
+            _configuration = configuration;
         }
 
         public async Task<AuthenticateUserResponse> Authenticate(MasterServerSession session, AuthenticateUserRequest request)
@@ -344,7 +348,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     new CreateMatchmakingServerRequest(
                         secret,
                         ManagerId,
-                        _mapper.Map<DedicatedServer.Interface.Models.GameplayServerConfiguration>(request.GameplayServerConfiguration)
+                        _mapper.Map<DedicatedServer.Interface.Models.GameplayServerConfiguration>(request.GameplayServerConfiguration),
+                        AllowNE: _configuration.AllowNoodle
                      ));
 
                 if (!createMatchmakingServerResponse.Success)
