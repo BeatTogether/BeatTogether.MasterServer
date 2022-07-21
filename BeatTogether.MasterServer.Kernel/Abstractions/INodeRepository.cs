@@ -10,7 +10,7 @@ namespace BeatTogether.MasterServer.Kernal.Abstractions
     {
         bool WaitingForResponses { get; set; }
         public ConcurrentDictionary<IPAddress, Node> GetNodes();
-        public void SetNodeOnline(IPAddress endPoint);
+        public void SetNodeOnline(IPAddress endPoint, string Version);
         public void SetNodeOffline(IPAddress endPoint);
 
         public void ReceivedOK(IPAddress endPoint);

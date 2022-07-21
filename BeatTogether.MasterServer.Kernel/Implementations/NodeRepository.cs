@@ -4,6 +4,7 @@ using BeatTogether.MasterServer.Domain.Models;
 using BeatTogether.MasterServer.Interface.Events;
 using BeatTogether.MasterServer.Kernal.Abstractions;
 using Serilog;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -80,13 +81,13 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             return _nodes;
         }
 
-        public void SetNodeOnline(IPAddress endPoint)
+        public void SetNodeOnline(IPAddress endPoint, string Version)
         {
             if (_nodes.ContainsKey(endPoint))
                 _serverRepository.RemoveServersWithEndpoint(endPoint);
             else
             {
-                _nodes.TryAdd(endPoint, new Node(endPoint));
+                _nodes.TryAdd(endPoint, new Node(endPoint, Version));
                 AwaitNodeResponses.TryAdd(endPoint, new());
             }
             _nodes[endPoint].Online = true;
@@ -102,6 +103,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         {
             if (!WaitingForResponses)
                 return;
+            if (_nodes.TryGetValue(endPoint, out var node))
+                node.LastOnline = DateTime.Now;
             ReceivedOk[endPoint] = true;
             if (_EndpointsReceived.TryGetValue(endPoint, out var tcs) && !tcs.Task.IsCompleted)
                 tcs.SetResult();

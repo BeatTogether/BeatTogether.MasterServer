@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Net;
+using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Autobus;
 using AutoMapper;
@@ -12,6 +14,7 @@ using BeatTogether.MasterServer.Domain.Models;
 using BeatTogether.MasterServer.Kernal.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions.Providers;
+using BeatTogether.MasterServer.Kernel.Configuration;
 using BeatTogether.MasterServer.Messaging.Enums;
 using BeatTogether.MasterServer.Messaging.Messages.User;
 using BeatTogether.MasterServer.Messaging.Models;
@@ -21,6 +24,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 {
     public class UserService : IUserService
     {
+        public const string VerifyUserURL = "https://api.beatsaver.com/users/verify";
         public const int EncryptionRecieveTimeout = 2000;
 
         private readonly IAutobus _autobus;
@@ -33,6 +37,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         private readonly ISecretProvider _secretProvider;
         private readonly ILogger _logger;
         private readonly INodeRepository _nodeRepository;
+        private readonly HttpClient _httpClient;
+        private readonly MasterServerConfiguration _configuration;
 
         public UserService(
             IAutobus autobus,
@@ -43,7 +49,9 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             IMasterServerSessionService sessionService,
             IServerCodeProvider serverCodeProvider,
             ISecretProvider secretProvider,
-            INodeRepository nodeRepository)
+            INodeRepository nodeRepository,
+            HttpClient httpClient,
+            MasterServerConfiguration configuration)
         {
             _autobus = autobus;
             _mapper = mapper;
@@ -55,9 +63,11 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             _secretProvider = secretProvider;
             _logger = Log.ForContext<UserService>();
             _nodeRepository = nodeRepository;
+            _httpClient = httpClient;
+            _configuration = configuration;
         }
 
-        public Task<AuthenticateUserResponse> Authenticate(MasterServerSession session, AuthenticateUserRequest request)
+        public async Task<AuthenticateUserResponse> Authenticate(MasterServerSession session, AuthenticateUserRequest request)
         {
             _logger.Verbose(
                 $"Handling {nameof(AuthenticateUserRequest)} " +
@@ -65,15 +75,95 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 $"UserId='{request.AuthenticationToken.UserId}', " +
                 $"UserName='{request.AuthenticationToken.UserName}')."
             );
-            // TODO: Verify that there aren't any other sessions with the same user ID
-            // TODO: Validate session token?
-            _logger.Information(
-                "Session authenticated " +
-                $"(EndPoint='{session.EndPoint}', " +
-                $"Platform={request.AuthenticationToken.Platform}, " +
-                $"UserId='{request.AuthenticationToken.UserId}', " +
-                $"UserName='{request.AuthenticationToken.UserName}')."
-            );
+
+            var platform = request.AuthenticationToken.Platform;
+            if (_configuration.AuthenticateClients)
+            {
+                if (platform != Platform.OculusQuest)
+                {
+                    try
+                    {
+                        var requestContent = new
+                        {
+                            proof = BitConverter.ToString(request.AuthenticationToken.SessionToken).Replace("-", ""),
+                            oculusId = platform == Platform.Oculus ? request.AuthenticationToken.UserId : "",
+                            steamId = platform == Platform.Steam ? request.AuthenticationToken.UserId : ""
+                        };
+
+                        using var verifyResponse = await _httpClient.PostAsync(VerifyUserURL, new StringContent(JsonSerializer.Serialize(requestContent), null, "application/json"));
+
+                        if (verifyResponse.StatusCode == HttpStatusCode.OK)
+                        {
+                            var stringContent = await verifyResponse.Content.ReadAsStringAsync();
+                            if (stringContent.Contains("\"success\": false"))
+                            {
+                                _logger.Information(
+                                    "Session authentication failed " +
+                                    $"(EndPoint='{session.EndPoint}', " +
+                                    $"Platform='{request.AuthenticationToken.Platform}', " +
+                                    $"UserId='{request.AuthenticationToken.UserId}', " +
+                                    $"UserName='{request.AuthenticationToken.UserName}').");
+
+                                return new AuthenticateUserResponse
+                                {
+                                    Result = AuthenticateUserResult.Failed
+                                };
+                            }
+                            else
+                            {
+                                _logger.Information(
+                                    "Session authenticated " +
+                                    $"(EndPoint='{session.EndPoint}', " +
+                                    $"Platform='{request.AuthenticationToken.Platform}', " +
+                                    $"UserId='{request.AuthenticationToken.UserId}', " +
+                                    $"UserName='{request.AuthenticationToken.UserName}')."
+                                );
+                            }
+                        }
+                        else
+                        {
+                            _logger.Information(
+                                "Skipping session authentication (BeatSaverDown)" +
+                                $"(EndPoint='{session.EndPoint}', " +
+                                $"Platform='{request.AuthenticationToken.Platform}', " +
+                                $"UserId='{request.AuthenticationToken.UserId}', " +
+                                $"UserName='{request.AuthenticationToken.UserName}')."
+                            );
+                        }
+                    }
+                    catch(Exception ex)
+                    {
+                        _logger.Information(
+                            $"Skipping session authentication ({ex.Message})" +
+                            $"(EndPoint='{session.EndPoint}', " +
+                            $"Platform='{request.AuthenticationToken.Platform}', " +
+                            $"UserId='{request.AuthenticationToken.UserId}', " +
+                            $"UserName='{request.AuthenticationToken.UserName}')."
+                        );
+                    }
+                }
+                else
+                {
+                    _logger.Information(
+                        "Skipping session authentication (OculusQuest)" +
+                        $"(EndPoint='{session.EndPoint}', " +
+                        $"Platform='{request.AuthenticationToken.Platform}', " +
+                        $"UserId='{request.AuthenticationToken.UserId}', " +
+                        $"UserName='{request.AuthenticationToken.UserName}')."
+                    );
+                }
+            }
+            else
+            {
+                _logger.Information(
+                    "Skipping session authentication (disabled)" +
+                    $"(EndPoint='{session.EndPoint}', " +
+                    $"Platform='{request.AuthenticationToken.Platform}', " +
+                    $"UserId='{request.AuthenticationToken.UserId}', " +
+                    $"UserName='{request.AuthenticationToken.UserName}')."
+                );
+            }
+               
             session.Platform = request.AuthenticationToken.Platform;
             session.UserId = request.AuthenticationToken.UserId;
             session.UserName = request.AuthenticationToken.UserName;
@@ -90,10 +180,10 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
             session.GameId = Convert.ToBase64String(SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(platformStr + session.UserId)))[..22];
 
-            return Task.FromResult(new AuthenticateUserResponse
+            return new AuthenticateUserResponse
             {
                 Result = AuthenticateUserResult.Success
-            });
+            };
         }
 
 
@@ -125,10 +215,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         private async Task<ConnectToServerResponse> ConnectPlayer(MasterServerSession session, Server server, byte[] Random, byte[] PublicKey)
         {
             Server serverFromRepo = await _serverRepository.GetServer(server.Secret);
-            if(serverFromRepo.CurrentPlayerCount < 0 || serverFromRepo.CurrentPlayerCount > serverFromRepo.GameplayServerConfiguration.MaxPlayerCount)
-            {
-                _logger.Error("WARNING CURRENT PLAYER COUNT IS IMPOSSIBLE, WARNING 1, YELL AT CUBIC, count is: " + serverFromRepo.CurrentPlayerCount);
-            }
             if (serverFromRepo.CurrentPlayerCount + 1 > serverFromRepo.GameplayServerConfiguration.MaxPlayerCount)
             {
                 return new ConnectToServerResponse()
@@ -144,12 +230,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 {
                     Result = ConnectToServerResult.NoAvailableDedicatedServers
                 };
-            
 
-            if (serverFromRepo.CurrentPlayerCount < 0 || serverFromRepo.CurrentPlayerCount > serverFromRepo.GameplayServerConfiguration.MaxPlayerCount)
-            {
-                _logger.Error("WARNING CURRENT PLAYER COUNT IS IMPOSSIBLE, WARNING 2, YELL AT CUBIC, count is: " + serverFromRepo.CurrentPlayerCount);
-            }
             _logger.Information("Player Connected to matchmaking server: " + session.GameId);
             _logger.Information("Sending player to node: " + server.RemoteEndPoint);
 /*
@@ -284,7 +365,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             string secret = request.Secret;
             string ManagerId = "ziuMSceapEuNN7wRGQXrZg";
             if (!IsQuickplay)
-                ManagerId = session.GameId;
+                ManagerId = session.GameId;//sets the manager to the 
             else
                 secret = _secretProvider.GetSecret();
 
@@ -294,7 +375,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     new CreateMatchmakingServerRequest(
                         secret,
                         ManagerId,
-                        _mapper.Map<DedicatedServer.Interface.Models.GameplayServerConfiguration>(request.GameplayServerConfiguration)
+                        _mapper.Map<DedicatedServer.Interface.Models.GameplayServerConfiguration>(request.GameplayServerConfiguration),
+                        AllowNE: _configuration.AllowNoodle
                      ));
 
                 if (!createMatchmakingServerResponse.Success)

@@ -14,6 +14,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
     {
         private readonly IMasterServerSessionService _sessionService;
         private readonly ILogger _logger;
+        MasterServerConfiguration _configuration;
 
         public MasterServer(
             MasterServerConfiguration configuration,
@@ -24,6 +25,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         {
             _sessionService = sessionService;
             _logger = Log.ForContext<MasterServer>();
+            _configuration = configuration;
         }
 
         protected override ISession GetSession(EndPoint endPoint) =>
@@ -31,7 +33,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            _logger.Information($"Starting master server (EndPoint='{Endpoint}').");
+            _logger.Information($"Starting master server, Version: {_configuration.MasterServerVersion} (EndPoint='{Endpoint}').");
             Start();
             return Task.CompletedTask;
         }

@@ -9,19 +9,11 @@ namespace BeatTogether.MasterServer.Interface.ApiInterface
     public interface IApiInterface
     {
         Task<CreatedServerResponse> CreateServer(CreateServerRequest request);
-        /*
-        Task<RemoveSecretServerResponse> RemoveServer(RemoveSecretServerRequest request);
-        Task<RemoveCodeServerResponse> RemoveServer(RemoveCodeServerCodeRequest request);
-        */
-        Task<PublicServerSecretListResponse> GetPublicServerSecrets(GetPublicServerSecretsListRequest request);
-        Task<ServerSecretListResponse> GetServerSecretsList(GetServerSecretsListRequest request);
-        Task<PublicServerListResponse> GetPublicServers(GetPublicSimpleServersRequest request);
-        Task<ServerListResponse> GetServers(GetSimpleServersRequest request);
-        Task<PublicServerCountResponse> GetPublicServerCount(GetPublicServerCountRequest request);
-        Task<ServerCountResponse> GetServerCount(GetServerCountRequest request);
-        Task<ServerFromCodeResponse> GetServerFromCode(GetServerFromCodeRequest request);
-        Task<ServerFromSecretResponse> GetServerFromSecret(GetServerFromSecretRequest request);
-        Task<PlayersFromMasterServerResponse> GetAllPlayers(PlayersFromMasterServerRequest request);
+        Task<ServerListResponse> GetServers(GetServersRequest request);
+        Task<DisconnectPlayerResponse> KickPlayer(DisconnectPlayerRequest request);
+        Task<RemoveServerResponse> StopServer(RemoveServerRequest request);
+        Task<ServerJoinsCountResponse> GetPlayerJoins(GetPlayerJoins request);
+        Task<GetServerNodesResponse> GetNodes(GetServerNodesRequest request);
 
         public class MasterServerServiceContract : BaseServiceContract
         {
@@ -31,7 +23,8 @@ namespace BeatTogether.MasterServer.Interface.ApiInterface
                     .AddInterface<IApiInterface>()
                     .AddEvent<CheckNodesEvent>()
                     .AddEvent<DisconnectPlayerFromMatchmakingServerEvent>()
-                    .AddEvent<PlayerConnectedToMatchmakingServerEvent>();
+                    .AddEvent<PlayerConnectedToMatchmakingServerEvent>()
+                    .AddEvent<CloseServerInstanceEvent>();
         }
     }
 }

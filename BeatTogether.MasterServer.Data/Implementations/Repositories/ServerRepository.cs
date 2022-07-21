@@ -208,6 +208,11 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
             };
         }
 
+        public Task<long> TotalPlayerJoins()
+        {
+            return Task.FromResult((long)0);
+        }
+
         #endregion
 
         #region Scripts
