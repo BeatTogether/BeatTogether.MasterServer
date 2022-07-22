@@ -80,7 +80,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
             if (_configuration.AuthenticateClients)
             {
-                if (platform != Platform.OculusQuest && platform != Platform.Oculus) { //TODO figure out why oculus does not authenticate correctly at some point
+                if (platform != Platform.OculusQuest && platform != Platform.Oculus) //TODO figure out why oculus does not authenticate correctly at some point
                 {
                     try
                     {
