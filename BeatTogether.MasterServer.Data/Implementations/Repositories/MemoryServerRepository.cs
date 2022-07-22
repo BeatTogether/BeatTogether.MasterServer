@@ -52,7 +52,7 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
         }
         public Task<int> GetServerCount()
         {
-            return Task.FromResult(_servers.Count());
+            return Task.FromResult(_servers.Count);
         }
 
         public Task<Server> GetServer(string secret)
@@ -84,8 +84,8 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
             if (!_servers.Any())
                 return Task.FromResult<Server>(null);
             var publicServers = _servers.Values.Where(server => 
-                server.DiscoveryPolicy == DiscoveryPolicy.Public &&
-                server.InvitePolicy == invitePolicy &&
+                server.GameplayServerConfiguration.DiscoveryPolicy == DiscoveryPolicy.Public &&
+                server.GameplayServerConfiguration.InvitePolicy == invitePolicy &&
                 server.GameplayServerConfiguration.GameplayServerMode == serverMode &&
                 server.GameplayServerConfiguration.SongSelectionMode == songMode &&
                 server.GameplayServerConfiguration.GameplayServerControlSettings == serverControlSettings &&

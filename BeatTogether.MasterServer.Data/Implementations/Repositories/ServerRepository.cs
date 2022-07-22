@@ -107,8 +107,8 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
                     secret = (RedisValue)server.Secret,
                     code = (RedisValue)server.Code,
                     isPublic = (RedisValue)server.IsPublic,
-                    discoveryPolicy = (RedisValue)(int)server.DiscoveryPolicy,
-                    invitePolicy = (RedisValue)(int)server.InvitePolicy,
+                    discoveryPolicy = (RedisValue)(int)server.GameplayServerConfiguration.DiscoveryPolicy,
+                    invitePolicy = (RedisValue)(int)server.GameplayServerConfiguration.InvitePolicy,
                     beatmapDifficultyMask = (RedisValue)(int)server.BeatmapDifficultyMask,
                     gameplayModifiersMask = (RedisValue)(int)server.GameplayModifiersMask,
                     songPackBloomFilterTop = (RedisValue)server.SongPackBloomFilterTop,
@@ -188,6 +188,7 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
             var dictionary = hashEntries.ToDictionary();
             return new Server()
             {
+                /*
                 Host = new Player()
                 {
                     UserId = dictionary["HostUserId"],
@@ -205,6 +206,7 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
                 CurrentPlayerCount = (int)dictionary["CurrentPlayerCount"],
                 Random = dictionary["Random"],
                 PublicKey = dictionary["PublicKey"]
+                */
             };
         }
 

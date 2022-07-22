@@ -77,9 +77,10 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             );
 
             var platform = request.AuthenticationToken.Platform;
+
             if (_configuration.AuthenticateClients)
             {
-                if (platform != Platform.OculusQuest)
+                if (platform != Platform.OculusQuest && platform != Platform.Oculus) { //TODO figure out why oculus does not authenticate correctly at some point
                 {
                     try
                     {
@@ -289,8 +290,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 Secret = secret,
                 Code = _serverCodeProvider.Generate(),
                 IsPublic = IsQuickplay,
-                DiscoveryPolicy = (Domain.Enums.DiscoveryPolicy)request.GameplayServerConfiguration.DiscoveryPolicy,
-                InvitePolicy = (Domain.Enums.InvitePolicy)request.GameplayServerConfiguration.InvitePolicy,
                 BeatmapDifficultyMask = (Domain.Enums.BeatmapDifficultyMask)request.BeatmapLevelSelectionMask.BeatmapDifficultyMask,
                 GameplayModifiersMask = (Domain.Enums.GameplayModifiersMask)request.BeatmapLevelSelectionMask.GameplayModifiersMask,
                 GameplayServerConfiguration = new Domain.Models.GameplayServerConfiguration
