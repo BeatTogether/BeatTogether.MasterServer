@@ -7,6 +7,6 @@
         public string MasterServerVersion { get; } = "1.1";
         public string[] SupportedDediServerVersions { get; } = { "1.1" };
         public bool AuthenticateClients { get; set; } = true;
-        public bool AllowNoodle = false;
+        public bool AllowNoodle {get; set; } = false;
     }
 }
