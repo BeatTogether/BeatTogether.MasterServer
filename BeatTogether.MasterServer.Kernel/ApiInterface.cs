@@ -86,8 +86,6 @@ namespace BeatTogether.MasterServer.Kernal
                 Secret = Secret,
                 Code = Code,
                 IsPublic = request.GameplayServerConfiguration.DiscoveryPolicy == DiscoveryPolicy.Public,
-                DiscoveryPolicy = (Domain.Enums.DiscoveryPolicy)request.GameplayServerConfiguration.DiscoveryPolicy,
-                InvitePolicy = (Domain.Enums.InvitePolicy)request.GameplayServerConfiguration.InvitePolicy,
                 BeatmapDifficultyMask = (Domain.Enums.BeatmapDifficultyMask)request.BeatmapDifficultyMask,
                 GameplayModifiersMask = (Domain.Enums.GameplayModifiersMask)request.GameplayModifiersMask,
                 GameplayServerConfiguration = new Domain.Models.GameplayServerConfiguration(

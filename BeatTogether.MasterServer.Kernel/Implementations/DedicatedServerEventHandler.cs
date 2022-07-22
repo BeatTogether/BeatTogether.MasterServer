@@ -1,6 +1,7 @@
 ﻿using Autobus;
 using BeatTogether.DedicatedServer.Interface.Events;
 using BeatTogether.MasterServer.Data.Abstractions.Repositories;
+using BeatTogether.MasterServer.Domain.Models;
 using BeatTogether.MasterServer.Kernal.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Configuration;
@@ -45,6 +46,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             _autobus.Subscribe<NodeStartedEvent>(NodeStartedHandler);
             _autobus.Subscribe<NodeReceivedPlayerEncryptionEvent>(NodeReceivedPlayerEncryptionHandler);
             _autobus.Subscribe<NodeOnlineEvent>(NodeOnlineHandler);
+
+            _autobus.Subscribe<UpdateInstanceConfigEvent>(InstanceConfigurationUpdateHandler);
 
             return Task.CompletedTask;
         }
@@ -103,9 +106,43 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         private Task NodeOnlineHandler(NodeOnlineEvent nodeOnlineEvent)
         {
-            _nodeRepository.ReceivedOK(IPAddress.Parse(nodeOnlineEvent.endPoint));
+            IPAddress address = IPAddress.Parse(nodeOnlineEvent.endPoint);
+            if (!_nodeRepository.GetNodes().Keys.Contains(address))
+            {
+                NodeStartedHandler(new NodeStartedEvent(nodeOnlineEvent.endPoint, nodeOnlineEvent.NodeVersion));
+                return Task.CompletedTask;
+            }
+            _nodeRepository.ReceivedOK(address);
             return Task.CompletedTask;
         }
+
+        private Task InstanceConfigurationUpdateHandler(UpdateInstanceConfigEvent updateInstanceConfigEvent)
+        {
+            Server server = _serverRepository.GetServer(updateInstanceConfigEvent.Secret).Result;
+            if(server == null)
+                return Task.CompletedTask;
+            server.Code = updateInstanceConfigEvent.Code;
+            GameplayServerConfiguration confgiuration = new(
+                updateInstanceConfigEvent.Configuration.MaxPlayerCount,
+                (Domain.Enums.DiscoveryPolicy)updateInstanceConfigEvent.Configuration.DiscoveryPolicy,
+                (Domain.Enums.InvitePolicy)updateInstanceConfigEvent.Configuration.InvitePolicy,
+                (Domain.Enums.GameplayServerMode)updateInstanceConfigEvent.Configuration.GameplayServerMode,
+                (Domain.Enums.SongSelectionMode)updateInstanceConfigEvent.Configuration.SongSelectionMode,
+                (Domain.Enums.GameplayServerControlSettings)updateInstanceConfigEvent.Configuration.GameplayServerControlSettings
+                );
+            server.GameplayServerConfiguration = confgiuration;
+            Player Host = new()
+            {
+                UserName = updateInstanceConfigEvent.ServerName,
+                UserId = server.Host.UserId
+            };
+            server.Host = Host;
+            if(_serverRepository.GetServerByCode(updateInstanceConfigEvent.Code) == null)
+                server.Code = updateInstanceConfigEvent.Code;
+            return Task.CompletedTask;
+        }
+
+
 
         private Task NodeReceivedPlayerEncryptionHandler(NodeReceivedPlayerEncryptionEvent RecievedEvent)
         {
