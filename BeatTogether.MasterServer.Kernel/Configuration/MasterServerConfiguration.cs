@@ -6,6 +6,7 @@
         public int SessionTimeToLive { get; set; } = 180;
         public string MasterServerVersion { get; } = "1.1";
         public string[] SupportedDediServerVersions { get; } = { "1.1" };
+        public bool AuthenticateClients { get; set; } = true;
         public bool AllowNoodle = false;
     }
 }
