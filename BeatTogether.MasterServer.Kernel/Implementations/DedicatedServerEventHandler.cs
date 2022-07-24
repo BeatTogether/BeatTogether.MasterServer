@@ -92,7 +92,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         private Task NodeStartedHandler(NodeStartedEvent startedEvent)
         {
-            if (_configuration.SupportedDediServerVersions.Contains(startedEvent.NodeVersion))
+            if (_configuration.SupportedDediServerVersions.Where(N => N.StartsWith(startedEvent.NodeVersion)).Count() > 0)
             {
                 _logger.Information($"Node is online: " + startedEvent.endPoint);
                 _nodeRepository.SetNodeOnline(IPAddress.Parse(startedEvent.endPoint), startedEvent.NodeVersion);
