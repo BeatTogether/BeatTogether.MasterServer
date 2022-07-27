@@ -226,7 +226,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             await _serverRepository.IncrementCurrentPlayerCount(server.Secret);
             _sessionService.AddSession(session.EndPoint, server.Secret);
 
-            if (!await _nodeRepository.SendAndAwaitPlayerEncryptionRecievedFromNode(server.RemoteEndPoint, session.EndPoint, session.UserId, session.UserName, Random, PublicKey, EncryptionRecieveTimeout))
+            if (!await _nodeRepository.SendAndAwaitPlayerEncryptionRecievedFromNode(server.RemoteEndPoint, session.EndPoint, session.UserId, session.UserName,session.Platform, Random, PublicKey, EncryptionRecieveTimeout))
                 return new ConnectToServerResponse()
                 {
                     Result = ConnectToServerResult.NoAvailableDedicatedServers

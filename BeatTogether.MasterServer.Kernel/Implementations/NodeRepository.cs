@@ -3,6 +3,7 @@ using BeatTogether.MasterServer.Data.Abstractions.Repositories;
 using BeatTogether.MasterServer.Domain.Models;
 using BeatTogether.MasterServer.Interface.Events;
 using BeatTogether.MasterServer.Kernal.Abstractions;
+using BeatTogether.MasterServer.Messaging.Enums;
 using Serilog;
 using System;
 using System.Collections.Concurrent;
@@ -127,7 +128,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         readonly ConcurrentDictionary<IPAddress, ConcurrentDictionary<EndPoint, TaskCompletionSource<bool>>> AwaitNodeResponses = new();
 
-        public async Task<bool> SendAndAwaitPlayerEncryptionRecievedFromNode(IPEndPoint NodeEndPoint,EndPoint SessionEndPoint, string UserId, string UserName, byte[] Random, byte[] PublicKey, int TimeOut)
+        public async Task<bool> SendAndAwaitPlayerEncryptionRecievedFromNode(IPEndPoint NodeEndPoint,EndPoint SessionEndPoint, string UserId, string UserName, Platform platform, byte[] Random, byte[] PublicKey, int TimeOut)
         {
             if (!EndpointExists(NodeEndPoint))
                 return false;
@@ -143,7 +144,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 return false;
 
             _autobus.Publish(new PlayerConnectedToMatchmakingServerEvent(NodeEndPoint.Address.ToString(),
-                SessionEndPoint.ToString(), UserId, UserName,
+                SessionEndPoint.ToString(), UserId, UserName, (Interface.ApiInterface.Enums.Platform)platform,
                 Random, PublicKey
             ));
 
