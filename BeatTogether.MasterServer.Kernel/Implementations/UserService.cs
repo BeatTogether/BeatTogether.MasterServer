@@ -192,7 +192,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         {
             if (!IsQuickplay)
             {
-                Server server = await _serverRepository.GetServerByCode(request.Code);
+                Server server = await _serverRepository.GetServerByCode(request.Code.Replace('8', 'B').Replace('D', '0')); //Similar characters are replaced
                 if(server == null)
                     server = await _serverRepository.GetServer(request.Secret);
                 return server;
@@ -312,6 +312,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         public async Task<ConnectToServerResponse> ConnectToMatchmakingServer(MasterServerSession session, ConnectToMatchmakingServerRequest request)
         {
+            
             _logger.Verbose(
                 $"Handling {nameof(ConnectToMatchmakingServerRequest)} " +
                 $"(UserId='{request.UserId}', " +
@@ -364,7 +365,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             string secret = request.Secret;
             string ManagerId = "ziuMSceapEuNN7wRGQXrZg";
             if (!IsQuickplay)
-                ManagerId = session.GameId;//sets the manager to the 
+                ManagerId = session.GameId;//sets the manager to the player who is requesting
             else
                 secret = _secretProvider.GetSecret();
 
