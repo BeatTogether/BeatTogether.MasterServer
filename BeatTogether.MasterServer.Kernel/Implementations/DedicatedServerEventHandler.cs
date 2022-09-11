@@ -7,6 +7,7 @@ using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Configuration;
 using Microsoft.Extensions.Hosting;
 using Serilog;
+using System;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -78,16 +79,20 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             return;
         }
 
-        private Task HandlePlayerDisconnect(PlayerLeaveServerEvent integrationEvent)
+        private async Task HandlePlayerDisconnect(PlayerLeaveServerEvent integrationEvent)
         {
-            if(_serverRepository.GetServer(integrationEvent.Secret) != null)
+            var server = await _serverRepository.GetServer(integrationEvent.Secret);
+            bool SessionExists = _masterServerSessionService.TryGetSession((EndPoint)IPEndPoint.Parse(integrationEvent.endPoint), out var session);
+            if (server != null)
             {
                 _serverRepository.UpdateCurrentPlayerCount(integrationEvent.Secret, integrationEvent.NewPlayerCount);
-                if (!_masterServerSessionService.TryGetSession((EndPoint)IPEndPoint.Parse(integrationEvent.endPoint), out var session))
-                    return Task.CompletedTask;
+                if (!SessionExists)
+                    return;
                 _masterServerSessionService.RemoveSecretFromSession(session.EndPoint);
+                session.LastGameIp = server.RemoteEndPoint.ToString();
             }
-            return Task.CompletedTask;
+            session.LastGameDisconnect = DateTime.Now;
+            return;
         }
 
         private Task NodeStartedHandler(NodeStartedEvent startedEvent)

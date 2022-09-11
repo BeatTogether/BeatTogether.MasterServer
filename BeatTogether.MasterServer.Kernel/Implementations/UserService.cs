@@ -80,7 +80,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
             if (_configuration.AuthenticateClients)
             {
-                if (platform != Platform.OculusQuest && platform != Platform.Oculus) //TODO figure out why oculus does not authenticate correctly at some point
+                if (platform != Platform.OculusQuest && platform != Platform.Oculus && platform != Platform.Test) //TODO figure out why oculus does not authenticate correctly at some point
                 {
                     try
                     {
@@ -231,15 +231,22 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 {
                     Result = ConnectToServerResult.NoAvailableDedicatedServers
                 };
-
+            _logger.Information("Awaiting player things");
+            var sessioncheck = _sessionService.GetSession(session.EndPoint);
+            int LastServerSeconds = (int)DateTime.Now.Subtract(session.LastGameDisconnect).TotalSeconds;
+            if (sessioncheck.LastGameIp == server.RemoteEndPoint.ToString() && LastServerSeconds < 6)
+            {
+                _logger.Information("Delaying join");
+                await Task.Delay(6000 - (LastServerSeconds * 1000) );
+            }
             _logger.Information("Player Connected to matchmaking server: " + session.GameId);
             _logger.Information("Sending player to node: " + server.RemoteEndPoint);
-/*
-            _logger.Information($"Random='{BitConverter.ToString(Random)}'");
-            _logger.Information($"PublicKey='{BitConverter.ToString(PublicKey)}'");
-            _logger.Information($"session.ClientRandom='{BitConverter.ToString(session.ClientRandom)}'");
-            _logger.Information($"session.ClientPublicKey='{BitConverter.ToString(session.ClientPublicKey)}'");
-*/
+            /*
+                        _logger.Information($"Random='{BitConverter.ToString(Random)}'");
+                        _logger.Information($"PublicKey='{BitConverter.ToString(PublicKey)}'");
+                        _logger.Information($"session.ClientRandom='{BitConverter.ToString(session.ClientRandom)}'");
+                        _logger.Information($"session.ClientPublicKey='{BitConverter.ToString(session.ClientPublicKey)}'");
+            */
             return new ConnectToServerResponse
             {
                 UserId = "ziuMSceapEuNN7wRGQXrZg",
