@@ -15,6 +15,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         public string UserName { get; set; }
         public string Secret { get; set; }
         public string GameId { get; set; }
+        public string LastGameIp { get; set; } = string.Empty;
+        public DateTime LastGameDisconnect { get; set; } = DateTime.MinValue;
 
         public byte[] Cookie { get; set; }
         public byte[] ClientRandom { get; set; }
