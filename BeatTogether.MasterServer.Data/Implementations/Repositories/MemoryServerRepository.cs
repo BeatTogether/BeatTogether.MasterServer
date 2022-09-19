@@ -94,6 +94,9 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
                 server.SongPackBloomFilterTop == songPackTop &&
                 server.SongPackBloomFilterBottom == songPackBottom
             );
+            var InLobbyServers = publicServers.Where(server => server.IsInGameplay == false);
+            if (InLobbyServers.Any())
+                publicServers = InLobbyServers;
             if (!publicServers.Any())
                 return Task.FromResult<Server>(null);
             var server = publicServers.First();

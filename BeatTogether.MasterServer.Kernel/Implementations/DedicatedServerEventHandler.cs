@@ -47,7 +47,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             _autobus.Subscribe<NodeStartedEvent>(NodeStartedHandler);
             _autobus.Subscribe<NodeReceivedPlayerEncryptionEvent>(NodeReceivedPlayerEncryptionHandler);
             _autobus.Subscribe<NodeOnlineEvent>(NodeOnlineHandler);
-
+            _autobus.Subscribe<UpdateStatusEvent>(HandleServerStatusChanged);
             _autobus.Subscribe<UpdateInstanceConfigEvent>(InstanceConfigurationUpdateHandler);
 
             return Task.CompletedTask;
@@ -60,8 +60,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             _autobus.Unsubscribe<NodeStartedEvent>(NodeStartedHandler);
             _autobus.Unsubscribe<NodeReceivedPlayerEncryptionEvent>(NodeReceivedPlayerEncryptionHandler);
             _autobus.Unsubscribe<NodeOnlineEvent>(NodeOnlineHandler);
-
-
+            _autobus.Unsubscribe<UpdateStatusEvent>(HandleServerStatusChanged);
+            _autobus.Unsubscribe<UpdateInstanceConfigEvent>(InstanceConfigurationUpdateHandler);
             return Task.CompletedTask;
         }
 
@@ -90,8 +90,18 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     return;
                 _masterServerSessionService.RemoveSecretFromSession(session.EndPoint);
                 session.LastGameIp = server.RemoteEndPoint.ToString();
+                session.LastGameDisconnect = DateTime.Now;
             }
-            session.LastGameDisconnect = DateTime.Now;
+            return;
+        }
+
+        private async Task HandleServerStatusChanged(UpdateStatusEvent updateStatusEvent)
+        {
+            var server = await _serverRepository.GetServer(updateStatusEvent.Secret);
+            if (updateStatusEvent.GameState == DedicatedServer.Interface.Enums.MultiplayerGameState.Game)
+                server.IsInGameplay = true;
+            else
+                server.IsInGameplay = false;
             return;
         }
 
