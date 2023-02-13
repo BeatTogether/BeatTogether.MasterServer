@@ -48,7 +48,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             _autobus.Subscribe<NodeReceivedPlayerEncryptionEvent>(NodeReceivedPlayerEncryptionHandler);
             _autobus.Subscribe<NodeOnlineEvent>(NodeOnlineHandler);
             _autobus.Subscribe<UpdateStatusEvent>(HandleServerStatusChanged);
-            _autobus.Subscribe<UpdateInstanceConfigEvent>(InstanceConfigurationUpdateHandler);
+            //_autobus.Subscribe<UpdateInstanceConfigEvent>(InstanceConfigurationUpdateHandler);
 
             return Task.CompletedTask;
         }
@@ -61,7 +61,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             _autobus.Unsubscribe<NodeReceivedPlayerEncryptionEvent>(NodeReceivedPlayerEncryptionHandler);
             _autobus.Unsubscribe<NodeOnlineEvent>(NodeOnlineHandler);
             _autobus.Unsubscribe<UpdateStatusEvent>(HandleServerStatusChanged);
-            _autobus.Unsubscribe<UpdateInstanceConfigEvent>(InstanceConfigurationUpdateHandler);
+            //_autobus.Unsubscribe<UpdateInstanceConfigEvent>(InstanceConfigurationUpdateHandler);
             return Task.CompletedTask;
         }
 
@@ -82,17 +82,17 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         private async Task HandlePlayerDisconnect(PlayerLeaveServerEvent integrationEvent)
         {
             var server = await _serverRepository.GetServer(integrationEvent.Secret);
-            bool SessionExists = _masterServerSessionService.TryGetSession((EndPoint)IPEndPoint.Parse(integrationEvent.endPoint), out var session);
+            bool SessionExists = _masterServerSessionService.TryGetSession(IPEndPoint.Parse(integrationEvent.endPoint), out var session);
             if (server != null)
             {
                 _serverRepository.UpdateCurrentPlayerCount(integrationEvent.Secret, integrationEvent.NewPlayerCount);
-                if (!SessionExists)
-                    return;
-                _masterServerSessionService.RemoveSecretFromSession(session.EndPoint);
-                session.LastGameIp = server.RemoteEndPoint.ToString();
-                session.LastGameDisconnect = DateTime.Now;
+                if (SessionExists)
+                    session.LastGameIp = server.RemoteEndPoint.ToString();
             }
-            return;
+            if(!SessionExists)
+                return;
+            _masterServerSessionService.RemoveSecretFromSession(session.EndPoint);
+            session.LastGameDisconnect = DateTime.Now;
         }
 
         private async Task HandleServerStatusChanged(UpdateStatusEvent updateStatusEvent)
@@ -131,37 +131,29 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             return Task.CompletedTask;
         }
 
+        /*
         private Task InstanceConfigurationUpdateHandler(UpdateInstanceConfigEvent updateInstanceConfigEvent)
         {
             Server server = _serverRepository.GetServer(updateInstanceConfigEvent.Secret).Result;
             if(server == null)
                 return Task.CompletedTask;
+            server.GameplayServerConfiguration.MaxPlayerCount = updateInstanceConfigEvent.Configuration.MaxPlayerCount;
+            server.GameplayServerConfiguration.DiscoveryPolicy = (Domain.Enums.DiscoveryPolicy)updateInstanceConfigEvent.Configuration.DiscoveryPolicy;
+            server.GameplayServerConfiguration.InvitePolicy = (Domain.Enums.InvitePolicy)updateInstanceConfigEvent.Configuration.InvitePolicy;
+            server.GameplayServerConfiguration.GameplayServerMode = (Domain.Enums.GameplayServerMode)updateInstanceConfigEvent.Configuration.GameplayServerMode;
+            server.GameplayServerConfiguration.SongSelectionMode = (Domain.Enums.SongSelectionMode)updateInstanceConfigEvent.Configuration.SongSelectionMode;
+            server.GameplayServerConfiguration.GameplayServerControlSettings = (Domain.Enums.GameplayServerControlSettings)updateInstanceConfigEvent.Configuration.GameplayServerControlSettings;
+            server.Host.UserName = updateInstanceConfigEvent.ServerName;
             server.Code = updateInstanceConfigEvent.Code;
-            GameplayServerConfiguration confgiuration = new(
-                updateInstanceConfigEvent.Configuration.MaxPlayerCount,
-                (Domain.Enums.DiscoveryPolicy)updateInstanceConfigEvent.Configuration.DiscoveryPolicy,
-                (Domain.Enums.InvitePolicy)updateInstanceConfigEvent.Configuration.InvitePolicy,
-                (Domain.Enums.GameplayServerMode)updateInstanceConfigEvent.Configuration.GameplayServerMode,
-                (Domain.Enums.SongSelectionMode)updateInstanceConfigEvent.Configuration.SongSelectionMode,
-                (Domain.Enums.GameplayServerControlSettings)updateInstanceConfigEvent.Configuration.GameplayServerControlSettings
-                );
-            server.GameplayServerConfiguration = confgiuration;
-            Player Host = new()
-            {
-                UserName = updateInstanceConfigEvent.ServerName,
-                UserId = server.Host.UserId
-            };
-            server.Host = Host;
-            if(_serverRepository.GetServerByCode(updateInstanceConfigEvent.Code) == null)
-                server.Code = updateInstanceConfigEvent.Code;
             return Task.CompletedTask;
         }
+        */
 
 
 
         private Task NodeReceivedPlayerEncryptionHandler(NodeReceivedPlayerEncryptionEvent RecievedEvent)
         {
-            _nodeRepository.OnNodeRecievedEncryptionParameters(IPEndPoint.Parse(RecievedEvent.endPoint), (EndPoint)IPEndPoint.Parse(RecievedEvent.PlayerEndPoint));
+            _nodeRepository.OnNodeRecievedEncryptionParameters(IPEndPoint.Parse(RecievedEvent.endPoint), IPEndPoint.Parse(RecievedEvent.PlayerEndPoint));
             return Task.CompletedTask;
         }
         #endregion
