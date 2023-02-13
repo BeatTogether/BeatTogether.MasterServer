@@ -231,7 +231,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 {
                     Result = ConnectToServerResult.NoAvailableDedicatedServers
                 };
-            _logger.Information("Awaiting player things");
             var sessioncheck = _sessionService.GetSession(session.EndPoint);
             int LastServerSeconds = (int)DateTime.Now.Subtract(session.LastGameDisconnect).TotalSeconds;
             if (sessioncheck.LastGameIp == server.RemoteEndPoint.ToString() && LastServerSeconds < 6)
