@@ -159,12 +159,20 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
             return Task.FromResult(true);
         }
 
-        public void UpdateCurrentPlayerCount(string secret, int currentPlayerCount)
+        public Task<bool> UpdateCurrentPlayerCount(string secret, int currentPlayerCount)
         {
             if (!_servers.TryGetValue(secret, out var server))
-                return;
+                return Task.FromResult(false);
             server.CurrentPlayerCount = currentPlayerCount;
+            return Task.FromResult(true);
         }
 
+        public Task<bool> UpdateServerGameplayState(string secret, bool InGameplay)
+        {
+            if (!_servers.TryGetValue(secret, out var server))
+                return Task.FromResult(false);
+            server.IsInGameplay = InGameplay;
+            return Task.FromResult(true);
+        }
     }
 }

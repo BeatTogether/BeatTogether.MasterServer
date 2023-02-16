@@ -312,6 +312,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 CurrentPlayerCount = 0,
                 Random = random,
                 PublicKey = publicKey,
+                IsInGameplay = false,
             };
  
         }
@@ -381,8 +382,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     new CreateMatchmakingServerRequest(
                         secret,
                         ManagerId,
-                        _mapper.Map<DedicatedServer.Interface.Models.GameplayServerConfiguration>(request.GameplayServerConfiguration),
-                        AllowNE: _configuration.AllowNoodle
+                        _mapper.Map<DedicatedServer.Interface.Models.GameplayServerConfiguration>(request.GameplayServerConfiguration)
                      ));
 
                 if (!createMatchmakingServerResponse.Success)
