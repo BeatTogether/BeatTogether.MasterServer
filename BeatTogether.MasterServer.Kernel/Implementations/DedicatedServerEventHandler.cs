@@ -94,7 +94,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             _masterServerSessionService.RemoveSecretFromSession(session.EndPoint);
             session.LastGameDisconnect = DateTime.Now;
         }
-
+        /*
         private async Task HandleServerStatusChanged(UpdateStatusEvent updateStatusEvent)
         {
             var server = await _serverRepository.GetServer(updateStatusEvent.Secret);
@@ -103,6 +103,11 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             else
                 server.IsInGameplay = false;
             return;
+        }
+        */
+        private async Task HandleServerInGameplay(ServerInGameplayEvent serverInGameplayEvent)
+        {
+            _serverRepository.UpdateServerGameplayState(serverInGameplayEvent.Secret, serverInGameplayEvent.InGameplay);
         }
 
         private Task NodeStartedHandler(NodeStartedEvent startedEvent)

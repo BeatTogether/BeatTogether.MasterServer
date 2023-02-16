@@ -312,6 +312,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 CurrentPlayerCount = 0,
                 Random = random,
                 PublicKey = publicKey,
+                IsInGameplay = false,
             };
  
         }
