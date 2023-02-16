@@ -47,6 +47,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             _autobus.Subscribe<NodeStartedEvent>(NodeStartedHandler);
             _autobus.Subscribe<NodeReceivedPlayerEncryptionEvent>(NodeReceivedPlayerEncryptionHandler);
             _autobus.Subscribe<NodeOnlineEvent>(NodeOnlineHandler);
+            _autobus.Subscribe<ServerInGameplayEvent>(HandleServerInGameplay);
             //_autobus.Subscribe<UpdateStatusEvent>(HandleServerStatusChanged);
             //_autobus.Subscribe<UpdateInstanceConfigEvent>(InstanceConfigurationUpdateHandler);
 
@@ -60,6 +61,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             _autobus.Unsubscribe<NodeStartedEvent>(NodeStartedHandler);
             _autobus.Unsubscribe<NodeReceivedPlayerEncryptionEvent>(NodeReceivedPlayerEncryptionHandler);
             _autobus.Unsubscribe<NodeOnlineEvent>(NodeOnlineHandler);
+            _autobus.Unsubscribe<ServerInGameplayEvent>(HandleServerInGameplay);
             //_autobus.Unsubscribe<UpdateStatusEvent>(HandleServerStatusChanged);
             //_autobus.Unsubscribe<UpdateInstanceConfigEvent>(InstanceConfigurationUpdateHandler);
             return Task.CompletedTask;
