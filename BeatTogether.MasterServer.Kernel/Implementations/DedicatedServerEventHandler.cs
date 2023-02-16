@@ -47,7 +47,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             _autobus.Subscribe<NodeStartedEvent>(NodeStartedHandler);
             _autobus.Subscribe<NodeReceivedPlayerEncryptionEvent>(NodeReceivedPlayerEncryptionHandler);
             _autobus.Subscribe<NodeOnlineEvent>(NodeOnlineHandler);
-            _autobus.Subscribe<UpdateStatusEvent>(HandleServerStatusChanged);
+            //_autobus.Subscribe<UpdateStatusEvent>(HandleServerStatusChanged);
             //_autobus.Subscribe<UpdateInstanceConfigEvent>(InstanceConfigurationUpdateHandler);
 
             return Task.CompletedTask;
@@ -60,7 +60,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             _autobus.Unsubscribe<NodeStartedEvent>(NodeStartedHandler);
             _autobus.Unsubscribe<NodeReceivedPlayerEncryptionEvent>(NodeReceivedPlayerEncryptionHandler);
             _autobus.Unsubscribe<NodeOnlineEvent>(NodeOnlineHandler);
-            _autobus.Unsubscribe<UpdateStatusEvent>(HandleServerStatusChanged);
+            //_autobus.Unsubscribe<UpdateStatusEvent>(HandleServerStatusChanged);
             //_autobus.Unsubscribe<UpdateInstanceConfigEvent>(InstanceConfigurationUpdateHandler);
             return Task.CompletedTask;
         }
@@ -85,7 +85,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             bool SessionExists = _masterServerSessionService.TryGetSession(IPEndPoint.Parse(integrationEvent.endPoint), out var session);
             if (server != null)
             {
-                _serverRepository.UpdateCurrentPlayerCount(integrationEvent.Secret, integrationEvent.NewPlayerCount);
+                _ = _serverRepository.UpdateCurrentPlayerCount(integrationEvent.Secret, integrationEvent.NewPlayerCount);
                 if (SessionExists)
                     session.LastGameIp = server.RemoteEndPoint.ToString();
             }
@@ -105,9 +105,10 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             return;
         }
         */
-        private async Task HandleServerInGameplay(ServerInGameplayEvent serverInGameplayEvent)
+        private Task HandleServerInGameplay(ServerInGameplayEvent serverInGameplayEvent)
         {
-            _serverRepository.UpdateServerGameplayState(serverInGameplayEvent.Secret, serverInGameplayEvent.InGameplay);
+            _ = _serverRepository.UpdateServerGameplayState(serverInGameplayEvent.Secret, serverInGameplayEvent.InGame);
+            return Task.CompletedTask;
         }
 
         private Task NodeStartedHandler(NodeStartedEvent startedEvent)
