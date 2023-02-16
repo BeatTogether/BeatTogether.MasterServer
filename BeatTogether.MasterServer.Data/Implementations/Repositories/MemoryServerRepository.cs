@@ -1,6 +1,4 @@
-﻿/*
-
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -169,18 +167,12 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
             return Task.FromResult(true);
         }
 
-        public Task<bool> UpdateServerGaneplayState(string secret, bool GameplayState)
+        public Task<bool> UpdateServerGameplayState(string secret, bool InGameplay)
         {
             if (!_servers.TryGetValue(secret, out var server))
                 return Task.FromResult(false);
-            server.IsInGameplay = GameplayState;
+            server.IsInGameplay = InGameplay;
             return Task.FromResult(true);
-        }
-
-        public Task<bool> UpdateServerGameplayState(string secret, bool InGameplay)
-        {
-            throw new System.NotImplementedException();
         }
     }
 }
-*/
