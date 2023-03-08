@@ -165,7 +165,7 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
             return true;
         }
 
-        public void UpdateCurrentPlayerCount(string secret, int currentPlayerCount)
+        public Task<bool> UpdateCurrentPlayerCount(string secret, int currentPlayerCount)
         {
             var database = _connectionMultiplexer.GetDatabase();
             database.ScriptEvaluate(
@@ -177,6 +177,7 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
                 },
                 flags: CommandFlags.DemandMaster | CommandFlags.FireAndForget
             );
+            return Task.FromResult(true);
         }
 
         #endregion
@@ -213,6 +214,11 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
         public Task<long> TotalPlayerJoins()
         {
             return Task.FromResult((long)0);
+        }
+
+        public Task<bool> UpdateServerGameplayState(string secret, bool InGameplay)
+        {
+            throw new System.NotImplementedException();
         }
 
         #endregion

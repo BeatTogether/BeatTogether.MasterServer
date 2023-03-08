@@ -92,11 +92,9 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
                 server.BeatmapDifficultyMask == difficultyMask &&
                 server.GameplayModifiersMask == modifiersMask &&
                 server.SongPackBloomFilterTop == songPackTop &&
-                server.SongPackBloomFilterBottom == songPackBottom
+                server.SongPackBloomFilterBottom == songPackBottom &&
+                server.IsInGameplay == false
             );
-            var InLobbyServers = publicServers.Where(server => server.IsInGameplay == false);
-            if (InLobbyServers.Any())
-                publicServers = InLobbyServers;
             if (!publicServers.Any())
                 return Task.FromResult<Server>(null);
             var server = publicServers.First();
@@ -161,12 +159,20 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
             return Task.FromResult(true);
         }
 
-        public void UpdateCurrentPlayerCount(string secret, int currentPlayerCount)
+        public Task<bool> UpdateCurrentPlayerCount(string secret, int currentPlayerCount)
         {
             if (!_servers.TryGetValue(secret, out var server))
-                return;
+                return Task.FromResult(false);
             server.CurrentPlayerCount = currentPlayerCount;
+            return Task.FromResult(true);
         }
 
+        public Task<bool> UpdateServerGameplayState(string secret, bool InGameplay)
+        {
+            if (!_servers.TryGetValue(secret, out var server))
+                return Task.FromResult(false);
+            server.IsInGameplay = InGameplay;
+            return Task.FromResult(true);
+        }
     }
 }

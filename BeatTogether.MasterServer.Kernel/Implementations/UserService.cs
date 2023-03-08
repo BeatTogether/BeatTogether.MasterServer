@@ -231,7 +231,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 {
                     Result = ConnectToServerResult.NoAvailableDedicatedServers
                 };
-            _logger.Information("Awaiting player things");
             var sessioncheck = _sessionService.GetSession(session.EndPoint);
             int LastServerSeconds = (int)DateTime.Now.Subtract(session.LastGameDisconnect).TotalSeconds;
             if (sessioncheck.LastGameIp == server.RemoteEndPoint.ToString() && LastServerSeconds < 6)
@@ -313,6 +312,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 CurrentPlayerCount = 0,
                 Random = random,
                 PublicKey = publicKey,
+                IsInGameplay = false,
             };
  
         }
@@ -382,8 +382,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     new CreateMatchmakingServerRequest(
                         secret,
                         ManagerId,
-                        _mapper.Map<DedicatedServer.Interface.Models.GameplayServerConfiguration>(request.GameplayServerConfiguration),
-                        AllowNE: _configuration.AllowNoodle
+                        _mapper.Map<DedicatedServer.Interface.Models.GameplayServerConfiguration>(request.GameplayServerConfiguration)
                      ));
 
                 if (!createMatchmakingServerResponse.Success)
