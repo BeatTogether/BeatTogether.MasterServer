@@ -81,20 +81,23 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             return;
         }
 
-        private async Task HandlePlayerDisconnect(PlayerLeaveServerEvent integrationEvent)
+        private async Task HandlePlayerDisconnect(PlayerLeaveServerEvent integrationEvent) //Handles player disconnects and when the player count changes
         {
             var server = await _serverRepository.GetServer(integrationEvent.Secret);
-            bool SessionExists = _masterServerSessionService.TryGetSession(IPEndPoint.Parse(integrationEvent.endPoint), out var session);
             if (server != null)
             {
                 _ = _serverRepository.UpdateCurrentPlayerCount(integrationEvent.Secret, integrationEvent.NewPlayerCount);
-                if (SessionExists)
-                    session.LastGameIp = server.RemoteEndPoint.ToString();
             }
-            if(!SessionExists)
-                return;
-            _masterServerSessionService.RemoveSecretFromSession(session.EndPoint);
-            session.LastGameDisconnect = DateTime.Now;
+            if(integrationEvent.endPoint != string.Empty)
+            {
+                bool SessionExists = _masterServerSessionService.TryGetSession(IPEndPoint.Parse(integrationEvent.endPoint), out var session);
+                if (SessionExists && server != null)
+                    session.LastGameIp = server.RemoteEndPoint.ToString();
+                if (!SessionExists)
+                    return;
+                _masterServerSessionService.RemoveSecretFromSession(session.EndPoint);
+                session.LastGameDisconnect = DateTime.Now;
+            }
         }
         /*
         private async Task HandleServerStatusChanged(UpdateStatusEvent updateStatusEvent)

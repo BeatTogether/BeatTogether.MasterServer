@@ -112,7 +112,7 @@ namespace BeatTogether.MasterServer.Kernal
 
         public Task<DisconnectPlayerResponse> KickPlayer(DisconnectPlayerRequest request)
         {
-            _autobus.Publish(new DisconnectPlayerFromMatchmakingServerEvent(request.Secret, request.UserId));
+            _autobus.Publish(new DisconnectPlayerFromMatchmakingServerEvent(request.Secret, request.UserId, string.Empty));
             return Task.FromResult(new DisconnectPlayerResponse());
         }
 
