@@ -174,7 +174,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             {
                 Platform.Test => "Test#",
                 Platform.Oculus => "Oculus#",
-                Platform.OculusQuest => "Oculus#",
+                Platform.OculusQuest => "OculusQuest#",
                 Platform.Steam => "Steam#",
                 Platform.PS4 => "PSN#",
                 _ => ""
