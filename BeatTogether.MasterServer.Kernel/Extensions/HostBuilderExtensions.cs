@@ -59,6 +59,7 @@ namespace BeatTogether.Extensions
                         .AddHostedService<MasterServerSessionTickService>()
                         .AddHostedService<HandshakeMessageHandler>()
                         .AddHostedService<UserMessageHandler>()
-                );
+                )
+                .UseHttpApi();
     }
 }
