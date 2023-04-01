@@ -1,14 +1,25 @@
 ﻿using BeatTogether.MasterServer.HttpApi.Models.Enums;
+using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Messaging.Enums;
 using BeatTogether.MasterServer.Messaging.Models;
 using BeatTogether.MasterServer.Messaging.Models.HttpApi;
 using Microsoft.AspNetCore.Mvc;
+using Serilog;
 
 namespace BeatTogether.MasterServer.Kernel.HttpControllers
 {
     [ApiController]
     public class GetMultiplayerInstanceController
     {
+        private readonly ILogger _logger;
+        private readonly IMasterServerSessionService _sessionService;
+
+        public GetMultiplayerInstanceController(IMasterServerSessionService sessionService)
+        {
+            _logger = Log.ForContext<GetMultiplayerInstanceController>();
+            _sessionService = sessionService;
+        }
+        
         /// <summary>
         /// Beat Saber sends this to request a server instance or begin matchmaking.
         /// </summary>
@@ -34,7 +45,7 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
 
             var response = new GetMultiplayerInstanceResponse()
             {
-                ErrorCode = MultiplayerPlacementErrorCode.Success,
+                ErrorCode = MultiplayerPlacementErrorCode.MatchmakingTimeout,
                 PlayerSessionInfo = new PlayerSessionInfo()
                 {
                     PrivateGameCode = "abc",
@@ -48,21 +59,14 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
                         SongSelectionMode =SongSelectionMode.ManagerPicks,
                         GameplayServerControlSettings = GameplayServerControlSettings.All
                     },
-                    BeatmapLevelSelectionMask = new BeatmapLevelSelectionMask()
-                    {
-                        BeatmapDifficultyMask = BeatmapDifficultyMask.All,
-                        SongPackMask = new SongPackMask()
-                        {
-                            Bottom = ulong.MaxValue,
-                            Top = ulong.MaxValue
-                        },
-                        GameplayModifiersMask = GameplayModifiersMask.All
-                    },
+                    BeatmapLevelSelectionMask = request.BeatmapLevelSelectionMask,
                     Port = 1234,
                     DnsName = "test",
                     GameSessionId = "test",
                     PlayerSessionId = "test"
-                }
+                },
+                PollIntervalMs = 5000,
+                PlacementStatus = "SEARCHING"
             };
             return new JsonResult(response);
         }

@@ -255,11 +255,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 {
                     BeatmapDifficultyMask = (BeatmapDifficultyMask)server.BeatmapDifficultyMask,
                     GameplayModifiersMask = (GameplayModifiersMask)server.GameplayModifiersMask,
-                    SongPackMask = new SongPackMask
-                    {
-                        Top = server.SongPackBloomFilterTop,
-                        Bottom = server.SongPackBloomFilterBottom
-                    }
+                    SongPackMask = new SongPackMask(server.SongPackBloomFilterTop, server.SongPackBloomFilterBottom)
                 },
                 IsConnectionOwner = true,
                 IsDedicatedServer = true,

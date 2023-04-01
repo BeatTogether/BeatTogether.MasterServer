@@ -27,9 +27,42 @@ namespace BeatTogether.MasterServer.Messaging.Models.HttpApi
         [JsonProperty("placement_status")]
         public string? PlacementStatus { get; set; }
 
+        #region Utils
+
+        /// <summary>
+        /// Creates a response with a simple error code.
+        /// </summary>
         public static GetMultiplayerInstanceResponse ForErrorCode(MultiplayerPlacementErrorCode errorCode) => new()
         {
             ErrorCode = errorCode
         };
+        
+        /// <summary>
+        /// Creates a pending/timeout response that tells the client to retry their request after a certain poll time. 
+        /// </summary>
+        public static GetMultiplayerInstanceResponse ForPendingPlacement(string privateGameSecret, string placementId,
+            int pollIntervalMs, GameplayServerConfiguration gameplayServerConfiguration,
+            BeatmapLevelSelectionMask beatmapLevelSelectionMask) => new()
+        {
+            ErrorCode = MultiplayerPlacementErrorCode.RequestTimeout,
+            PlayerSessionInfo = new PlayerSessionInfo()
+            {
+                GameSessionId = "",
+                Port = -1,
+                DnsName = "",
+                PlayerSessionId = "",
+                PrivateGameCode = "",
+                GameplayServerConfiguration = gameplayServerConfiguration,
+                BeatmapLevelSelectionMask = beatmapLevelSelectionMask,
+                PrivateGameSecret = privateGameSecret
+            },
+            PollIntervalMs = pollIntervalMs,
+            TicketId = "",
+            TicketStatus = "",
+            PlacementId = placementId,
+            PlacementStatus = "PENDING"
+        };
+        
+        #endregion
     }
 }
