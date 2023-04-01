@@ -16,6 +16,8 @@ using BeatTogether.MasterServer.Kernal;
 using BeatTogether.MasterServer.Interface.ApiInterface;
 using BeatTogether.MasterServer.Kernal.Abstractions;
 using System.Net.Http;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 
 namespace BeatTogether.Extensions
 {
@@ -60,6 +62,19 @@ namespace BeatTogether.Extensions
                         .AddHostedService<HandshakeMessageHandler>()
                         .AddHostedService<UserMessageHandler>()
                 )
-                .UseHttpApi();
+                .ConfigureWebHostDefaults(webHostBuilder =>
+                    webHostBuilder
+                        .ConfigureServices((hostBuilderContext, services) =>
+                            services
+                                .AddOptions()
+                                .AddControllers()
+                                .AddNewtonsoftJson()
+                        )
+                        .Configure(applicationBuilder =>
+                            applicationBuilder
+                                .UseRouting()
+                                .UseEndpoints(endPointRouteBuilder => endPointRouteBuilder.MapControllers())
+                        )
+                );
     }
 }
