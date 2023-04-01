@@ -12,6 +12,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         public MasterServerSessionState State { get; set; }
         public Platform Platform { get; set; }
         public string UserId { get; set; }
+        public string AuthUserId { get; set; }
         public string UserName { get; set; }
         public string Secret { get; set; }
         public string GameId { get; set; }

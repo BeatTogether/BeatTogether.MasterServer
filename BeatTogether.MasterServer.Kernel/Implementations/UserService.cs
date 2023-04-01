@@ -20,6 +20,8 @@ using BeatTogether.MasterServer.Messaging.Messages.User;
 using BeatTogether.MasterServer.Messaging.Models;
 using Serilog;
 
+// ReSharper disable TemplateIsNotCompileTimeConstantProblem
+
 namespace BeatTogether.MasterServer.Kernel.Implementations
 {
     public class UserService : IUserService
@@ -315,27 +317,24 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         public async Task<ConnectToServerResponse> ConnectToMatchmakingServer(MasterServerSession session, ConnectToMatchmakingServerRequest request)
         {
-            
+            var randomLog = request.Random != null ? BitConverter.ToString(request.Random) : "Pending";
+            var pubKeyLog = request.PublicKey != null ? BitConverter.ToString(request.PublicKey) : "Pending";
             _logger.Verbose(
                 $"Handling {nameof(ConnectToMatchmakingServerRequest)} " +
                 $"(UserId='{request.UserId}', " +
                 $"UserName='{request.UserName}', " +
-                $"Random='{BitConverter.ToString(request.Random)}', " +
-                $"PublicKey='{BitConverter.ToString(request.PublicKey)}', " +
+                $"Random='{randomLog}', " +
+                $"PublicKey='{pubKeyLog}', " +
                 $"BeatmapDifficultyMask={request.BeatmapLevelSelectionMask.BeatmapDifficultyMask}, " +
                 $"GameplayModifiersMask={request.BeatmapLevelSelectionMask.GameplayModifiersMask}, " +
                 $"Secret='{request.Secret}', " +
                 $"Code='{request.Code}')."
             );
-            bool IsQuickplay = true;
+            
+            var isQuickplay = !(!string.IsNullOrEmpty(request.Code) || !string.IsNullOrEmpty(request.Secret));
 
-            if (!string.IsNullOrEmpty(request.Code) || !string.IsNullOrEmpty(request.Secret))
-            {
-                IsQuickplay = false;
-            }
-
-            Server server = await GetServerToConnectTo(request, IsQuickplay);
-            if (server == null && !IsQuickplay)
+            Server server = await GetServerToConnectTo(request, isQuickplay);
+            if (server == null && !isQuickplay)
             {
                 if (!string.IsNullOrEmpty(request.Code)) //if code was incorrect{
                 {
@@ -367,7 +366,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             }
             string secret = request.Secret;
             string ManagerId = "ziuMSceapEuNN7wRGQXrZg";
-            if (!IsQuickplay)
+            if (!isQuickplay)
                 ManagerId = session.GameId;//sets the manager to the player who is requesting
             else
                 secret = _secretProvider.GetSecret();
@@ -379,7 +378,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                         secret,
                         ManagerId,
                         _mapper.Map<DedicatedServer.Interface.Models.GameplayServerConfiguration>(request.GameplayServerConfiguration)
-                     ));
+                    ));
 
                 if (!createMatchmakingServerResponse.Success)
                     return new ConnectToServerResponse
@@ -388,7 +387,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     };
 
                 var remoteEndPoint = IPEndPoint.Parse(createMatchmakingServerResponse.RemoteEndPoint);
-                server = CreateServer(request, session.UserName, secret, remoteEndPoint, IsQuickplay, createMatchmakingServerResponse.Random, createMatchmakingServerResponse.PublicKey);
+                server = CreateServer(request, session.UserName, secret, remoteEndPoint, isQuickplay, createMatchmakingServerResponse.Random, createMatchmakingServerResponse.PublicKey);
                 if (!await _serverRepository.AddServer(server))
                     return new ConnectToServerResponse
                     {
