@@ -1,7 +1,8 @@
-﻿using BeatTogether.MasterServer.HttpApi.Models.Enums;
+﻿using System;
+using System.Net;
+using BeatTogether.MasterServer.HttpApi.Models.Enums;
 using BeatTogether.MasterServer.Kernel.Abstractions;
-using BeatTogether.MasterServer.Messaging.Enums;
-using BeatTogether.MasterServer.Messaging.Models;
+using BeatTogether.MasterServer.Kernel.Implementations;
 using BeatTogether.MasterServer.Messaging.Models.HttpApi;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
@@ -9,17 +10,19 @@ using Serilog;
 namespace BeatTogether.MasterServer.Kernel.HttpControllers
 {
     [ApiController]
-    public class GetMultiplayerInstanceController
+    public class GetMultiplayerInstanceController : Controller
     {
         private readonly ILogger _logger;
+        private readonly IUserService _userService;
         private readonly IMasterServerSessionService _sessionService;
 
-        public GetMultiplayerInstanceController(IMasterServerSessionService sessionService)
+        public GetMultiplayerInstanceController(IMasterServerSessionService sessionService, IUserService userService)
         {
             _logger = Log.ForContext<GetMultiplayerInstanceController>();
+            _userService = userService;
             _sessionService = sessionService;
         }
-        
+
         /// <summary>
         /// Beat Saber sends this to request a server instance or begin matchmaking.
         /// </summary>
@@ -27,50 +30,70 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
         [Route("beat_saber_get_multiplayer_instance")]
         public IActionResult GetMultiplayerInstance([FromBody] GetMultiplayerInstanceRequest request)
         {
-            // ReSharper disable once TemplateIsNotCompileTimeConstantProblem
-            Serilog.Log.Logger.Information($"Get instance (Version={request.Version}, " +
-                                           $"ServiceEnvironment={request.ServiceEnvironment}, " +
-                                           $"SingleUseAuthToken={request.SingleUseAuthToken}, " +
-                                           $"BeatmapLevelSelectionMask={request.BeatmapLevelSelectionMask}, " +
-                                           $"GameplayServerConfiguration={request.GameplayServerConfiguration}, " +
-                                           $"UserId={request.UserId}, " +
-                                           $"PrivateGameSecret={request.PrivateGameSecret}, " +
-                                           $"PrivateGameCode={request.PrivateGameCode}, " +
-                                           $"Platform={request.Platform}, " +
-                                           $"AuthUserId={request.AuthUserId}, " +
-                                           $"GameliftRegionLatencies={request.GameliftRegionLatencies}, " +
-                                           $"TicketId={request.TicketId}, " +
-                                           $"PlacementId={request.PlacementId})");
+            var response = new GetMultiplayerInstanceResponse();
+            response.AddRequestContext(request);
 
+            // TODO Validate game client version supported range?
 
-            var response = new GetMultiplayerInstanceResponse()
+            if (HttpContext.Connection.RemoteIpAddress is null)
             {
-                ErrorCode = MultiplayerPlacementErrorCode.MatchmakingTimeout,
-                PlayerSessionInfo = new PlayerSessionInfo()
+                _logger.Warning("Auth failure: Missing IP address from HTTP request context");
+                response.ErrorCode = MultiplayerPlacementErrorCode.AuthenticationFailed;
+                return new JsonResult(response);
+            }
+
+            var remoteEndPoint = new IPEndPoint(
+                HttpContext.Connection.RemoteIpAddress,
+                HttpContext.Connection.RemotePort
+            );
+
+            // Try to resume session from our assigned player session ID (transmitted as ticket ID)
+            // If that doesn't work, get/create session by endpoint
+            MasterServerSession session = null;
+
+            if (!string.IsNullOrEmpty(request.TicketId) &&
+                _sessionService.TryGetSessionByPlayerSessionId(request.TicketId, out session))
+            {
+                _logger.Information(
+                    "Test - HTTP session resume test by psessid={Psess}",
+                    session.PlayerSessionId);
+            }
+            else
+            {
+                session = _sessionService.GetOrAddSession(remoteEndPoint);
+            }
+
+            // Authenticate platform user and assign session ID if not yet authed
+            if (string.IsNullOrEmpty(session.PlayerSessionId))
+            {
+                if (request.SingleUseAuthToken != null && request.AuthUserId != null)
                 {
-                    PrivateGameCode = "abc",
-                    PrivateGameSecret = "def",
-                    GameplayServerConfiguration = new GameplayServerConfiguration()
-                    {
-                        DiscoveryPolicy = DiscoveryPolicy.Public,
-                        InvitePolicy = InvitePolicy.AnyoneCanInvite,
-                        GameplayServerMode = GameplayServerMode.Managed,
-                        MaxPlayerCount = 6,
-                        SongSelectionMode =SongSelectionMode.ManagerPicks,
-                        GameplayServerControlSettings = GameplayServerControlSettings.All
-                    },
-                    BeatmapLevelSelectionMask = request.BeatmapLevelSelectionMask,
-                    Port = 1234,
-                    DnsName = "test",
-                    GameSessionId = "test",
-                    PlayerSessionId = "test"
-                },
-                PollIntervalMs = 5000,
-                PlacementStatus = "SEARCHING"
-            };
+                    // TODO Use SingleUseAuthToken (= AuthenticationToken.sessionToken) to do platform auth like UserService
+
+                    session.Platform = request.Platform;
+                    session.UserId = request.UserId;
+                    session.PlayerSessionId = Guid.NewGuid().ToString("N");
+
+                    _logger.Information(
+                        "Auth success (platform={Platform}, userId={UserId}, playerSessionId={PlayerSessionId})",
+                        session.Platform, session.UserId, session.PlayerSessionId);
+                }
+                else
+                {
+                    _logger.Warning("Auth failure: Session did not go through platform authentication");
+                    response.ErrorCode = MultiplayerPlacementErrorCode.AuthenticationFailed;
+                    return new JsonResult(response);
+                }
+            }
+            
+            response.AddSessionContext(session.PlayerSessionId);
+
+            // var authResult = _userService.Authenticate()
+            response.ErrorCode = MultiplayerPlacementErrorCode.RequestTimeout;
+            response.PollIntervalMs = 5000;
             return new JsonResult(response);
         }
-        
+
         /// <summary>
         /// Beat Saber sends this request when matchmaking gets cancelled by the user.
         /// </summary>
@@ -78,9 +101,9 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
         [Route("beat_saber_multiplayer_cancel_matchmaking_ticket")]
         public IActionResult CancelMatchmakingTicket()
         {
-            return new JsonResult(
-                GetMultiplayerInstanceResponse.ForErrorCode(MultiplayerPlacementErrorCode.ConnectionCanceled)
-            );
+            var response = new GetMultiplayerInstanceResponse();
+            response.ErrorCode = MultiplayerPlacementErrorCode.ConnectionCanceled;
+            return new JsonResult(response);
         }
     }
 }

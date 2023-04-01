@@ -1,5 +1,4 @@
-﻿using BeatTogether.MasterServer.HttpApi.Models;
-using BeatTogether.MasterServer.HttpApi.Models.Enums;
+﻿using BeatTogether.MasterServer.HttpApi.Models.Enums;
 using Newtonsoft.Json;
 
 namespace BeatTogether.MasterServer.Messaging.Models.HttpApi
@@ -7,62 +6,42 @@ namespace BeatTogether.MasterServer.Messaging.Models.HttpApi
     public class GetMultiplayerInstanceResponse
     {
         [JsonProperty("error_code")]
-        public MultiplayerPlacementErrorCode? ErrorCode { get; set; }
+        public MultiplayerPlacementErrorCode ErrorCode { get; set; } = MultiplayerPlacementErrorCode.Unknown;
 
-        [JsonProperty("player_session_info")]
-        public PlayerSessionInfo? PlayerSessionInfo { get; set; }
+        [JsonProperty("player_session_info")] 
+        public PlayerSessionInfo PlayerSessionInfo { get; set; } = new();
 
-        [JsonProperty("poll_interval_ms")]
-        public int? PollIntervalMs { get; set; }
+        [JsonProperty("poll_interval_ms")] 
+        public int PollIntervalMs { get; set; } = -1;
 
         [JsonProperty("ticket_id")]
-        public string? TicketId { get; set; }
+        public string TicketId { get; set; } = "";
 
         [JsonProperty("ticket_status")]
-        public string? TicketStatus { get; set; }
+        public string TicketStatus { get; set; } = "";
 
         [JsonProperty("placement_id")]
-        public string? PlacementId { get; set; }
+        public string PlacementId { get; set; } = "";
 
         [JsonProperty("placement_status")]
-        public string? PlacementStatus { get; set; }
+        public string PlacementStatus { get; set; } = "";
 
         #region Utils
 
-        /// <summary>
-        /// Creates a response with a simple error code.
-        /// </summary>
-        public static GetMultiplayerInstanceResponse ForErrorCode(MultiplayerPlacementErrorCode errorCode) => new()
+        public void AddRequestContext(GetMultiplayerInstanceRequest request)
         {
-            ErrorCode = errorCode
-        };
-        
-        /// <summary>
-        /// Creates a pending/timeout response that tells the client to retry their request after a certain poll time. 
-        /// </summary>
-        public static GetMultiplayerInstanceResponse ForPendingPlacement(string privateGameSecret, string placementId,
-            int pollIntervalMs, GameplayServerConfiguration gameplayServerConfiguration,
-            BeatmapLevelSelectionMask beatmapLevelSelectionMask) => new()
+            PlayerSessionInfo.PrivateGameCode = request.PrivateGameCode;
+            PlayerSessionInfo.PrivateGameSecret = request.PrivateGameSecret;
+            TicketId = request.TicketId;
+            PlacementId = request.PlacementId;
+        }
+
+        public void AddSessionContext(string playerSessionId)
         {
-            ErrorCode = MultiplayerPlacementErrorCode.RequestTimeout,
-            PlayerSessionInfo = new PlayerSessionInfo()
-            {
-                GameSessionId = "",
-                Port = -1,
-                DnsName = "",
-                PlayerSessionId = "",
-                PrivateGameCode = "",
-                GameplayServerConfiguration = gameplayServerConfiguration,
-                BeatmapLevelSelectionMask = beatmapLevelSelectionMask,
-                PrivateGameSecret = privateGameSecret
-            },
-            PollIntervalMs = pollIntervalMs,
-            TicketId = "",
-            TicketStatus = "",
-            PlacementId = placementId,
-            PlacementStatus = "PENDING"
-        };
-        
+            PlayerSessionInfo.PlayerSessionId = playerSessionId;
+            TicketId = playerSessionId;
+        }
+
         #endregion
     }
 }
