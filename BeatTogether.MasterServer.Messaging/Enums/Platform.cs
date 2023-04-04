@@ -3,9 +3,12 @@
     public enum Platform : byte
     {
         Test,
-        Oculus,
+        OculusRift,
         OculusQuest,
         Steam,
-        PS4
+        PS4,
+        PS4Dev,
+        PS4Cert,
+        Oculus = 1
     }
 }

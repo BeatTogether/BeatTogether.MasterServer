@@ -16,6 +16,8 @@ using BeatTogether.MasterServer.Kernal;
 using BeatTogether.MasterServer.Interface.ApiInterface;
 using BeatTogether.MasterServer.Kernal.Abstractions;
 using System.Net.Http;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 
 namespace BeatTogether.Extensions
 {
@@ -29,36 +31,47 @@ namespace BeatTogether.Extensions
                 .UseSerilog()
                 .UseAutobus()
                 .UseMasterServerData()
-                .ConfigureServices((hostBuilderContext, services) =>
-                    services
-                        .AddCoreSecurity()
-                        .AddServiceKernel<IApiInterface, ApiInterface>()
-                        .AddMasterServerMessaging()
-                        .AddAutoMapper(configuration =>
-                        {
-                            configuration.CreateMap<BeatTogether.MasterServer.Messaging.Models.GameplayServerConfiguration,
-                                                    DedicatedServer.Interface.Models.GameplayServerConfiguration>();
-                        })
-                        .AddConfiguration<MasterServerConfiguration>("MasterServer")
-                        .AddTransient<SecureRandom>()
-                        .AddTransient<RNGCryptoServiceProvider>()
-                        .AddSingleton<HttpClient>()
-                        .AddSingleton<ICookieProvider, CookieProvider>()
-                        .AddSingleton<IRandomProvider, RandomProvider>()
-                        .AddSingleton<IServerCodeProvider, ServerCodeProvider>()
-                        .AddSingleton<ISecretProvider, SecretProvider>()
-                        .AddScoped<IHandshakeService, HandshakeService>()
-                        .AddScoped<IUserService, UserService>()
-                        .AddSingleton<IMasterServerSessionService, MasterServerSessionService>()
-                        .AddSingleton<INodeRepository, NodeRepository>()
-                        .AddSingleton<MasterServerMessageSource>()
-                        .AddSingleton<MasterServerMessageDispatcher>()
-                        .AddServiceClient<IMatchmakingService>()
-                        .AddHostedService<DedicatedServerEventHandler>()
-                        .AddHostedService<MasterServer>()
-                        .AddHostedService<MasterServerSessionTickService>()
-                        .AddHostedService<HandshakeMessageHandler>()
-                        .AddHostedService<UserMessageHandler>()
+                .ConfigureWebHostDefaults(webHostBuilder =>
+                    webHostBuilder
+                        .ConfigureServices((hostBuilderContext, services) =>
+                            services
+                                .AddCoreSecurity()
+                                .AddServiceKernel<IApiInterface, ApiInterface>()
+                                .AddMasterServerMessaging()
+                                .AddAutoMapper(configuration =>
+                                {
+                                    configuration.CreateMap<BeatTogether.MasterServer.Messaging.Models.GameplayServerConfiguration,
+                                        DedicatedServer.Interface.Models.GameplayServerConfiguration>();
+                                })
+                                .AddConfiguration<MasterServerConfiguration>("MasterServer")
+                                .AddTransient<SecureRandom>()
+                                .AddTransient<RNGCryptoServiceProvider>()
+                                .AddSingleton<HttpClient>()
+                                .AddSingleton<ICookieProvider, CookieProvider>()
+                                .AddSingleton<IRandomProvider, RandomProvider>()
+                                .AddSingleton<IServerCodeProvider, ServerCodeProvider>()
+                                .AddSingleton<ISecretProvider, SecretProvider>()
+                                .AddScoped<IHandshakeService, HandshakeService>()
+                                .AddScoped<IUserService, UserService>()
+                                .AddSingleton<IMasterServerSessionService, MasterServerSessionService>()
+                                .AddSingleton<INodeRepository, NodeRepository>()
+                                .AddSingleton<MasterServerMessageSource>()
+                                .AddSingleton<MasterServerMessageDispatcher>()
+                                .AddServiceClient<IMatchmakingService>()
+                                .AddHostedService<DedicatedServerEventHandler>()
+                                .AddHostedService<MasterServer>()
+                                .AddHostedService<MasterServerSessionTickService>()
+                                .AddHostedService<HandshakeMessageHandler>()
+                                .AddHostedService<UserMessageHandler>()
+                                .AddOptions()
+                                .AddControllers()
+                                .AddNewtonsoftJson()
+                        )
+                        .Configure(applicationBuilder =>
+                            applicationBuilder
+                                .UseRouting()
+                                .UseEndpoints(endPointRouteBuilder => endPointRouteBuilder.MapControllers())
+                        )
                 );
     }
 }

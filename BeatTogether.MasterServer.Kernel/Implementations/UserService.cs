@@ -21,6 +21,8 @@ using BeatTogether.MasterServer.Messaging.Messages.User;
 using BeatTogether.MasterServer.Messaging.Models;
 using Serilog;
 
+// ReSharper disable TemplateIsNotCompileTimeConstantProblem
+
 namespace BeatTogether.MasterServer.Kernel.Implementations
 {
     public class UserService : IUserService
@@ -259,11 +261,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 {
                     BeatmapDifficultyMask = (BeatmapDifficultyMask)server.BeatmapDifficultyMask,
                     GameplayModifiersMask = (GameplayModifiersMask)server.GameplayModifiersMask,
-                    SongPackMask = new SongPackMask
-                    {
-                        Top = server.SongPackBloomFilterTop,
-                        Bottom = server.SongPackBloomFilterBottom
-                    }
+                    SongPackMask = new SongPackMask(server.SongPackBloomFilterTop, server.SongPackBloomFilterBottom)
                 },
                 IsConnectionOwner = true,
                 IsDedicatedServer = true,
@@ -320,24 +318,24 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         public async Task<ConnectToServerResponse> ConnectToMatchmakingServer(MasterServerSession session, ConnectToMatchmakingServerRequest request)
         {
-            
+            var randomLog = request.Random != null ? BitConverter.ToString(request.Random) : "Pending";
+            var pubKeyLog = request.PublicKey != null ? BitConverter.ToString(request.PublicKey) : "Pending";
             _logger.Verbose(
                 $"Handling {nameof(ConnectToMatchmakingServerRequest)} " +
                 $"(UserId='{request.UserId}', " +
                 $"UserName='{request.UserName}', " +
-                $"Random='{BitConverter.ToString(request.Random)}', " +
-                $"PublicKey='{BitConverter.ToString(request.PublicKey)}', " +
+                $"Random='{randomLog}', " +
+                $"PublicKey='{pubKeyLog}', " +
                 $"BeatmapDifficultyMask={request.BeatmapLevelSelectionMask.BeatmapDifficultyMask}, " +
                 $"GameplayModifiersMask={request.BeatmapLevelSelectionMask.GameplayModifiersMask}, " +
                 $"Secret='{request.Secret}', " +
                 $"Code='{request.Code}')."
-            ); //Logging for the packet
+            );
+            
+            bool isQuickplay = string.IsNullOrEmpty(request.Code) && string.IsNullOrEmpty(request.Secret); //Quickplay is true if there is no code and no secret
 
-            bool IsQuickplay = string.IsNullOrEmpty(request.Code) && string.IsNullOrEmpty(request.Secret); //Quickplay is true if there is no code and no secret
-
-
-            Server server = await GetServerToConnectTo(request, IsQuickplay); //Gets the server that is requested to join
-            if (server == null && !IsQuickplay)
+            Server server = await GetServerToConnectTo(request, isQuickplay); //Gets the server that is requested to join
+            if (server == null && !isQuickplay)
             {
                 if (!string.IsNullOrEmpty(request.Code)) //if code was incorrect then server does not exist
                 {
@@ -369,7 +367,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             }
             string secret = request.Secret;
             string ManagerId = "ziuMSceapEuNN7wRGQXrZg";
-            if (!IsQuickplay)
+            if (!isQuickplay)
                 ManagerId = session.GameId;//sets the manager to the player who is requesting
             else
                 secret = _secretProvider.GetSecret();
@@ -388,7 +386,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                      )
                     {
                     ServerName = ServerName,
-                    }) ;
+                    });
 
                 if (!createMatchmakingServerResponse.Success)
                     return new ConnectToServerResponse
