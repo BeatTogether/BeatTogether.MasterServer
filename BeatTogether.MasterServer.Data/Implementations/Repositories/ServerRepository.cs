@@ -11,6 +11,22 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
 {
     public sealed class ServerRepository : IServerRepository
     {
+        /* //TODO
+         * Refactor redis server code
+         * load scripts to the redis server now it has been updated to latest for extra performance
+         * use sets instead of hashes?
+         * 
+         * specification: 
+         * Server list - server ID to server
+         * Servers by code - server code to server ID
+         * Servers by secret - server secret to server ID
+         * Public servers - list of public servers
+         * Maybe other stuff?
+         * 
+         * 
+         */
+
+
         public static class RedisKeys
         {
             public static RedisKey Servers(string secret) => $"Servers:{secret}";

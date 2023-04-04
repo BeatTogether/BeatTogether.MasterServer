@@ -11,6 +11,7 @@ using BeatTogether.DedicatedServer.Interface;
 using BeatTogether.DedicatedServer.Interface.Requests;
 using BeatTogether.MasterServer.Data.Abstractions.Repositories;
 using BeatTogether.MasterServer.Domain.Models;
+using BeatTogether.MasterServer.Interface.Events;
 using BeatTogether.MasterServer.Kernal.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions.Providers;
@@ -175,7 +176,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             {
                 Platform.Test => "Test#",
                 Platform.Oculus => "Oculus#",
-                Platform.OculusQuest => "Oculus#",
+                Platform.OculusQuest => "OculusQuest#",
                 Platform.Steam => "Steam#",
                 Platform.PS4 => "PSN#",
                 _ => ""
@@ -225,23 +226,26 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     Result = ConnectToServerResult.ServerAtCapacity
                 };
             }
-            await _serverRepository.IncrementCurrentPlayerCount(server.Secret);
-            _sessionService.AddSession(session.EndPoint, server.Secret);
-
-            if (!await _nodeRepository.SendAndAwaitPlayerEncryptionRecievedFromNode(server.RemoteEndPoint, session.EndPoint, session.UserId, session.UserName,session.Platform, Random, PublicKey, EncryptionRecieveTimeout))
+            if (!await _nodeRepository.SendAndAwaitPlayerEncryptionRecievedFromNode(server.RemoteEndPoint, session.EndPoint, session.UserId, session.UserName, session.Platform, Random, PublicKey, EncryptionRecieveTimeout))
+            {
+                _autobus.Publish(new DisconnectPlayerFromMatchmakingServerEvent(server.Secret, session.UserId, session.EndPoint.ToString()));
                 return new ConnectToServerResponse()
                 {
-                    Result = ConnectToServerResult.NoAvailableDedicatedServers
+                    Result = ConnectToServerResult.UnknownError
                 };
-            var sessioncheck = _sessionService.GetSession(session.EndPoint);
-            int LastServerSeconds = (int)DateTime.Now.Subtract(session.LastGameDisconnect).TotalSeconds;
-            if (sessioncheck.LastGameIp == server.RemoteEndPoint.ToString() && LastServerSeconds < 6)
-            {
-                _logger.Information("Delaying join");
-                await Task.Delay(6000 - (LastServerSeconds * 1000) );
             }
-            _logger.Information("Player Connected to matchmaking server: " + session.GameId);
-            _logger.Information("Sending player to node: " + server.RemoteEndPoint);
+
+            var sessioncheck = _sessionService.GetSession(session.EndPoint);
+            int LastServerMilliSeconds = (int)DateTime.Now.Subtract(session.LastGameDisconnect).TotalMilliseconds;
+            if (sessioncheck.LastGameIp == server.RemoteEndPoint.ToString() && LastServerMilliSeconds < 6000)
+            {
+                _logger.Verbose("Delaying player from joining");
+                await Task.Delay(6000 - (LastServerMilliSeconds) );
+            }
+
+            _sessionService.AddSession(session.EndPoint, server.Secret);
+
+            _logger.Information("Player: " + session.GameId + " Is being sent to node: " + server.RemoteEndPoint + ", Server name: " + serverFromRepo.Host.UserName + ", PlayerCountBeforeJoin: " + serverFromRepo.CurrentPlayerCount);
             /*
                         _logger.Information($"Random='{BitConverter.ToString(Random)}'");
                         _logger.Information($"PublicKey='{BitConverter.ToString(PublicKey)}'");
@@ -278,11 +282,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             };
         }
 
-        public Server CreateServer(ConnectToMatchmakingServerRequest request ,string ManagerName,string secret, IPEndPoint DediEndpoint, bool IsQuickplay, byte[] random, byte[] publicKey)
+        public Server CreateServer(ConnectToMatchmakingServerRequest request ,string ServerName, string ManagerName,string secret, IPEndPoint DediEndpoint, bool IsQuickplay, byte[] random, byte[] publicKey)
         {
-            string ServerName = ManagerName + "'s server";
-            if (IsQuickplay)
-                ServerName = "BeatTogether Quickplay: " + ((Domain.Enums.BeatmapDifficultyMask)request.BeatmapLevelSelectionMask.BeatmapDifficultyMask).ToString();
             return new Server
             {
                 Host = new Player
@@ -331,19 +332,19 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 $"Code='{request.Code}')."
             );
             
-            var isQuickplay = !(!string.IsNullOrEmpty(request.Code) || !string.IsNullOrEmpty(request.Secret));
+            bool isQuickplay = string.IsNullOrEmpty(request.Code) && string.IsNullOrEmpty(request.Secret); //Quickplay is true if there is no code and no secret
 
-            Server server = await GetServerToConnectTo(request, isQuickplay);
+            Server server = await GetServerToConnectTo(request, isQuickplay); //Gets the server that is requested to join
             if (server == null && !isQuickplay)
             {
-                if (!string.IsNullOrEmpty(request.Code)) //if code was incorrect{
+                if (!string.IsNullOrEmpty(request.Code)) //if code was incorrect then server does not exist
                 {
                     return new ConnectToServerResponse
                     {
                         Result = ConnectToServerResult.InvalidCode
                     };
                 }
-                if (string.IsNullOrEmpty(request.Secret))//If secret is empty(cannot make server then)
+                if (string.IsNullOrEmpty(request.Secret))//If secret is empty then a server cannot be made/joined
                 {
                     return new ConnectToServerResponse
                     {
@@ -356,11 +357,11 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             {
                 if (!DoesServerExist(server))
                 {
-                    _logger.Information("NODE OFFLINE removing server");
+                    _logger.Information("NODE OFFLINE removing server with ID: " + server.Secret + " from the server list");
                     await _serverRepository.RemoveServer(server.Secret);
                     return new ConnectToServerResponse
                     {
-                        Result = ConnectToServerResult.NoAvailableDedicatedServers //there is no specific error result for this so im using this one
+                        Result = ConnectToServerResult.UnknownError //there is no specific error result for this
                     };
                 }
             }
@@ -373,12 +374,19 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
             if(server == null) //Creates the server, then the player can join
             {
+                string ServerName = session.UserName + "'s server";
+                if (IsQuickplay)
+                    ServerName = "BeatTogether Quickplay: " + ((Domain.Enums.BeatmapDifficultyMask)request.BeatmapLevelSelectionMask.BeatmapDifficultyMask).ToString();
+
                 var createMatchmakingServerResponse = await _matchmakingService.CreateMatchmakingServer(
                     new CreateMatchmakingServerRequest(
                         secret,
                         ManagerId,
                         _mapper.Map<DedicatedServer.Interface.Models.GameplayServerConfiguration>(request.GameplayServerConfiguration)
-                    ));
+                     )
+                    {
+                    ServerName = ServerName,
+                    });
 
                 if (!createMatchmakingServerResponse.Success)
                     return new ConnectToServerResponse
@@ -387,14 +395,17 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     };
 
                 var remoteEndPoint = IPEndPoint.Parse(createMatchmakingServerResponse.RemoteEndPoint);
-                server = CreateServer(request, session.UserName, secret, remoteEndPoint, isQuickplay, createMatchmakingServerResponse.Random, createMatchmakingServerResponse.PublicKey);
+                server = CreateServer(request, ServerName, session.UserName, secret, remoteEndPoint, IsQuickplay, createMatchmakingServerResponse.Random, createMatchmakingServerResponse.PublicKey);
                 if (!await _serverRepository.AddServer(server))
+                {
+                    _autobus.Publish(new CloseServerInstanceEvent(secret));//Closes the server on the dedi side because master could not add it to the repository
                     return new ConnectToServerResponse
                     {
-                        Result = ConnectToServerResult.InvalidSecret
+                        Result = ConnectToServerResult.UnknownError
                     };
-            }
+                }
 
+            }
             return await ConnectPlayer(session, server, request.Random, request.PublicKey);
         }
 
