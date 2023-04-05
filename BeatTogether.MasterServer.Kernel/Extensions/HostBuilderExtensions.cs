@@ -17,6 +17,7 @@ using BeatTogether.MasterServer.Kernal.Abstractions;
 using System.Net.Http;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using BeatTogether.MasterServer.Interface;
 
 namespace BeatTogether.Extensions
 {
@@ -36,6 +37,7 @@ namespace BeatTogether.Extensions
                             services
                                 .AddCoreSecurity()
                                 .AddMasterServerMessaging()
+                                .AddSingleton<MasterInterfaceService>()
                                 .AddAutoMapper(configuration =>
                                 {
                                     configuration.CreateMap<BeatTogether.MasterServer.Messaging.Models.GameplayServerConfiguration,
