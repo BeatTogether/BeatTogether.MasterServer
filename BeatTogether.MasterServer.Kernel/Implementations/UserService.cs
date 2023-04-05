@@ -375,7 +375,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             if(server == null) //Creates the server, then the player can join
             {
                 string ServerName = session.UserName + "'s server";
-                if (IsQuickplay)
+                if (isQuickplay)
                     ServerName = "BeatTogether Quickplay: " + ((Domain.Enums.BeatmapDifficultyMask)request.BeatmapLevelSelectionMask.BeatmapDifficultyMask).ToString();
 
                 var createMatchmakingServerResponse = await _matchmakingService.CreateMatchmakingServer(
@@ -395,7 +395,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     };
 
                 var remoteEndPoint = IPEndPoint.Parse(createMatchmakingServerResponse.RemoteEndPoint);
-                server = CreateServer(request, ServerName, session.UserName, secret, remoteEndPoint, IsQuickplay, createMatchmakingServerResponse.Random, createMatchmakingServerResponse.PublicKey);
+                server = CreateServer(request, ServerName, session.UserName, secret, remoteEndPoint, isQuickplay, createMatchmakingServerResponse.Random, createMatchmakingServerResponse.PublicKey);
                 if (!await _serverRepository.AddServer(server))
                 {
                     _autobus.Publish(new CloseServerInstanceEvent(secret));//Closes the server on the dedi side because master could not add it to the repository

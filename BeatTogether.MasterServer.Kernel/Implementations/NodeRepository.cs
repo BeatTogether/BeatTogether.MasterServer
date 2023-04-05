@@ -147,8 +147,9 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 return false;
             }
 
-            _autobus.Publish(new PlayerConnectedToMatchmakingServerEvent(NodeEndPoint.Address.ToString(),
-                SessionEndPoint.ToString(), UserId, UserName, (Interface.ApiInterface.Enums.Platform)platform,
+            _autobus.Publish(new PlayerConnectedToMatchmakingServerEvent(
+                NodeEndPoint.Address.ToString(),
+                SessionEndPoint.ToString(),
                 Random, PublicKey
             ));
 
