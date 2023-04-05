@@ -132,19 +132,24 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         {
             if (!EndpointExists(NodeEndPoint))
                 return false;
-            if (!AwaitNodeResponses.TryGetValue(NodeEndPoint.Address, out var NodeResponses))
+            if (!AwaitNodeResponses.TryGetValue(NodeEndPoint.Address, out var NodeResponses))//This happens if the node has gone offline
                 return false;
 
             var task = new TaskCompletionSource<bool>();
             var EndpointsTimeout = new CancellationTokenSource();
-            var LinkedTask = CancellationTokenSource.CreateLinkedTokenSource(EndpointsTimeout.Token);
-            LinkedTask.Token.Register(() => task.TrySetResult(false));
+            EndpointsTimeout.Token.Register(() => {
+                task.TrySetResult(false);
+            });
 
             if (!NodeResponses.TryAdd(SessionEndPoint, task))
+            {
+                NodeResponses[SessionEndPoint].SetResult(false);
                 return false;
+            }
 
-            _autobus.Publish(new PlayerConnectedToMatchmakingServerEvent(NodeEndPoint.Address.ToString(),
-                SessionEndPoint.ToString(), UserId, UserName, (Interface.ApiInterface.Enums.Platform)platform,
+            _autobus.Publish(new PlayerConnectedToMatchmakingServerEvent(
+                NodeEndPoint.Address.ToString(),
+                SessionEndPoint.ToString(),
                 Random, PublicKey
             ));
 

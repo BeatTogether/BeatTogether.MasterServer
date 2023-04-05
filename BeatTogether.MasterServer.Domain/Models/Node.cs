@@ -1,5 +1,4 @@
-﻿using BeatTogether.MasterServer.Interface.ApiInterface.Models;
-using System;
+﻿using System;
 using System.Net;
 
 namespace BeatTogether.MasterServer.Domain.Models
@@ -21,11 +20,6 @@ namespace BeatTogether.MasterServer.Domain.Models
             LastStart = DateTime.Now;
             LastOnline = DateTime.Now;
             NodeVersion = Version;
-        }
-
-        public ServerNode Convert()
-        {
-            return new ServerNode(endpoint.ToString(), Online, LastStart, LastOnline, NodeVersion);
         }
     }
 }
