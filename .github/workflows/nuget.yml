@@ -4,6 +4,7 @@ on:
     branches:
       - master
       - dev
+      - dev-1.29
 
 jobs:
   nuget-1:
