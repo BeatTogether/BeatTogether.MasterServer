@@ -19,10 +19,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         //Stores the currently active nodes and whether they are online or not
     {
         private readonly ConcurrentDictionary<IPAddress, Node> _nodes = new();
-        public bool WaitingForResponses { get; set; }
-
-        private readonly ConcurrentDictionary<IPAddress, bool> ReceivedOk = new();
-        private readonly ConcurrentDictionary<IPAddress, TaskCompletionSource> _EndpointsReceived = new();
+        private bool WaitingForResponses;
+        private readonly CheckNodesEvent checkNodes;
 
         private readonly int EndpointRecieveTimeout = 4000;
 
@@ -34,47 +32,33 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         {
             _serverRepository = serverRepository;
             _autobus = autobus;
+            checkNodes = new CheckNodesEvent();
         }
 
         public void StartWaitForAllNodesTask()
         {
-            foreach (var node in _nodes)
+            if (!WaitingForResponses)
             {
-                ReceivedOk.TryAdd(node.Key, false);
+                WaitingForResponses = true;
+                _autobus.Publish(checkNodes);
+                _ = Task.Run(() => AsyncStartWaitForAllNodesTask());
             }
-            var EndpointsTimeout = new CancellationTokenSource();
-            var LinkedTask = CancellationTokenSource.CreateLinkedTokenSource(EndpointsTimeout.Token);
-            IEnumerable<Task> ServerRecieveTasks = _nodes.Values.Select(p => {
-                var task = _EndpointsReceived.GetOrAdd(p.endpoint, _ => new());
-                LinkedTask.Token.Register(() => task.TrySetResult());
-                return task.Task;
-            });
-            _ = Task.Run(()=> AsyncStartWaitForAllNodesTask(EndpointsTimeout, ServerRecieveTasks));
         }
 
-        private async void AsyncStartWaitForAllNodesTask(CancellationTokenSource EndpointsTimeout, IEnumerable<Task> ServerRecieveTasks)
+        private async void AsyncStartWaitForAllNodesTask()
         {
-            EndpointsTimeout.CancelAfter(EndpointRecieveTimeout);
-            await Task.WhenAll(ServerRecieveTasks);
+            await Task.Delay(EndpointRecieveTimeout);
 
-            foreach (var node in ReceivedOk)
+            foreach (var node in _nodes)
             {
-                if (!node.Value)
+                if (node.Value.Online && (DateTime.UtcNow - node.Value.LastOnline).TotalSeconds > 10) //10 seconds is the delay before StartWaitForAllNodesTask is called again
                 {
-                    _logger.Error("SERVER NODE IS OFFLINE or has not responded in 5 seconds: " + node.Key);
+                    _logger.Error("SERVER NODE IS OFFLINE or has not responded in 10 seconds: " + node.Key);
 
-                    SetNodeOffline(node.Key);
-                    if (!_nodes[node.Key].RemovedServerInstances)
-                    {
-                        await _serverRepository.RemoveServersWithEndpoint(node.Key);
-                        _nodes[node.Key].RemovedServerInstances = true;
-                        _logger.Error("Removed servers that are on node from master repository");
-                    }
+                    await SetNodeOffline(node.Key);
                 }
             }
             WaitingForResponses = false;
-            _EndpointsReceived.Clear();
-            ReceivedOk.Clear();
         }
 
         public ConcurrentDictionary<IPAddress, Node> GetNodes()
@@ -82,22 +66,29 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             return _nodes;
         }
 
-        public void SetNodeOnline(IPAddress endPoint, string Version)
+        public async Task SetNodeOnline(IPAddress endPoint, string Version)
         {
-            if (_nodes.ContainsKey(endPoint))
-                _serverRepository.RemoveServersWithEndpoint(endPoint);
-            else
+            _logger.Information($"Node is online: " + endPoint);
+
+            if (!_nodes.TryAdd(endPoint, new Node(endPoint, Version)))
             {
-                _nodes.TryAdd(endPoint, new Node(endPoint, Version));
-                AwaitNodeResponses.TryAdd(endPoint, new());
+                _logger.Information($"Resetting restarted node: " + endPoint);
+                await SetNodeOffline(endPoint);
+                _nodes[endPoint].NodeVersion = Version;
+                _nodes[endPoint].LastStart = DateTime.UtcNow;
+                _nodes[endPoint].LastOnline = DateTime.UtcNow;
+                _nodes[endPoint].Online = true;
             }
-            _nodes[endPoint].Online = true;
-            _nodes[endPoint].RemovedServerInstances = false;
+            AwaitNodeResponses.TryAdd(endPoint, new());
         }
-        public void SetNodeOffline(IPAddress endPoint)
+        public async Task SetNodeOffline(IPAddress endPoint)
         { 
-            if (!_nodes.ContainsKey(endPoint))
+            if (_nodes.ContainsKey(endPoint))
+            {
+                await _serverRepository.RemoveServersWithEndpoint(endPoint);
+                _logger.Information("Removed servers that are on node " + endPoint + " from master repository");
                 _nodes[endPoint].Online = false;
+            }
         }
 
         public void ReceivedOK(IPAddress endPoint)
@@ -105,23 +96,25 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             if (!WaitingForResponses)
                 return;
             if (_nodes.TryGetValue(endPoint, out var node))
-                node.LastOnline = DateTime.Now;
-            ReceivedOk[endPoint] = true;
-            if (_EndpointsReceived.TryGetValue(endPoint, out var tcs) && !tcs.Task.IsCompleted)
-                tcs.SetResult();
+            {
+                node.LastOnline = DateTime.UtcNow;
+                node.Online = true;
+            }
         }
 
         public bool EndpointExists(IPEndPoint endPoint)
         {
-            bool found = false;
-            foreach(var node in GetNodes())
+            return _nodes.TryGetValue(endPoint.Address, out var node) && node.Online;
+            /*
+            foreach (var node in _nodes)
             {
                 if(endPoint.Address.ToString() == node.Key.ToString() && node.Value.Online)
                 {
-                    found = true; break;
+                    return true;
                 }
             }
-            return found;
+            return false;
+            */
         }
 
 

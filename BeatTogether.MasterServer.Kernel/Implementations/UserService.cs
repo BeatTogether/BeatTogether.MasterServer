@@ -200,7 +200,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     server = await _serverRepository.GetServer(request.Secret);
                 return server;
             }
-            return  await _serverRepository.GetAvailablePublicServer(
+            return await _serverRepository.GetAvailablePublicServer(
                 (Domain.Enums.InvitePolicy)request.GameplayServerConfiguration.InvitePolicy,
                 (Domain.Enums.GameplayServerMode)request.GameplayServerConfiguration.GameplayServerMode,
                 (Domain.Enums.SongSelectionMode)request.GameplayServerConfiguration.SongSelectionMode,
@@ -236,7 +236,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             }
 
             var sessioncheck = _sessionService.GetSession(session.EndPoint);
-            int LastServerMilliSeconds = (int)DateTime.Now.Subtract(session.LastGameDisconnect).TotalMilliseconds;
+            int LastServerMilliSeconds = (int)DateTime.UtcNow.Subtract(session.LastGameDisconnect).TotalMilliseconds;
             if (sessioncheck.LastGameIp == server.RemoteEndPoint.ToString() && LastServerMilliSeconds < 6000)
             {
                 _logger.Verbose("Delaying player from joining");

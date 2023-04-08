@@ -8,7 +8,6 @@ using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Configuration;
 using Microsoft.Extensions.Hosting;
 using Serilog;
-using StackExchange.Redis;
 
 namespace BeatTogether.MasterServer.Kernel.Implementations.Sessions
 {
@@ -75,31 +74,17 @@ namespace BeatTogether.MasterServer.Kernel.Implementations.Sessions
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                cancellationToken.ThrowIfCancellationRequested();
+                //cancellationToken.ThrowIfCancellationRequested();
 
-                try
-                {
-                    // Remove servers that are hosted on a node if that node is not responsive every 10 seconds
-                    if (!_nodeRepository.WaitingForResponses)
-                    {
-                        _nodeRepository.StartWaitForAllNodesTask();
-                        _nodeRepository.WaitingForResponses = true;
-                        _autobus.Publish(new CheckNodesEvent());
-                    }
-                    // Prune inactive sessions every 10 seconds, a session must be over 3 min old to be removed
-                    var inactiveSessions = _sessionService
-                        .GetInactiveSessions(_configuration.SessionTimeToLive);
-                    foreach (var session in inactiveSessions)
-                        _sessionService.CloseSession(session);
-                }
-                catch (Exception e) when ((e is RedisException) || (e is RedisTimeoutException))
-                {
-                    _logger.Warning(e, "Error while pruning inactive sessions.");
-                }
-                finally
-                {
-                    await Task.Delay(10000, cancellationToken);//waits 10 seconds
-                }
+                // Removes servers that are hosted on a node if that node is not responsive every 10 seconds
+                _nodeRepository.StartWaitForAllNodesTask();
+                // Prune inactive sessions every 10 seconds, a session must be over 3 min old to be removed
+                var inactiveSessions = _sessionService
+                    .GetInactiveSessions(_configuration.SessionTimeToLive);
+                foreach (var session in inactiveSessions)
+                    _sessionService.CloseSession(session);
+
+                await Task.Delay(10000, cancellationToken);//waits 10 seconds
             }
         }
 
