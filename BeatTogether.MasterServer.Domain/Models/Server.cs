@@ -5,8 +5,9 @@ namespace BeatTogether.MasterServer.Domain.Models
 {
     public sealed class Server
     {
-        public Player Host { get; set; }
-        public IPEndPoint RemoteEndPoint { get; set; }
+        public string ServerName { get; set; }
+        public string ServerId { get; set; }
+        public IPEndPoint ServerEndPoint { get; set; }
         public string Secret { get; set; }
         public string Code { get; set; }
         public bool IsPublic { get; set; }

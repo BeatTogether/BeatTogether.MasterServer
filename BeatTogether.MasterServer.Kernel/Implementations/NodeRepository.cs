@@ -7,8 +7,6 @@ using BeatTogether.MasterServer.Messaging.Enums;
 using Serilog;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -32,7 +30,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         {
             _serverRepository = serverRepository;
             _autobus = autobus;
-            checkNodes = new CheckNodesEvent();
         }
 
         public void StartWaitForAllNodesTask()
@@ -115,6 +112,15 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             }
             return false;
             */
+        }
+
+        public async Task<bool> DisconnectNode(IPAddress endPoint)
+        {
+            _logger.Information("Disconnecting and shutting down node: " + endPoint);
+            await SetNodeOffline(endPoint);
+            _nodes.TryRemove(endPoint, out _);
+            _autobus.Publish(new ShutdownNodeEvent(endPoint.ToString())); //TODO add logic dedi side to shutdown said node
+            return true;
         }
 
 

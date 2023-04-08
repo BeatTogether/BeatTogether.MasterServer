@@ -92,7 +92,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             {
                 bool SessionExists = _masterServerSessionService.TryGetSession(IPEndPoint.Parse(integrationEvent.endPoint), out var session);
                 if (SessionExists && server != null)
-                    session.LastGameIp = server.RemoteEndPoint.ToString();
+                    session.LastGameIp = server.ServerEndPoint.ToString();
                 if (!SessionExists)
                     return;
                 _masterServerSessionService.RemoveSecretFromSession(session.EndPoint);

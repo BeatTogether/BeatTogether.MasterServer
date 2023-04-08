@@ -213,7 +213,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         private bool DoesServerExist(Server server)
         {
-            return _nodeRepository.EndpointExists(server.RemoteEndPoint);
+            return _nodeRepository.EndpointExists(server.ServerEndPoint);
         }
 
         private async Task<ConnectToServerResponse> ConnectPlayer(MasterServerSession session, Server server, byte[] Random, byte[] PublicKey)
@@ -226,7 +226,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     Result = ConnectToServerResult.ServerAtCapacity
                 };
             }
-            if (!await _nodeRepository.SendAndAwaitPlayerEncryptionRecievedFromNode(server.RemoteEndPoint, session.EndPoint, session.UserId, session.UserName, session.Platform, Random, PublicKey, EncryptionRecieveTimeout))
+            if (!await _nodeRepository.SendAndAwaitPlayerEncryptionRecievedFromNode(server.ServerEndPoint, session.EndPoint, session.UserId, session.UserName, session.Platform, Random, PublicKey, EncryptionRecieveTimeout))
             {
                 _autobus.Publish(new DisconnectPlayerFromMatchmakingServerEvent(server.Secret, session.UserId, session.EndPoint.ToString()));
                 return new ConnectToServerResponse()
@@ -237,7 +237,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
             var sessioncheck = _sessionService.GetSession(session.EndPoint);
             int LastServerMilliSeconds = (int)DateTime.UtcNow.Subtract(session.LastGameDisconnect).TotalMilliseconds;
-            if (sessioncheck.LastGameIp == server.RemoteEndPoint.ToString() && LastServerMilliSeconds < 6000)
+            if (sessioncheck.LastGameIp == server.ServerEndPoint.ToString() && LastServerMilliSeconds < 6000)
             {
                 _logger.Verbose("Delaying player from joining");
                 await Task.Delay(6000 - (LastServerMilliSeconds) );
@@ -245,7 +245,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
             _sessionService.AddSession(session.EndPoint, server.Secret);
 
-            _logger.Information("Player: " + session.GameId + " Is being sent to node: " + server.RemoteEndPoint + ", Server name: " + serverFromRepo.Host.UserName + ", PlayerCountBeforeJoin: " + serverFromRepo.CurrentPlayerCount);
+            _logger.Information("Player: " + session.GameId + " Is being sent to node: " + server.ServerEndPoint + ", Server name: " + serverFromRepo.ServerName + ", PlayerCountBeforeJoin: " + serverFromRepo.CurrentPlayerCount);
             /*
                         _logger.Information($"Random='{BitConverter.ToString(Random)}'");
                         _logger.Information($"PublicKey='{BitConverter.ToString(PublicKey)}'");
@@ -255,7 +255,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             return new ConnectToServerResponse
             {
                 UserId = "ziuMSceapEuNN7wRGQXrZg",
-                UserName = server.Host.UserName,
+                UserName = server.ServerName,
                 Secret = server.Secret,
                 BeatmapLevelSelectionMask = new BeatmapLevelSelectionMask
                 {
@@ -265,7 +265,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 },
                 IsConnectionOwner = true,
                 IsDedicatedServer = true,
-                RemoteEndPoint = server.RemoteEndPoint,
+                RemoteEndPoint = server.ServerEndPoint,
                 Random = server.Random,
                 PublicKey = server.PublicKey,
                 Code = server.Code,
@@ -278,7 +278,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     SongSelectionMode = (SongSelectionMode)server.GameplayServerConfiguration.SongSelectionMode,
                     GameplayServerControlSettings = (GameplayServerControlSettings)server.GameplayServerConfiguration.GameplayServerControlSettings
                 },
-                ManagerId = server.Host.UserId
+                ManagerId = server.ServerId
             };
         }
 
@@ -286,12 +286,10 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         {
             return new Server
             {
-                Host = new Player
-                {
-                    UserId = "ziuMSceapEuNN7wRGQXrZg", //Server UserId is the host, always
-                    UserName = ServerName
-                },
-                RemoteEndPoint = DediEndpoint,
+
+                ServerId = "ziuMSceapEuNN7wRGQXrZg", //Server UserId is the host, always
+                ServerName = ServerName,
+                ServerEndPoint = DediEndpoint,
                 Secret = secret,
                 Code = _serverCodeProvider.Generate(),
                 IsPublic = IsQuickplay,
