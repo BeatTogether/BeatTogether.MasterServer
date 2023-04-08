@@ -4,5 +4,6 @@
         string NodeEndpoint,
         string RemoteEndPoint,
         byte[] Random,
-        byte[] PublicKey);
+        byte[] PublicKey,
+        string PlayerSessionId);
 }

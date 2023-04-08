@@ -1,15 +1,15 @@
-﻿using Autobus;
+﻿using System;
+using System.Collections.Concurrent;
+using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
+using Autobus;
 using BeatTogether.MasterServer.Data.Abstractions.Repositories;
 using BeatTogether.MasterServer.Domain.Models;
 using BeatTogether.MasterServer.Interface.Events;
 using BeatTogether.MasterServer.Kernal.Abstractions;
 using BeatTogether.MasterServer.Messaging.Enums;
 using Serilog;
-using System;
-using System.Collections.Concurrent;
-using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace BeatTogether.MasterServer.Kernel.Implementations
 {
@@ -127,7 +127,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         readonly ConcurrentDictionary<IPAddress, ConcurrentDictionary<EndPoint, TaskCompletionSource<bool>>> AwaitNodeResponses = new();
 
-        public async Task<bool> SendAndAwaitPlayerEncryptionRecievedFromNode(IPEndPoint NodeEndPoint,EndPoint SessionEndPoint, string UserId, string UserName, Platform platform, byte[] Random, byte[] PublicKey, int TimeOut)
+        public async Task<bool> SendAndAwaitPlayerEncryptionRecievedFromNode(IPEndPoint NodeEndPoint,EndPoint SessionEndPoint, string UserId, string UserName, Platform platform, byte[] Random, byte[] PublicKey, string PlayerSessionId, int TimeOut)
         {
             if (!EndpointExists(NodeEndPoint))
                 return false;
@@ -149,7 +149,9 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             _autobus.Publish(new PlayerConnectedToMatchmakingServerEvent(
                 NodeEndPoint.Address.ToString(),
                 SessionEndPoint.ToString(),
-                Random, PublicKey
+                Random,
+                PublicKey,
+                PlayerSessionId
             ));
 
             EndpointsTimeout.CancelAfter(TimeOut);
