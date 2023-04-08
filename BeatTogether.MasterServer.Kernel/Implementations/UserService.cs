@@ -216,19 +216,15 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 };
             }
 
-            var hasEncryptionParams = Random != null && PublicKey != null;
-            if (hasEncryptionParams)
+            if (!await _nodeRepository.SendAndAwaitPlayerEncryptionRecievedFromNode(server.ServerEndPoint,
+                    session.EndPoint, session.UserIdHash, session.UserName, session.Platform, Random, PublicKey,
+                     session.PlayerSessionId, EncryptionRecieveTimeout))
             {
-                if (!await _nodeRepository.SendAndAwaitPlayerEncryptionRecievedFromNode(server.ServerEndPoint,
-                        session.EndPoint, session.UserIdHash, session.UserName, session.Platform, Random, PublicKey,
-                         session.PlayerSessionId, EncryptionRecieveTimeout))
+                _autobus.Publish(new DisconnectPlayerFromMatchmakingServerEvent(server.Secret, session.UserIdHash, session.EndPoint.ToString()));
+                return new ConnectToServerResponse()
                 {
-                    _autobus.Publish(new DisconnectPlayerFromMatchmakingServerEvent(server.Secret, session.UserIdHash, session.EndPoint.ToString()));
-                    return new ConnectToServerResponse()
-                    {
-                        Result = ConnectToServerResult.UnknownError
-                    };
-                }
+                    Result = ConnectToServerResult.UnknownError
+                };
             }
 
             var sessionCheck = _sessionService.GetSession(session.EndPoint);

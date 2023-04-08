@@ -149,8 +149,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             _autobus.Publish(new PlayerConnectedToMatchmakingServerEvent(
                 NodeEndPoint.Address.ToString(),
                 SessionEndPoint.ToString(),
-                Random,
-                PublicKey,
+                Random ?? Array.Empty<byte>(),
+                PublicKey ?? Array.Empty<byte>(),
                 PlayerSessionId
             ));
 
