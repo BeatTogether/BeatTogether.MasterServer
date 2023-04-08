@@ -1,5 +1,4 @@
-﻿
-using BeatTogether.MasterServer.Domain.Models;
+﻿using BeatTogether.MasterServer.Domain.Models;
 using BeatTogether.MasterServer.Messaging.Enums;
 using System.Collections.Concurrent;
 using System.Net;
@@ -9,10 +8,9 @@ namespace BeatTogether.MasterServer.Kernal.Abstractions
 {
     public interface INodeRepository
     {
-        bool WaitingForResponses { get; set; }
         public ConcurrentDictionary<IPAddress, Node> GetNodes();
-        public void SetNodeOnline(IPAddress endPoint, string Version);
-        public void SetNodeOffline(IPAddress endPoint);
+        public Task SetNodeOnline(IPAddress endPoint, string Version);
+        public Task SetNodeOffline(IPAddress endPoint);
 
         public void ReceivedOK(IPAddress endPoint);
 

@@ -130,7 +130,7 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
             List<string> secrets = new();
             foreach (var server in _servers)
             {
-                if(server.Value.RemoteEndPoint.Address.ToString() == EndPoint.ToString())
+                if(server.Value.ServerEndPoint.Address.ToString() == EndPoint.ToString())
                 {
                     secrets.Add(server.Key);
                 }

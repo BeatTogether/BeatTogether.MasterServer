@@ -92,11 +92,11 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             {
                 bool SessionExists = _masterServerSessionService.TryGetSession(IPEndPoint.Parse(integrationEvent.endPoint), out var session);
                 if (SessionExists && server != null)
-                    session.LastGameIp = server.RemoteEndPoint.ToString();
+                    session.LastGameIp = server.ServerEndPoint.ToString();
                 if (!SessionExists)
                     return;
                 _masterServerSessionService.RemoveSecretFromSession(session.EndPoint);
-                session.LastGameDisconnect = DateTime.Now;
+                session.LastGameDisconnect = DateTime.UtcNow;
             }
         }
         /*
@@ -120,7 +120,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         {
             if (_configuration.SupportedDediServerVersions.Where(N => startedEvent.NodeVersion.StartsWith(N)).Any())
             {
-                _logger.Information($"Node is online: " + startedEvent.endPoint);
                 _nodeRepository.SetNodeOnline(IPAddress.Parse(startedEvent.endPoint), startedEvent.NodeVersion);
             }
             else

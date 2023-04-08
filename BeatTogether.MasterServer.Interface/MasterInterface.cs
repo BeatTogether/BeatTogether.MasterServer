@@ -13,6 +13,7 @@ namespace BeatTogether.MasterServer.Interface
                 builder
                     .UseName("MasterServer")
                     .AddEvent<CheckNodesEvent>()
+                    .AddEvent<ShutdownNodeEvent>()
                     .AddEvent<DisconnectPlayerFromMatchmakingServerEvent>()
                     .AddEvent<PlayerConnectedToMatchmakingServerEvent>()
                     .AddEvent<CloseServerInstanceEvent>();
