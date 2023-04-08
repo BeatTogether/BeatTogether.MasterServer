@@ -14,6 +14,8 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
     [ApiController]
     public class GetMultiplayerInstanceController : Controller
     {
+        public const string SessionIdPrefix = "ps:bt$";
+        
         private readonly ILogger _logger;
         private readonly IUserService _userService;
         private readonly IMasterServerSessionService _sessionService;
@@ -75,7 +77,7 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
                     session.UserIdHash = request.UserId;
                     session.UserName = "Mystery Beater"; // not provided to master through GameLift auth process
                     session.PlatformUserId = request.AuthUserId; // platform identifier, e.g. Steam User ID
-                    session.PlayerSessionId = Guid.NewGuid().ToString("N");
+                    session.PlayerSessionId = SessionIdPrefix + Guid.NewGuid().ToString("N");
 
                     _logger.Information(
                         "Platform auth success (platform={Platform}, userId={UserId}, playerSessionId={PlayerSessionId})",
