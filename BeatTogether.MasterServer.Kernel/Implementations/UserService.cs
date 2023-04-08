@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Net;
 using System.Net.Http;
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Autobus;
@@ -16,6 +14,7 @@ using BeatTogether.MasterServer.Kernal.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions.Providers;
 using BeatTogether.MasterServer.Kernel.Configuration;
+using BeatTogether.MasterServer.Kernel.Util;
 using BeatTogether.MasterServer.Messaging.Enums;
 using BeatTogether.MasterServer.Messaging.Messages.User;
 using BeatTogether.MasterServer.Messaging.Models;
@@ -169,20 +168,9 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             }
                
             session.Platform = request.AuthenticationToken.Platform;
-            session.UserId = request.AuthenticationToken.UserId;
+            session.PlatformUserId = request.AuthenticationToken.UserId;
+            session.UserIdHash = UserIdHash.Generate(session.Platform, session.PlatformUserId);
             session.UserName = request.AuthenticationToken.UserName;
-
-            string platformStr = session.Platform switch
-            {
-                Platform.Test => "Test#",
-                Platform.Oculus => "Oculus#",
-                Platform.OculusQuest => "OculusQuest#",
-                Platform.Steam => "Steam#",
-                Platform.PS4 => "PSN#",
-                _ => ""
-            };
-
-            session.GameId = Convert.ToBase64String(SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(platformStr + session.UserId)))[..22];
 
             return new AuthenticateUserResponse
             {
@@ -218,7 +206,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         private async Task<ConnectToServerResponse> ConnectPlayer(MasterServerSession session, Server server, byte[] Random, byte[] PublicKey)
         {
-            Server serverFromRepo = await _serverRepository.GetServer(server.Secret);
+            var serverFromRepo = await _serverRepository.GetServer(server.Secret);
+            
             if (serverFromRepo.CurrentPlayerCount + 1 > serverFromRepo.GameplayServerConfiguration.MaxPlayerCount)
             {
                 return new ConnectToServerResponse()
@@ -226,32 +215,33 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     Result = ConnectToServerResult.ServerAtCapacity
                 };
             }
-            if (!await _nodeRepository.SendAndAwaitPlayerEncryptionRecievedFromNode(server.ServerEndPoint, session.EndPoint, session.UserId, session.UserName, session.Platform, Random, PublicKey, EncryptionRecieveTimeout))
+
+            var hasEncryptionParams = Random != null && PublicKey != null;
+            if (hasEncryptionParams)
             {
-                _autobus.Publish(new DisconnectPlayerFromMatchmakingServerEvent(server.Secret, session.UserId, session.EndPoint.ToString()));
-                return new ConnectToServerResponse()
+                if (!await _nodeRepository.SendAndAwaitPlayerEncryptionRecievedFromNode(server.ServerEndPoint, session.EndPoint, session.UserIdHash, session.UserName, session.Platform, Random, PublicKey, EncryptionRecieveTimeout))
                 {
-                    Result = ConnectToServerResult.UnknownError
-                };
+                    _autobus.Publish(new DisconnectPlayerFromMatchmakingServerEvent(server.Secret, session.UserIdHash, session.EndPoint.ToString()));
+                    return new ConnectToServerResponse()
+                    {
+                        Result = ConnectToServerResult.UnknownError
+                    };
+                }
             }
 
-            var sessioncheck = _sessionService.GetSession(session.EndPoint);
-            int LastServerMilliSeconds = (int)DateTime.UtcNow.Subtract(session.LastGameDisconnect).TotalMilliseconds;
-            if (sessioncheck.LastGameIp == server.ServerEndPoint.ToString() && LastServerMilliSeconds < 6000)
+            var sessionCheck = _sessionService.GetSession(session.EndPoint);
+            var lastServerMs = (int)DateTime.UtcNow.Subtract(session.LastGameDisconnect).TotalMilliseconds;
+            
+            if (sessionCheck.LastGameIp == server.ServerEndPoint.ToString() && lastServerMs < 6000)
             {
                 _logger.Verbose("Delaying player from joining");
-                await Task.Delay(6000 - (LastServerMilliSeconds) );
+                await Task.Delay(6000 - (lastServerMs) );
             }
 
             _sessionService.AddSession(session.EndPoint, server.Secret);
 
-            _logger.Information("Player: " + session.GameId + " Is being sent to node: " + server.ServerEndPoint + ", Server name: " + serverFromRepo.ServerName + ", PlayerCountBeforeJoin: " + serverFromRepo.CurrentPlayerCount);
-            /*
-                        _logger.Information($"Random='{BitConverter.ToString(Random)}'");
-                        _logger.Information($"PublicKey='{BitConverter.ToString(PublicKey)}'");
-                        _logger.Information($"session.ClientRandom='{BitConverter.ToString(session.ClientRandom)}'");
-                        _logger.Information($"session.ClientPublicKey='{BitConverter.ToString(session.ClientPublicKey)}'");
-            */
+            _logger.Information("Player: " + session.UserIdHash + " Is being sent to node: " + server.ServerEndPoint + ", Server name: " + serverFromRepo.ServerName + ", PlayerCountBeforeJoin: " + serverFromRepo.CurrentPlayerCount);
+
             return new ConnectToServerResponse
             {
                 UserId = "ziuMSceapEuNN7wRGQXrZg",
@@ -366,7 +356,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             string secret = request.Secret;
             string ManagerId = "ziuMSceapEuNN7wRGQXrZg";
             if (!isQuickplay)
-                ManagerId = session.GameId;//sets the manager to the player who is requesting
+                ManagerId = session.UserIdHash;//sets the manager to the player who is requesting
             else
                 secret = _secretProvider.GetSecret();
 
@@ -413,7 +403,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 $"Handling {nameof(SessionKeepalive)} " +
                 $"(EndPoint='{session.EndPoint}', " +
                 $"Platform={session.Platform}, " +
-                $"UserId='{session.GameId}', " +
+                $"UserIdHash='{session.UserIdHash}', " +
                 $"UserName='{session.UserName}')."
             );
             session.LastKeepAlive = DateTimeOffset.UtcNow;

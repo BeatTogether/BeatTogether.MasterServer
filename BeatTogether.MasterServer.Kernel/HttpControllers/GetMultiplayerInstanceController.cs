@@ -72,13 +72,14 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
                     // TODO Use SingleUseAuthToken (= AuthenticationToken.sessionToken) to do platform auth like UserService
 
                     session.Platform = request.Platform;
-                    session.UserId = request.UserId;
-                    session.AuthUserId = request.AuthUserId; // platform token, e.g. Steam User ID
+                    session.UserIdHash = request.UserId;
+                    session.UserName = "Mystery Beater"; // not provided to master through GameLift auth process
+                    session.PlatformUserId = request.AuthUserId; // platform identifier, e.g. Steam User ID
                     session.PlayerSessionId = Guid.NewGuid().ToString("N");
 
                     _logger.Information(
                         "Platform auth success (platform={Platform}, userId={UserId}, playerSessionId={PlayerSessionId})",
-                        session.Platform, session.UserId, session.PlayerSessionId);
+                        session.Platform, session.UserIdHash, session.PlayerSessionId);
                 }
                 else
                 {
@@ -98,8 +99,8 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
                 matchResult = await _userService.ConnectToMatchmakingServer(session,
                     new ConnectToMatchmakingServerRequest()
                     {
-                        UserId = session.UserId,
-                        UserName = "Mystery Beater",
+                        UserId = session.UserIdHash,
+                        UserName = session.UserName,
                         Random = null,
                         PublicKey = null,
                         BeatmapLevelSelectionMask = request.BeatmapLevelSelectionMask,

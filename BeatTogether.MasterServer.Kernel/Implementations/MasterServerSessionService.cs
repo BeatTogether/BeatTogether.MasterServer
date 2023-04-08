@@ -69,7 +69,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     "Closing session " +
                     $"(EndPoint='{session.EndPoint}', " +
                     $"Platform={session.Platform}, " +
-                    $"UserId='{session.UserId}', " +
+                    $"UserId='{session.UserIdHash}', " +
                     $"UserName='{session.UserName}')."
                 );
             else
