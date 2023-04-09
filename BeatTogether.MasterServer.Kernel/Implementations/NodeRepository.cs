@@ -127,7 +127,9 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         readonly ConcurrentDictionary<IPAddress, ConcurrentDictionary<EndPoint, TaskCompletionSource<bool>>> AwaitNodeResponses = new();
 
-        public async Task<bool> SendAndAwaitPlayerEncryptionRecievedFromNode(IPEndPoint NodeEndPoint,EndPoint SessionEndPoint, string UserId, string UserName, Platform platform, byte[] Random, byte[] PublicKey, string PlayerSessionId, int TimeOut)
+        public async Task<bool> SendAndAwaitPlayerEncryptionRecievedFromNode(IPEndPoint NodeEndPoint,
+            EndPoint SessionEndPoint, string UserId, string UserName, Platform platform, byte[] Random, 
+            byte[] PublicKey, string PlayerSessionId, string Secret, int TimeOut)
         {
             if (!EndpointExists(NodeEndPoint))
                 return false;
@@ -151,7 +153,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 SessionEndPoint.ToString(),
                 Random ?? Array.Empty<byte>(),
                 PublicKey ?? Array.Empty<byte>(),
-                PlayerSessionId
+                PlayerSessionId,
+                Secret
             ));
 
             EndpointsTimeout.CancelAfter(TimeOut);

@@ -19,7 +19,7 @@ namespace BeatTogether.MasterServer.Kernal.Abstractions
 
         Task<bool> SendAndAwaitPlayerEncryptionRecievedFromNode(IPEndPoint NodeEndPoint, EndPoint SessionEndPoint,
             string UserId, string UserName, Platform platform, byte[] Random, byte[] PublicKey, string PlayerSessionId,
-            int TimeOut);
+            string Secret, int TimeOut);
         void OnNodeRecievedEncryptionParameters(IPEndPoint NodeEndPoint, EndPoint PlayerEndpoint);
     }
 }
