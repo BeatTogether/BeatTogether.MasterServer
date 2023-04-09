@@ -1,4 +1,4 @@
-﻿using BeatTogether.MasterServer.HttpApi.Models.Enums;
+﻿using BeatTogether.MasterServer.Messaging.Enums;
 using Newtonsoft.Json;
 
 namespace BeatTogether.MasterServer.Messaging.Models.HttpApi

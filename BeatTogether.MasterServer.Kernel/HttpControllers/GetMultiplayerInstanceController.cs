@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Net;
 using System.Threading.Tasks;
-using BeatTogether.MasterServer.HttpApi.Models.Enums;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Implementations;
+using BeatTogether.MasterServer.Messaging.Enums;
 using BeatTogether.MasterServer.Messaging.Messages.User;
+using BeatTogether.MasterServer.Messaging.Models;
 using BeatTogether.MasterServer.Messaging.Models.HttpApi;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
@@ -16,15 +17,22 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
     {
         public const string SessionIdPrefix = "ps:bt$";
         
-        private readonly ILogger _logger;
         private readonly IUserService _userService;
         private readonly IMasterServerSessionService _sessionService;
+        private readonly IUserAuthenticator _userAuthenticator;
+        
+        private readonly ILogger _logger;
 
-        public GetMultiplayerInstanceController(IMasterServerSessionService sessionService, IUserService userService)
+        public GetMultiplayerInstanceController(
+            IMasterServerSessionService sessionService, 
+            IUserService userService,
+            IUserAuthenticator userAuthenticator)
         {
-            _logger = Log.ForContext<GetMultiplayerInstanceController>();
             _userService = userService;
             _sessionService = sessionService;
+            _userAuthenticator = userAuthenticator;
+            
+            _logger = Log.ForContext<GetMultiplayerInstanceController>();
         }
 
         /// <summary>
@@ -71,17 +79,18 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
                 if (!string.IsNullOrEmpty(request.SingleUseAuthToken) && !string.IsNullOrEmpty(request.UserId) &&
                     !string.IsNullOrEmpty(request.AuthUserId))
                 {
-                    // TODO Use SingleUseAuthToken (= AuthenticationToken.sessionToken) to do platform auth like UserService
+                    var authToken = GetAuthenticationTokenFromRequest(request);
+                    var authResult = await _userAuthenticator.TryAuthenticateUserWithPlatform(session, authToken);
 
-                    session.Platform = request.Platform;
-                    session.UserIdHash = request.UserId;
-                    session.UserName = "Mystery Beater"; // not provided to master through GameLift auth process
-                    session.PlatformUserId = request.AuthUserId; // platform identifier, e.g. Steam User ID
+                    if (!authResult)
+                    {
+                        // Hard auth failure
+                        response.ErrorCode = MultiplayerPlacementErrorCode.AuthenticationFailed;
+                        return new JsonResult(response);
+                    }
+
+                    // Auth success; generate session token
                     session.PlayerSessionId = SessionIdPrefix + Guid.NewGuid().ToString("N");
-
-                    _logger.Information(
-                        "Platform auth success (platform={Platform}, userId={UserId}, playerSessionId={PlayerSessionId})",
-                        session.Platform, session.UserIdHash, session.PlayerSessionId);
                 }
                 else
                 {
@@ -133,6 +142,11 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
                 return new JsonResult(response);
             }
 
+            _logger.Information("Graph API join success (userId={UserId}, gameVersion={GameVersion}, " +
+                                "platform={Platform}, playerSessionId={SessionId}, targetNode={TargetNode})",
+                session.UserIdHash, request.Version, session.Platform, session.PlayerSessionId,
+                matchResult.RemoteEndPoint.ToString());
+
             response.ErrorCode = MultiplayerPlacementErrorCode.Success;
             response.PlayerSessionInfo.GameSessionId = matchResult.ManagerId;
             response.PlayerSessionInfo.DnsName = matchResult.RemoteEndPoint.Address.ToString();
@@ -156,5 +170,27 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
             response.ErrorCode = MultiplayerPlacementErrorCode.ConnectionCanceled;
             return new JsonResult(response);
         }
+
+        #region Util
+        
+        private static AuthenticationToken GetAuthenticationTokenFromRequest(GetMultiplayerInstanceRequest request)
+        {
+            byte[] sessionToken;
+
+            if (request.Platform == Platform.Steam)
+                sessionToken = AuthenticationToken.SessionTokenFromHex(request.SingleUseAuthToken);
+            else
+                sessionToken = AuthenticationToken.SessionTokenFromUtf8(request.SingleUseAuthToken);
+
+            return new AuthenticationToken()
+            {
+                Platform = request.Platform,
+                UserId = request.AuthUserId,
+                UserName = "Mystery Beater", // not provided to master through GameLift auth process
+                SessionToken = sessionToken
+            };
+        }
+        
+        #endregion
     }
 }

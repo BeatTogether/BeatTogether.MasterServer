@@ -1,4 +1,4 @@
-﻿namespace BeatTogether.MasterServer.HttpApi.Models.Enums
+﻿namespace BeatTogether.MasterServer.Messaging.Enums
 {
     public enum MultiplayerPlacementErrorCode
     {

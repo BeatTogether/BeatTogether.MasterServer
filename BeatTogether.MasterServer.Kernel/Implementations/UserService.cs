@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Net;
 using System.Net.Http;
-using System.Text.Json;
 using System.Threading.Tasks;
 using Autobus;
 using AutoMapper;
@@ -14,7 +13,6 @@ using BeatTogether.MasterServer.Kernal.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions.Providers;
 using BeatTogether.MasterServer.Kernel.Configuration;
-using BeatTogether.MasterServer.Kernel.Util;
 using BeatTogether.MasterServer.Messaging.Enums;
 using BeatTogether.MasterServer.Messaging.Messages.User;
 using BeatTogether.MasterServer.Messaging.Models;
@@ -41,6 +39,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         private readonly INodeRepository _nodeRepository;
         private readonly HttpClient _httpClient;
         private readonly MasterServerConfiguration _configuration;
+        private readonly IUserAuthenticator _userAuthenticator;
 
         public UserService(
             IAutobus autobus,
@@ -53,7 +52,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             ISecretProvider secretProvider,
             INodeRepository nodeRepository,
             HttpClient httpClient,
-            MasterServerConfiguration configuration)
+            MasterServerConfiguration configuration,
+            IUserAuthenticator userAuthenticator)
         {
             _autobus = autobus;
             _mapper = mapper;
@@ -67,117 +67,19 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             _nodeRepository = nodeRepository;
             _httpClient = httpClient;
             _configuration = configuration;
+            _userAuthenticator = userAuthenticator;
         }
 
         public async Task<AuthenticateUserResponse> Authenticate(MasterServerSession session, AuthenticateUserRequest request)
         {
-            _logger.Verbose(
-                $"Handling {nameof(AuthenticateUserRequest)} " +
-                $"(Platform={request.AuthenticationToken.Platform}, " +
-                $"UserId='{request.AuthenticationToken.UserId}', " +
-                $"UserName='{request.AuthenticationToken.UserName}')."
-            );
-
-            var platform = request.AuthenticationToken.Platform;
-
-            if (_configuration.AuthenticateClients)
-            {
-                if (platform != Platform.OculusQuest && platform != Platform.Oculus && platform != Platform.Test) //TODO figure out why oculus does not authenticate correctly at some point
-                {
-                    try
-                    {
-                        var requestContent = new
-                        {
-                            proof = BitConverter.ToString(request.AuthenticationToken.SessionToken).Replace("-", ""),
-                            oculusId = platform == Platform.Oculus ? request.AuthenticationToken.UserId : "",
-                            steamId = platform == Platform.Steam ? request.AuthenticationToken.UserId : ""
-                        };
-
-                        using var verifyResponse = await _httpClient.PostAsync(VerifyUserURL, new StringContent(JsonSerializer.Serialize(requestContent), null, "application/json"));
-
-                        if (verifyResponse.StatusCode == HttpStatusCode.OK)
-                        {
-                            var stringContent = await verifyResponse.Content.ReadAsStringAsync();
-                            if (stringContent.Contains("\"success\": false"))
-                            {
-                                _logger.Information(
-                                    "Session authentication failed " +
-                                    $"(EndPoint='{session.EndPoint}', " +
-                                    $"Platform='{request.AuthenticationToken.Platform}', " +
-                                    $"UserId='{request.AuthenticationToken.UserId}', " +
-                                    $"UserName='{request.AuthenticationToken.UserName}').");
-
-                                return new AuthenticateUserResponse
-                                {
-                                    Result = AuthenticateUserResult.Failed
-                                };
-                            }
-                            else
-                            {
-                                _logger.Information(
-                                    "Session authenticated " +
-                                    $"(EndPoint='{session.EndPoint}', " +
-                                    $"Platform='{request.AuthenticationToken.Platform}', " +
-                                    $"UserId='{request.AuthenticationToken.UserId}', " +
-                                    $"UserName='{request.AuthenticationToken.UserName}')."
-                                );
-                            }
-                        }
-                        else
-                        {
-                            _logger.Information(
-                                "Skipping session authentication (BeatSaverDown)" +
-                                $"(EndPoint='{session.EndPoint}', " +
-                                $"Platform='{request.AuthenticationToken.Platform}', " +
-                                $"UserId='{request.AuthenticationToken.UserId}', " +
-                                $"UserName='{request.AuthenticationToken.UserName}')."
-                            );
-                        }
-                    }
-                    catch(Exception ex)
-                    {
-                        _logger.Information(
-                            $"Skipping session authentication ({ex.Message})" +
-                            $"(EndPoint='{session.EndPoint}', " +
-                            $"Platform='{request.AuthenticationToken.Platform}', " +
-                            $"UserId='{request.AuthenticationToken.UserId}', " +
-                            $"UserName='{request.AuthenticationToken.UserName}')."
-                        );
-                    }
-                }
-                else
-                {
-                    _logger.Information(
-                        "Skipping session authentication (OculusQuest)" +
-                        $"(EndPoint='{session.EndPoint}', " +
-                        $"Platform='{request.AuthenticationToken.Platform}', " +
-                        $"UserId='{request.AuthenticationToken.UserId}', " +
-                        $"UserName='{request.AuthenticationToken.UserName}')."
-                    );
-                }
-            }
-            else
-            {
-                _logger.Information(
-                    "Skipping session authentication (disabled)" +
-                    $"(EndPoint='{session.EndPoint}', " +
-                    $"Platform='{request.AuthenticationToken.Platform}', " +
-                    $"UserId='{request.AuthenticationToken.UserId}', " +
-                    $"UserName='{request.AuthenticationToken.UserName}')."
-                );
-            }
-               
-            session.Platform = request.AuthenticationToken.Platform;
-            session.PlatformUserId = request.AuthenticationToken.UserId;
-            session.UserIdHash = UserIdHash.Generate(session.Platform, session.PlatformUserId);
-            session.UserName = request.AuthenticationToken.UserName;
+            var authSuccess =
+                await _userAuthenticator.TryAuthenticateUserWithPlatform(session, request.AuthenticationToken);
 
             return new AuthenticateUserResponse
             {
-                Result = AuthenticateUserResult.Success
+                Result = authSuccess ? AuthenticateUserResult.Success : AuthenticateUserResult.Failed
             };
         }
-
 
         private async Task<Server> GetServerToConnectTo(ConnectToMatchmakingServerRequest request, bool IsQuickplay)
         {
