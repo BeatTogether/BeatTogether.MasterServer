@@ -153,7 +153,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 SessionEndPoint.ToString(),
                 Random ?? Array.Empty<byte>(),
                 PublicKey ?? Array.Empty<byte>(),
-                PlayerSessionId,
+                PlayerSessionId ?? "",
                 Secret
             ));
 
