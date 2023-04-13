@@ -48,7 +48,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             _autobus.Subscribe<NodeReceivedPlayerEncryptionEvent>(NodeReceivedPlayerEncryptionHandler);
             _autobus.Subscribe<NodeOnlineEvent>(NodeOnlineHandler);
             _autobus.Subscribe<ServerInGameplayEvent>(HandleServerInGameplay);
-            //_autobus.Subscribe<UpdateStatusEvent>(HandleServerStatusChanged);
             //_autobus.Subscribe<UpdateInstanceConfigEvent>(InstanceConfigurationUpdateHandler);
 
             return Task.CompletedTask;
@@ -62,7 +61,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             _autobus.Unsubscribe<NodeReceivedPlayerEncryptionEvent>(NodeReceivedPlayerEncryptionHandler);
             _autobus.Unsubscribe<NodeOnlineEvent>(NodeOnlineHandler);
             _autobus.Unsubscribe<ServerInGameplayEvent>(HandleServerInGameplay);
-            //_autobus.Unsubscribe<UpdateStatusEvent>(HandleServerStatusChanged);
             //_autobus.Unsubscribe<UpdateInstanceConfigEvent>(InstanceConfigurationUpdateHandler);
             return Task.CompletedTask;
         }
@@ -81,35 +79,14 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             return;
         }
 
-        private async Task HandlePlayerDisconnect(PlayerLeaveServerEvent integrationEvent) //Handles player disconnects and when the player count changes
+        private Task HandlePlayerDisconnect(PlayerLeaveServerEvent integrationEvent) //Handles player disconnects and when the player count changes
         {
-            var server = await _serverRepository.GetServer(integrationEvent.Secret);
-            if (server != null)
-            {
-                _ = _serverRepository.UpdateCurrentPlayerCount(integrationEvent.Secret, integrationEvent.NewPlayerCount);
-            }
-            if(integrationEvent.endPoint != string.Empty)
-            {
-                bool SessionExists = _masterServerSessionService.TryGetSession(IPEndPoint.Parse(integrationEvent.endPoint), out var session);
-                if (SessionExists && server != null)
-                    session.LastGameIp = server.ServerEndPoint.ToString();
-                if (!SessionExists)
-                    return;
+            _ = _serverRepository.UpdateCurrentPlayerCount(integrationEvent.Secret, integrationEvent.NewPlayerCount);
+            if (!string.IsNullOrEmpty(integrationEvent.endPoint) && _masterServerSessionService.TryGetSession(IPEndPoint.Parse(integrationEvent.endPoint), out var session))
                 _masterServerSessionService.RemoveSecretFromSession(session.EndPoint);
-                session.LastGameDisconnect = DateTime.UtcNow;
-            }
+            return Task.CompletedTask;
         }
-        /*
-        private async Task HandleServerStatusChanged(UpdateStatusEvent updateStatusEvent)
-        {
-            var server = await _serverRepository.GetServer(updateStatusEvent.Secret);
-            if (updateStatusEvent.GameState == DedicatedServer.Interface.Enums.MultiplayerGameState.Game)
-                server.IsInGameplay = true;
-            else
-                server.IsInGameplay = false;
-            return;
-        }
-        */
+
         private Task HandleServerInGameplay(ServerInGameplayEvent serverInGameplayEvent)
         {
             _ = _serverRepository.UpdateServerGameplayState(serverInGameplayEvent.Secret, serverInGameplayEvent.InGame);

@@ -15,11 +15,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         public string UserIdHash { get; set; }
         public string UserName { get; set; }
         public string Secret { get; set; }
-        public string LastGameIp { get; set; } = string.Empty;
-        public DateTime LastGameDisconnect { get; set; } = DateTime.MinValue;
-
         public string PlayerSessionId { get; set; } = null;
-
         public byte[] Cookie { get; set; }
         public byte[] ClientRandom { get; set; }
         public byte[] ServerRandom { get; set; }
@@ -28,7 +24,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         public ECPrivateKeyParameters ServerPrivateKeyParameters { get; set; }
         public byte[] PreMasterSecret { get; set; }
         public DateTimeOffset LastKeepAlive { get; set; }
-
         public MasterServerSession(EndPoint endPoint)
             : base(endPoint)
         {

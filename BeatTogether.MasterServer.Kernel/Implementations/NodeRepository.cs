@@ -14,7 +14,7 @@ using Serilog;
 namespace BeatTogether.MasterServer.Kernel.Implementations
 {
     public class NodeRepository : INodeRepository
-        //Stores the currently active nodes and whether they are online or not
+    //Stores the currently active nodes and whether they are online or not
     {
         private readonly ConcurrentDictionary<IPAddress, Node> _nodes = new();
         private bool WaitingForResponses;
@@ -100,19 +100,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         }
 
         public bool EndpointExists(IPEndPoint endPoint)
-        {
-            return _nodes.TryGetValue(endPoint.Address, out var node) && node.Online;
-            /*
-            foreach (var node in _nodes)
-            {
-                if(endPoint.Address.ToString() == node.Key.ToString() && node.Value.Online)
-                {
-                    return true;
-                }
-            }
-            return false;
-            */
-        }
+            => _nodes.TryGetValue(endPoint.Address, out var node) && node.Online;
 
         public async Task<bool> DisconnectNode(IPAddress endPoint)
         {

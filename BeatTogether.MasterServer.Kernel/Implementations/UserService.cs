@@ -129,15 +129,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 };
             }
 
-            var sessionCheck = _sessionService.GetSession(session.EndPoint);
-            var lastServerMs = (int)DateTime.UtcNow.Subtract(session.LastGameDisconnect).TotalMilliseconds;
-            
-            if (sessionCheck.LastGameIp == server.ServerEndPoint.ToString() && lastServerMs < 6000)
-            {
-                _logger.Verbose("Delaying player from joining");
-                await Task.Delay(6000 - (lastServerMs) );
-            }
-
             _sessionService.AddSession(session.EndPoint, server.Secret);
 
             _logger.Information("Player: " + session.UserIdHash + " Is being sent to node: " + server.ServerEndPoint + ", Server name: " + serverFromRepo.ServerName + ", PlayerCountBeforeJoin: " + serverFromRepo.CurrentPlayerCount);
