@@ -19,16 +19,19 @@ namespace BeatTogether.MasterServer.Data.Abstractions.Repositories
             ulong songPackTop,
             ulong songPackBottom);
 
-        Task<string[]> GetPublicServerSecretsList();
+        Task<string[]> GetPublicServerSecrets();
+        Task<string[]> GetPublicServerCodes();
         Task<Server[]> GetPublicServerList();
-        Task<string[]> GetServerSecretsList();
         Task<Server[]> GetServerList();
         Task<int> GetPublicServerCount();
         Task<int> GetServerCount();
-
+        Task<int> GetPlayerCount();
         Task<bool> AddServer(Server server);
         Task<bool> RemoveServer(string secret);
         Task<bool> RemoveServersWithEndpoint(IPAddress EndPoint);
+
+        Task<int> GetServerCountOnEndpoint(IPAddress EndPoint);
+        Task<int> GetPlayerCountOnEndpoint(IPAddress EndPoint);
 
         Task<bool> IncrementCurrentPlayerCount(string secret);
         Task<bool> DecrementCurrentPlayerCount(string secret);

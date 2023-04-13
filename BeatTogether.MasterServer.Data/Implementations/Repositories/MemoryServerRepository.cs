@@ -21,16 +21,16 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
             return Task.FromResult(TotalJoins);
         }
 
-        public Task<string[]> GetPublicServerSecretsList()
+        public Task<string[]> GetServerSecretsList()
         {
             return Task.FromResult(_servers.Keys.ToArray());
         }
-        public Task<Server[]> GetPublicServerList()
+        public Task<Server[]> GetServerList()
         {
             return Task.FromResult(_servers.Values.ToArray());
         }
 
-        public Task<string[]> GetServerSecretsList()
+        public Task<string[]> GetPublicServerSecrets()
         {
             List<string> secrets = new();
             foreach (var server in _servers.Values)
@@ -40,8 +40,18 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
             }
             return Task.FromResult(secrets.ToArray());
         }
+        public Task<string[]> GetPublicServerCodes()
+        {
+            List<string> codes = new();
+            foreach (var server in _servers.Values)
+            {
+                if (server.IsPublic)
+                    codes.Add(server.Code);
+            }
+            return Task.FromResult(codes.ToArray());
+        }
 
-        public Task<Server[]> GetServerList()
+        public Task<Server[]> GetPublicServerList()
         {
             return Task.FromResult((_servers.Values.Where(value => value.IsPublic)).ToArray());
         }
@@ -53,6 +63,13 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
         public Task<int> GetServerCount()
         {
             return Task.FromResult(_servers.Count);
+        }
+        public Task<int> GetPlayerCount()
+        {
+            int count = 0;
+            foreach (var server in _servers.Values)
+                count += server.CurrentPlayerCount;
+            return Task.FromResult(count);
         }
 
         public Task<Server> GetServer(string secret)
@@ -140,6 +157,32 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
                 RemoveServer(secret);
             }
             return Task.FromResult(true);
+        }
+
+        public Task<int> GetServerCountOnEndpoint(IPAddress EndPoint)
+        {
+            int count = 0;
+
+            foreach (var server in _servers)
+            {
+                if (server.Value.ServerEndPoint.Address.ToString() == EndPoint.ToString())
+                {
+                    count++;
+                }
+            }
+            return Task.FromResult(count);
+        }
+        public Task<int> GetPlayerCountOnEndpoint(IPAddress EndPoint)
+        {
+            int count = 0;
+            foreach (var server in _servers)
+            {
+                if (server.Value.ServerEndPoint.Address.ToString() == EndPoint.ToString())
+                {
+                    count += server.Value.CurrentPlayerCount;
+                }
+            }
+            return Task.FromResult(count);
         }
 
         public Task<bool> IncrementCurrentPlayerCount(string secret)

@@ -156,5 +156,12 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             AwaitNodeResponses[NodeEndPoint.Address][PlayerEndpoint].SetResult(true);
         }
 
+        public Node GetNode(string EndPoint)
+        {
+            
+            if(_nodes.TryGetValue(IPEndPoint.Parse(EndPoint).Address, out var Node))
+                return Node;
+            return null;
+        }
     }
 }

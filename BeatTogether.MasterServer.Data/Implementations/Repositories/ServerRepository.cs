@@ -237,6 +237,31 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
             throw new System.NotImplementedException();
         }
 
+        public Task<int> GetPlayerCount()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public Task<string[]> GetPublicServerSecrets()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public Task<string[]> GetPublicServerCodes()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public Task<int> GetServerCountOnEndpoint(IPAddress EndPoint)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public Task<int> GetPlayerCountOnEndpoint(IPAddress EndPoint)
+        {
+            throw new System.NotImplementedException();
+        }
+
         #endregion
 
         #region Scripts

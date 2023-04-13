@@ -9,6 +9,7 @@ namespace BeatTogether.MasterServer.Kernal.Abstractions
     public interface INodeRepository
     {
         public ConcurrentDictionary<IPAddress, Node> GetNodes();
+        public Node GetNode(string EndPoint);
         public Task SetNodeOnline(IPAddress endPoint, string Version);
         public Task SetNodeOffline(IPAddress endPoint);
 
