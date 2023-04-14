@@ -5,6 +5,7 @@ on:
       - master
       - dev
       - dev-1.29
+      - dev-1.29-Net6.0
 
 jobs:
   nuget-1:
