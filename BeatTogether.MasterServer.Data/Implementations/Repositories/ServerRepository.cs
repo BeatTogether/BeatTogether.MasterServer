@@ -11,6 +11,22 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
 {
     public sealed class ServerRepository : IServerRepository
     {
+        /* //TODO
+         * Refactor redis server code
+         * load scripts to the redis server now it has been updated to latest for extra performance
+         * use sets instead of hashes?
+         * 
+         * specification: 
+         * Server list - server ID to server
+         * Servers by code - server code to server ID
+         * Servers by secret - server secret to server ID
+         * Public servers - list of public servers
+         * Maybe other stuff?
+         * 
+         * 
+         */
+
+
         public static class RedisKeys
         {
             public static RedisKey Servers(string secret) => $"Servers:{secret}";
@@ -101,9 +117,9 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
                     serverKey = RedisKeys.Servers(server.Secret),
                     serversByCodeKey = RedisKeys.ServersByCode,
                     publicServersByPlayerCountKey = RedisKeys.PublicServersByPlayerCount,
-                    hostUserId = (RedisValue)server.Host.UserId,
-                    hostUserName = (RedisValue)server.Host.UserName,
-                    remoteEndPoint = (RedisValue)server.RemoteEndPoint.ToString(),
+                    ServerId = (RedisValue)server.ServerId,
+                    ServerName = (RedisValue)server.ServerName,
+                    remoteEndPoint = (RedisValue)server.ServerEndPoint.ToString(),
                     secret = (RedisValue)server.Secret,
                     code = (RedisValue)server.Code,
                     isPublic = (RedisValue)server.IsPublic,
@@ -217,6 +233,31 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
         }
 
         public Task<bool> UpdateServerGameplayState(string secret, bool InGameplay)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public Task<int> GetPlayerCount()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public Task<string[]> GetPublicServerSecrets()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public Task<string[]> GetPublicServerCodes()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public Task<int> GetServerCountOnEndpoint(IPAddress EndPoint)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public Task<int> GetPlayerCountOnEndpoint(IPAddress EndPoint)
         {
             throw new System.NotImplementedException();
         }
