@@ -1,6 +1,5 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
-using BeatTogether.Core.Messaging.Abstractions;
 using BeatTogether.MasterServer.Data.Abstractions.Repositories;
 using BeatTogether.MasterServer.Domain.Models;
 using BeatTogether.MasterServer.Kernal.Abstractions;
@@ -8,7 +7,6 @@ using BeatTogether.MasterServer.Messaging.Models;
 using BeatTogether.MasterServer.Messaging.Models.HttpApi;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
-using AutoMapper;
 
 
 namespace BeatTogether.MasterServer.Kernel.HttpControllers
@@ -18,17 +16,14 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
     {
         private readonly IServerRepository _ServerRepository;
         private readonly INodeRepository _NodeRepository;
-        private readonly IMapper _mapper;
         private readonly ILogger _logger;
 
         public MasterServerController(
             IServerRepository serverRepository,
-            INodeRepository nodeRepository,
-            IMapper mapper)
+            INodeRepository nodeRepository)
         {
             _ServerRepository = serverRepository;
             _NodeRepository = nodeRepository;
-            _mapper = mapper;
 
             _logger = Log.ForContext<MasterServerController>();
         }

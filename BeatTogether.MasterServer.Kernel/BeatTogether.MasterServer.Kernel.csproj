@@ -9,7 +9,7 @@
   <ItemGroup>
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
     <PackageReference Include="BeatTogether.Core.Security" Version="1.2.0" />
-    <PackageReference Include="BeatTogether.DedicatedServer.Interface" Version="1.5.7" />
+    <PackageReference Include="BeatTogether.DedicatedServer.Interface" Version="1.6.0" />
     <PackageReference Include="BeatTogether.Extensions.Autobus.RabbitMQ" Version="1.1.0" />
     <PackageReference Include="BeatTogether.Extensions.Serilog" Version="2.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="6.0.16" />
