@@ -14,6 +14,11 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
     [ApiController]
     public class MasterServerController : Controller
     {
+        /*//TODO
+         * Cache values and only update them if a request is made X amount of time since last updated
+         * 
+         * 
+         */
         private readonly IServerRepository _ServerRepository;
         private readonly INodeRepository _NodeRepository;
         private readonly ILogger _logger;
