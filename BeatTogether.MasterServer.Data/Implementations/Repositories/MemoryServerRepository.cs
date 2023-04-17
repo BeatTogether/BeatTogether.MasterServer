@@ -15,10 +15,16 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
         private static ConcurrentDictionary<string, Server> _servers = new();
         private static ConcurrentDictionary<string, string> _secretsByCode = new();
         private long TotalJoins = 0;
+        private long _TotalServersMade = 0;
 
         public Task<long> TotalPlayerJoins()
         {
             return Task.FromResult(TotalJoins);
+        }
+
+        public Task<long> TotalServersMade()
+        {
+            return Task.FromResult(_TotalServersMade);
         }
 
         public Task<string[]> GetServerSecretsList()
@@ -131,7 +137,12 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
         {
             if (!_servers.TryAdd(server.Secret, server))
                 return Task.FromResult(false);
-            _secretsByCode[server.Code] = server.Secret;
+            if (!_secretsByCode.TryAdd(server.Code, server.Secret))
+            {
+                _servers.TryRemove(server.Secret, out _);
+                return Task.FromResult(false);
+            }
+            Interlocked.Increment(ref _TotalServersMade);
             return Task.FromResult(true);
         }
 
@@ -206,6 +217,8 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
         {
             if (!_servers.TryGetValue(secret, out var server))
                 return Task.FromResult(false);
+            if(server.CurrentPlayerCount < currentPlayerCount)
+                Interlocked.Add(ref TotalJoins, currentPlayerCount - server.CurrentPlayerCount);
             server.CurrentPlayerCount = currentPlayerCount;
             return Task.FromResult(true);
         }

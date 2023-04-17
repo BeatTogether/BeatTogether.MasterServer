@@ -71,6 +71,8 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
             else
             {
                 session = _sessionService.GetOrAddSession(remoteEndPoint);
+                session.ClientVersion = request.Version;
+                session.Platform = request.Platform;
             }
 
             // Authenticate platform user and assign session ID if not yet authed

@@ -118,11 +118,14 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 };
             }
 
+            _logger.Information("Player: " + session.UserIdHash + " Is being sent to node: " + server.ServerEndPoint + ", Server name: " + serverFromRepo.ServerName + ", PlayerCountBeforeJoin: " + serverFromRepo.CurrentPlayerCount);
+
             if (!await _nodeRepository.SendAndAwaitPlayerEncryptionRecievedFromNode(server.ServerEndPoint,
                     session.EndPoint, session.UserIdHash, session.UserName, session.Platform, Random, PublicKey,
-                     session.PlayerSessionId, server.Secret, EncryptionRecieveTimeout))
+                     session.PlayerSessionId, session.ClientVersion, server.Secret, EncryptionRecieveTimeout))
             {
                 _autobus.Publish(new DisconnectPlayerFromMatchmakingServerEvent(server.Secret, session.UserIdHash, session.EndPoint.ToString()));
+                _logger.Warning("Player: " + session.UserIdHash + " Could not be sent to the node: " + server.ServerEndPoint);
                 return new ConnectToServerResponse()
                 {
                     Result = ConnectToServerResult.UnknownError
@@ -131,7 +134,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
             _sessionService.AddSession(session.EndPoint, server.Secret);
 
-            _logger.Information("Player: " + session.UserIdHash + " Is being sent to node: " + server.ServerEndPoint + ", Server name: " + serverFromRepo.ServerName + ", PlayerCountBeforeJoin: " + serverFromRepo.CurrentPlayerCount);
 
             return new ConnectToServerResponse
             {

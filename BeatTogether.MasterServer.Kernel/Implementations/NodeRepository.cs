@@ -44,8 +44,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         private async void AsyncStartWaitForAllNodesTask()
         {
-            await Task.Delay(EndpointRecieveTimeout);
-
+            await Task.Delay(EndpointRecieveTimeout); //Waits 4 seconds - is enough time for all nodes to send a response back to the master server
             foreach (var node in _nodes)
             {
                 if (node.Value.Online && (DateTime.UtcNow - node.Value.LastOnline).TotalSeconds > 10) //10 seconds is the delay before StartWaitForAllNodesTask is called again
@@ -66,11 +65,10 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         public async Task SetNodeOnline(IPAddress endPoint, string Version)
         {
             _logger.Information($"Node is online: " + endPoint);
-
             if (!_nodes.TryAdd(endPoint, new Node(endPoint, Version)))
             {
                 _logger.Information($"Resetting restarted node: " + endPoint);
-                await SetNodeOffline(endPoint);
+                await SetNodeOffline(endPoint); 
                 _nodes[endPoint].NodeVersion = Version;
                 _nodes[endPoint].LastStart = DateTime.UtcNow;
                 _nodes[endPoint].LastOnline = DateTime.UtcNow;
@@ -117,7 +115,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         public async Task<bool> SendAndAwaitPlayerEncryptionRecievedFromNode(IPEndPoint NodeEndPoint,
             EndPoint SessionEndPoint, string UserId, string UserName, Platform platform, byte[] Random, 
-            byte[] PublicKey, string PlayerSessionId, string Secret, int TimeOut)
+            byte[] PublicKey, string PlayerSessionId, string ClientVersion, string Secret, int TimeOut)
         {
             if (!EndpointExists(NodeEndPoint))
                 return false;
@@ -142,6 +140,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 Random ?? Array.Empty<byte>(),
                 PublicKey ?? Array.Empty<byte>(),
                 PlayerSessionId ?? "",
+                ClientVersion ?? "Pre-Gamelift",
+                (byte)platform,
                 Secret
             ));
 
@@ -158,7 +158,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         public Node GetNode(string EndPoint)
         {
-            
             if(_nodes.TryGetValue(IPEndPoint.Parse(EndPoint).Address, out var Node))
                 return Node;
             return null;

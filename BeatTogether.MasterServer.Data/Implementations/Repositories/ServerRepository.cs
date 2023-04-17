@@ -262,6 +262,11 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
             throw new System.NotImplementedException();
         }
 
+        public Task<long> TotalServersMade()
+        {
+            throw new System.NotImplementedException();
+        }
+
         #endregion
 
         #region Scripts

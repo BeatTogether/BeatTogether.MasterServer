@@ -72,6 +72,15 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
         {
             return await _ServerRepository.TotalPlayerJoins();
         }
+        /// <summary>
+        /// Returns the amount of instances created since the last master server restart
+        /// </summary>
+        [HttpGet]
+        [Route("get_instance_count_since_last_start")]
+        public async Task<long> GetInstancesCreatedSinceServerStart()
+        {
+            return await _ServerRepository.TotalServersMade();
+        }
 
         /// <summary>
         /// Returns a server from a server code
