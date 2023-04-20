@@ -152,7 +152,7 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
         [Route("get_public_server_codes")]
         public async Task<string[]> GetPublicServerCodes()
         {
-            return await _ServerRepository.GetPublicServerSecrets();
+            return await _ServerRepository.GetPublicServerCodes();
         }
 
         /// <summary>
