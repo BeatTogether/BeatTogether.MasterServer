@@ -48,7 +48,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             _autobus.Subscribe<NodeReceivedPlayerEncryptionEvent>(NodeReceivedPlayerEncryptionHandler);
             _autobus.Subscribe<NodeOnlineEvent>(NodeOnlineHandler);
             _autobus.Subscribe<ServerInGameplayEvent>(HandleServerInGameplay);
-            //_autobus.Subscribe<UpdateInstanceConfigEvent>(InstanceConfigurationUpdateHandler);
+            _autobus.Subscribe<UpdateInstanceConfigEvent>(InstanceConfigurationUpdateHandler);
 
             return Task.CompletedTask;
         }
@@ -61,7 +61,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             _autobus.Unsubscribe<NodeReceivedPlayerEncryptionEvent>(NodeReceivedPlayerEncryptionHandler);
             _autobus.Unsubscribe<NodeOnlineEvent>(NodeOnlineHandler);
             _autobus.Unsubscribe<ServerInGameplayEvent>(HandleServerInGameplay);
-            //_autobus.Unsubscribe<UpdateInstanceConfigEvent>(InstanceConfigurationUpdateHandler);
+            _autobus.Unsubscribe<UpdateInstanceConfigEvent>(InstanceConfigurationUpdateHandler);
             return Task.CompletedTask;
         }
 
@@ -116,7 +116,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             return Task.CompletedTask;
         }
 
-        /*
+ 
         private Task InstanceConfigurationUpdateHandler(UpdateInstanceConfigEvent updateInstanceConfigEvent)
         {
             Server server = _serverRepository.GetServer(updateInstanceConfigEvent.Secret).Result;
@@ -128,11 +128,11 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             server.GameplayServerConfiguration.GameplayServerMode = (Domain.Enums.GameplayServerMode)updateInstanceConfigEvent.Configuration.GameplayServerMode;
             server.GameplayServerConfiguration.SongSelectionMode = (Domain.Enums.SongSelectionMode)updateInstanceConfigEvent.Configuration.SongSelectionMode;
             server.GameplayServerConfiguration.GameplayServerControlSettings = (Domain.Enums.GameplayServerControlSettings)updateInstanceConfigEvent.Configuration.GameplayServerControlSettings;
-            server.Host.UserName = updateInstanceConfigEvent.ServerName;
+            server.ServerName = updateInstanceConfigEvent.ServerName;
+            server.Secret = updateInstanceConfigEvent.Secret;
             server.Code = updateInstanceConfigEvent.Code;
             return Task.CompletedTask;
         }
-        */
 
 
 
