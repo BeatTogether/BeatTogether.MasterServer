@@ -7,5 +7,6 @@
         public string MasterServerVersion { get; } = "1.2.0";
         public string[] SupportedDediServerVersions { get; } = { "1.3.0" }; //for example, if 1.1 is here, then 1.1.1, 1.1.5, 1.1.23, would all be accepted verisions and 1.2.3 would not
         public bool AuthenticateClients { get; set; } = true;
+        public int MillisBetweenUpdatingCachedApiResponses { get; set; } = 1000;
     }
 }
