@@ -79,11 +79,9 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             return;
         }
 
-        private Task HandlePlayerDisconnect(PlayerLeaveServerEvent integrationEvent) //Handles player disconnects and when the player count changes
+        private Task HandlePlayerDisconnect(PlayerLeaveServerEvent integrationEvent) //Handles when the player count changes
         {
             _ = _serverRepository.UpdateCurrentPlayerCount(integrationEvent.Secret, integrationEvent.NewPlayerCount);
-            if (!string.IsNullOrEmpty(integrationEvent.endPoint) && _masterServerSessionService.TryGetSession(IPEndPoint.Parse(integrationEvent.endPoint), out var session))
-                _masterServerSessionService.RemoveSecretFromSession(session.EndPoint);
             return Task.CompletedTask;
         }
 

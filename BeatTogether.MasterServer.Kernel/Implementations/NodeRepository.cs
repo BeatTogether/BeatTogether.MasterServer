@@ -30,6 +30,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         {
             _serverRepository = serverRepository;
             _autobus = autobus;
+            checkNodes = new();
         }
 
         public void StartWaitForAllNodesTask()

@@ -15,7 +15,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         public string ClientVersion { get; set; } = null;
         public string UserIdHash { get; set; }
         public string UserName { get; set; }
-        public string Secret { get; set; } //Probably no longer needed
         public string PlayerSessionId { get; set; } = null;
         public byte[] Cookie { get; set; }
         public byte[] ClientRandom { get; set; }

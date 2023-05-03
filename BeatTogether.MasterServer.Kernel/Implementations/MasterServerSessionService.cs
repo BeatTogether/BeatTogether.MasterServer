@@ -40,12 +40,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 }
             );
 
-        public void AddSession(EndPoint endPoint, string Secret)
-        {
-            _ = GetOrAddSession(endPoint);
-            _sessions[endPoint].Secret = Secret;
-        }
-
         public MasterServerSession GetSession(EndPoint endPoint) =>
             _sessions[endPoint];
 
@@ -76,12 +70,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 _logger.Information($"Closing session (EndPoint='{session.EndPoint}').");
             session.State = MasterServerSessionState.None;
             return true;
-        }
-
-        public void RemoveSecretFromSession(EndPoint sessionEndpoint)
-        {
-            if (_sessions.TryGetValue(sessionEndpoint, out _))
-                _sessions[sessionEndpoint].Secret = string.Empty;
         }
 
         #endregion

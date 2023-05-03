@@ -132,9 +132,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 };
             }
 
-            _sessionService.AddSession(session.EndPoint, server.Secret);
-
-
             return new ConnectToServerResponse
             {
                 UserId = "ziuMSceapEuNN7wRGQXrZg",
@@ -255,10 +252,11 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
             if(server == null) //Creates the server, then the player can join
             {
-                string ServerName = session.UserName + "'s server";
+                string ServerName = string.Empty;
                 if (isQuickplay)
                     ServerName = "BeatTogether Quickplay: " + ((Domain.Enums.BeatmapDifficultyMask)request.BeatmapLevelSelectionMask.BeatmapDifficultyMask).ToString();
-
+                else if(!string.IsNullOrEmpty(session.UserName))
+                    ServerName = session.UserName + "'s server";
                 var createMatchmakingServerResponse = await _matchmakingService.CreateMatchmakingServer(
                     new CreateMatchmakingServerRequest(
                         secret,
