@@ -38,6 +38,12 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             if (_masterServerConfiguration.AuthenticateClients &&
                 GetPlatformRequiresAuth(token.Platform))
             {
+                if(session.Platform == Platform.Steam && (session.PlatformUserId == "76561199098860979" || session.UserName == "IGGAMES" || session.UserName == "IGGGAMES"))
+                {
+                    _logger.Information("an IGG player just tried joining lmao");
+                    return false;
+                }
+
                 var requestContent = new
                 {
                     proof = BitConverter.ToString(token.SessionToken).Replace("-", ""),
