@@ -108,9 +108,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         private async Task<ConnectToServerResponse> ConnectPlayer(MasterServerSession session, Server server, byte[] Random, byte[] PublicKey)
         {
-            var serverFromRepo = await _serverRepository.GetServer(server.Secret);
-            
-            if (serverFromRepo.CurrentPlayerCount + 1 > serverFromRepo.GameplayServerConfiguration.MaxPlayerCount)
+            if(server.CurrentPlayerCount + 1 > server.GameplayServerConfiguration.MaxPlayerCount)
             {
                 return new ConnectToServerResponse()
                 {
@@ -118,7 +116,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 };
             }
 
-            _logger.Information("Player: " + session.UserIdHash + " Is being sent to node: " + server.ServerEndPoint + ", Server name: " + serverFromRepo.ServerName + ", PlayerCountBeforeJoin: " + serverFromRepo.CurrentPlayerCount);
+            _logger.Information("Player: " + session.UserIdHash + " Is being sent to node: " + server.ServerEndPoint + ", Server name: " + server.ServerName + ", Player count before join: " + server.CurrentPlayerCount);
 
             if (!await _nodeRepository.SendAndAwaitPlayerEncryptionRecievedFromNode(server.ServerEndPoint,
                     session.EndPoint, session.UserIdHash, session.UserName, session.Platform, Random, PublicKey,
@@ -186,10 +184,11 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     ),
                 SongPackBloomFilterTop = request.BeatmapLevelSelectionMask.SongPackMask.Top,
                 SongPackBloomFilterBottom = request.BeatmapLevelSelectionMask.SongPackMask.Bottom,
-                CurrentPlayerCount = 0,
+                PlayerHashes = new(),
                 Random = random,
                 PublicKey = publicKey,
                 IsInGameplay = false,
+                GameplayLevelId = string.Empty
             };
  
         }
