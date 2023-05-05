@@ -28,10 +28,12 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
 
         public MasterServerController(
             IServerRepository serverRepository,
-            INodeRepository nodeRepository)
+            INodeRepository nodeRepository,
+            MasterServerConfiguration masterServerConfiguration)
         {
             _ServerRepository = serverRepository;
             _NodeRepository = nodeRepository;
+            _Configuration = masterServerConfiguration;
 
             _logger = Log.ForContext<MasterServerController>();
         }

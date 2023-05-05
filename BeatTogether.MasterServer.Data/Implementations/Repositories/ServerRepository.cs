@@ -267,6 +267,31 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
             throw new System.NotImplementedException();
         }
 
+        public Task<bool> UpdateServerConfiguration(string secret, GameplayServerConfiguration gameplayServerConfiguration, string serverName)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public Task<bool> UpdateCurrentPlayers(string secret, string[] Players)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public Task<bool> AddPlayer(string secret, string UserHash)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public Task<bool> RemovePlayer(string secret, string UserHash)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public Task<bool> UpdateServerGameplayState(string secret, bool InGameplay, string LevelId)
+        {
+            throw new System.NotImplementedException();
+        }
+
         #endregion
 
         #region Scripts

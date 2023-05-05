@@ -58,11 +58,13 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         {
             _autobus.Unsubscribe<MatchmakingServerStoppedEvent>(HandleServerStop);
             _autobus.Unsubscribe<PlayerLeaveServerEvent>(HandlePlayerDisconnect);
+            _autobus.Unsubscribe<PlayerJoinEvent>(HandlePlayerJoin);
             _autobus.Unsubscribe<NodeStartedEvent>(NodeStartedHandler);
             _autobus.Unsubscribe<NodeReceivedPlayerEncryptionEvent>(NodeReceivedPlayerEncryptionHandler);
             _autobus.Unsubscribe<NodeOnlineEvent>(NodeOnlineHandler);
             _autobus.Unsubscribe<ServerInGameplayEvent>(HandleServerInGameplay);
             _autobus.Unsubscribe<UpdateInstanceConfigEvent>(InstanceConfigurationUpdateHandler);
+            _autobus.Unsubscribe<UpdatePlayersEvent>(HandlePlayersChangedEvent);
             return Task.CompletedTask;
         }
 
@@ -139,7 +141,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 (Domain.Enums.SongSelectionMode)updateInstanceConfigEvent.Configuration.SongSelectionMode,
                 (Domain.Enums.GameplayServerControlSettings)updateInstanceConfigEvent.Configuration.GameplayServerControlSettings
                 );
-            _serverRepository.UpdateServerConfiguration(updateInstanceConfigEvent.Secret, gameplayServerConfiguration, updateInstanceConfigEvent.Code, updateInstanceConfigEvent.ServerName);
+            _serverRepository.UpdateServerConfiguration(updateInstanceConfigEvent.Secret, gameplayServerConfiguration, updateInstanceConfigEvent.ServerName);
             return Task.CompletedTask;
         }
 
