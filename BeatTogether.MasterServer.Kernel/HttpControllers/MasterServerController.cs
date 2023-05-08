@@ -55,15 +55,15 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
         [Route("get_public_instance_count")]
         public async Task<int> GetPublicInstanceCount()
         {
-            if(DateTime.UtcNow.Millisecond - _TimeOfLastPublicInstanceCount > _Configuration.MillisBetweenUpdatingCachedApiResponses)
+            if(DateTime.UtcNow.Ticks - _TimeOfLastPublicInstanceCount > _Configuration.TicksBetweenUpdatingCachedApiResponses)
             {
-                _TimeOfLastPublicInstanceCount = DateTime.UtcNow.Millisecond;
+                _TimeOfLastPublicInstanceCount = DateTime.UtcNow.Ticks;
                 _LastPublicServerCount = await _ServerRepository.GetPublicServerCount();
             }
             return _LastPublicServerCount;
         }
         private int _LastPublicServerCount = 0;
-        private int _TimeOfLastPublicInstanceCount = 0;
+        private long _TimeOfLastPublicInstanceCount = 0; //TODO fix this stuff
 
         /// <summary>
         /// Returns the amount of active players
@@ -72,15 +72,15 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
         [Route("get_player_count")]
         public async Task<int> GetPlayerCount()
         {
-            if (DateTime.UtcNow.Millisecond - _TimeOfLastPlayerCount > _Configuration.MillisBetweenUpdatingCachedApiResponses)
+            if (DateTime.UtcNow.Ticks - _TimeOfLastPlayerCount > _Configuration.TicksBetweenUpdatingCachedApiResponses)
             {
-                _TimeOfLastPlayerCount = DateTime.UtcNow.Millisecond;
+                _TimeOfLastPlayerCount = DateTime.UtcNow.Ticks;
                 _LastPlayerCount = await _ServerRepository.GetPlayerCount();
             }
             return _LastPlayerCount; 
         }
         private int _LastPlayerCount = 0;
-        private int _TimeOfLastPlayerCount = 0;
+        private long _TimeOfLastPlayerCount = 0;
 
         /// <summary>
         /// Returns the amount of player joins since the last master server restart
@@ -171,15 +171,15 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
         [Route("get_public_server_codes")]
         public async Task<string[]> GetPublicServerCodes()
         {
-            if (DateTime.UtcNow.Millisecond - _TimeOfLastPublicServerCodes > _Configuration.MillisBetweenUpdatingCachedApiResponses)
+            if (DateTime.UtcNow.Ticks - _TimeOfLastPublicServerCodes > _Configuration.TicksBetweenUpdatingCachedApiResponses)
             {
-                _TimeOfLastPublicServerCodes = DateTime.UtcNow.Millisecond;
+                _TimeOfLastPublicServerCodes = DateTime.UtcNow.Ticks;
                 _LastPublicServerCodes = await _ServerRepository.GetPublicServerCodes();
             }
             return _LastPublicServerCodes;
         }
         private string[] _LastPublicServerCodes = Array.Empty<string>();
-        private int _TimeOfLastPublicServerCodes = 0;
+        private long _TimeOfLastPublicServerCodes = 0;
 
         /// <summary>
         /// Returns a list of public server codes
@@ -188,15 +188,15 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
         [Route("get_public_server_secrets")]
         public async Task<string[]> GetPublicServerSecrets()
         {
-            if (DateTime.UtcNow.Millisecond - _TimeOfLastPublicServerSecrets > _Configuration.MillisBetweenUpdatingCachedApiResponses)
+            if (DateTime.UtcNow.Ticks - _TimeOfLastPublicServerSecrets > _Configuration.TicksBetweenUpdatingCachedApiResponses)
             {
-                _TimeOfLastPublicServerSecrets = DateTime.UtcNow.Millisecond;
+                _TimeOfLastPublicServerSecrets = DateTime.UtcNow.Ticks;
                 _LastPublicServerSecrets = await _ServerRepository.GetPublicServerSecrets();
             }
             return _LastPublicServerSecrets;
         }
         private string[] _LastPublicServerSecrets = Array.Empty<string>();
-        private int _TimeOfLastPublicServerSecrets = 0;
+        private long _TimeOfLastPublicServerSecrets = 0;
 
         /// <summary>
         /// Returns a list of public servers
@@ -207,9 +207,9 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
         {
 
 
-            if (DateTime.UtcNow.Millisecond - _TimeOfLastPublicServers > _Configuration.MillisBetweenUpdatingCachedApiResponses)
+            if (DateTime.UtcNow.Ticks - _TimeOfLastPublicServers > _Configuration.TicksBetweenUpdatingCachedApiResponses)
             {
-                _TimeOfLastPublicServers = DateTime.UtcNow.Millisecond;
+                _TimeOfLastPublicServers = DateTime.UtcNow.Ticks;
                 Server[] server = await _ServerRepository.GetPublicServerList();
                 GetServerResponse[] serverResponses = new GetServerResponse[server.Length];
                 for (int i = 0; i < server.Length; i++)
@@ -236,7 +236,7 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
             return _LastPublicServers;
         }
         private GetServerResponse[] _LastPublicServers = Array.Empty<GetServerResponse>();
-        private int _TimeOfLastPublicServers = 0;
+        private long _TimeOfLastPublicServers = 0;
 
         /// <summary>
         /// Returns the status of the currently online nodes
@@ -245,9 +245,9 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
         [Route("get_nodes")]
         public async Task<GetNodeResponse[]> GetStatusOfNodes()
         {
-            if (DateTime.UtcNow.Millisecond - _TimeOfStatusOfNodes > _Configuration.MillisBetweenUpdatingCachedApiResponses)
+            if (DateTime.UtcNow.Ticks - _TimeOfStatusOfNodes > _Configuration.TicksBetweenUpdatingCachedApiResponses)
             {
-                _TimeOfStatusOfNodes = DateTime.UtcNow.Millisecond;
+                _TimeOfStatusOfNodes = DateTime.UtcNow.Ticks;
                 Node[] nodes = _NodeRepository.GetNodes().Values.ToArray();
                 GetNodeResponse[] nodesResponse = new GetNodeResponse[nodes.Length];
                 for (int i = 0; i < nodes.Length; i++)
@@ -261,6 +261,6 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
             return _LastStatusOfNodes;
         }
         private GetNodeResponse[] _LastStatusOfNodes = Array.Empty<GetNodeResponse>();
-        private int _TimeOfStatusOfNodes = 0;
+        private long _TimeOfStatusOfNodes = 0;
     }
 }
