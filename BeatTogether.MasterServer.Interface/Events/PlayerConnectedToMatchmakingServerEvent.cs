@@ -8,5 +8,6 @@
         string PlayerSessionId,
         string ClientVersion,
         byte Platform,
+        string PlatformUserId,
         string Secret);
 }

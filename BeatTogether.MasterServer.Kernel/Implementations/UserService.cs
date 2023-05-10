@@ -120,7 +120,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
             if (!await _nodeRepository.SendAndAwaitPlayerEncryptionRecievedFromNode(server.ServerEndPoint,
                     session.EndPoint, session.UserIdHash, session.UserName, session.Platform, Random, PublicKey,
-                     session.PlayerSessionId, session.ClientVersion, server.Secret, EncryptionRecieveTimeout))
+                     session.PlayerSessionId, session.ClientVersion, session.PlatformUserId, server.Secret, EncryptionRecieveTimeout))
             {
                 _autobus.Publish(new DisconnectPlayerFromMatchmakingServerEvent(server.Secret, session.UserIdHash, session.EndPoint.ToString()));
                 _logger.Warning("Player: " + session.UserIdHash + " Could not be sent to the node: " + server.ServerEndPoint);
@@ -175,7 +175,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 GameplayModifiersMask = (Domain.Enums.GameplayModifiersMask)request.BeatmapLevelSelectionMask.GameplayModifiersMask,
                 GameplayServerConfiguration = new Domain.Models.GameplayServerConfiguration
                     (
-                        Math.Min(request.GameplayServerConfiguration.MaxPlayerCount, 250), //New max player count
+                        Math.Min(request.GameplayServerConfiguration.MaxPlayerCount, 25), //max player count //TODO more if patreon?
                         (Domain.Enums.DiscoveryPolicy)request.GameplayServerConfiguration.DiscoveryPolicy,
                         (Domain.Enums.InvitePolicy)request.GameplayServerConfiguration.InvitePolicy,
                         (Domain.Enums.GameplayServerMode)request.GameplayServerConfiguration.GameplayServerMode,

@@ -116,7 +116,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         public async Task<bool> SendAndAwaitPlayerEncryptionRecievedFromNode(IPEndPoint NodeEndPoint,
             EndPoint SessionEndPoint, string UserId, string UserName, Platform platform, byte[] Random, 
-            byte[] PublicKey, string PlayerSessionId, string ClientVersion, string Secret, int TimeOut)
+            byte[] PublicKey, string PlayerSessionId, string ClientVersion, string PlatformUserId, string Secret, int TimeOut)
         {
             if (!EndpointExists(NodeEndPoint))
                 return false;
@@ -143,6 +143,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 PlayerSessionId ?? "",
                 ClientVersion ?? "Pre-Gamelift",
                 (byte)platform,
+                PlatformUserId,
                 Secret
             ));
 
