@@ -175,7 +175,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 GameplayModifiersMask = (Domain.Enums.GameplayModifiersMask)request.BeatmapLevelSelectionMask.GameplayModifiersMask,
                 GameplayServerConfiguration = new Domain.Models.GameplayServerConfiguration
                     (
-                        Math.Min(request.GameplayServerConfiguration.MaxPlayerCount, 25), //max player count //TODO more if patreon?
+                        Math.Min(request.GameplayServerConfiguration.MaxPlayerCount, 100), //max player count //TODO more if patreon?
                         (Domain.Enums.DiscoveryPolicy)request.GameplayServerConfiguration.DiscoveryPolicy,
                         (Domain.Enums.InvitePolicy)request.GameplayServerConfiguration.InvitePolicy,
                         (Domain.Enums.GameplayServerMode)request.GameplayServerConfiguration.GameplayServerMode,
