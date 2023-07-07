@@ -101,7 +101,7 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
                 InvitePolicy = (Messaging.Enums.InvitePolicy)server.GameplayServerConfiguration.InvitePolicy,
                 SongSelectionMode = (Messaging.Enums.SongSelectionMode)server.GameplayServerConfiguration.SongSelectionMode
             };
-            GetServerResponse serverResponse = new(server.ServerEndPoint.Address, server.ServerName, server.ServerId, server.Secret, server.Code, server.IsPublic, server.IsInGameplay, mask, config, server.CurrentPlayerCount);
+            GetServerResponse serverResponse = new(server.LiteNetEndPoint.Address, server.ServerName, server.ServerId,server.Secret, server.Code, server.IsPublic, server.IsInGameplay, mask, config, server.CurrentPlayerCount);
             return new JsonResult(serverResponse);
         }
 
@@ -132,7 +132,7 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
                 InvitePolicy = (Messaging.Enums.InvitePolicy)server.GameplayServerConfiguration.InvitePolicy,
                 SongSelectionMode = (Messaging.Enums.SongSelectionMode)server.GameplayServerConfiguration.SongSelectionMode
             };
-            GetServerResponse serverResponse = new(server.ServerEndPoint.Address, server.ServerName, server.ServerId, server.Secret, server.Code, server.IsPublic, server.IsInGameplay, mask, config, server.CurrentPlayerCount);
+            GetServerResponse serverResponse = new(server.LiteNetEndPoint.Address, server.ServerName, server.ServerId, server.Secret, server.Code, server.IsPublic, server.IsInGameplay, mask, config, server.CurrentPlayerCount);
             return new JsonResult(serverResponse);
         }
 

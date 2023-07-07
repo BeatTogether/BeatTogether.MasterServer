@@ -8,6 +8,7 @@ using BeatTogether.MasterServer.Messaging.Messages.User;
 using BeatTogether.MasterServer.Messaging.Models;
 using BeatTogether.MasterServer.Messaging.Models.HttpApi;
 using Microsoft.AspNetCore.Mvc;
+using Org.BouncyCastle.Asn1;
 using Serilog;
 
 namespace BeatTogether.MasterServer.Kernel.HttpControllers
@@ -142,15 +143,23 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
                 return new JsonResult(response);
             }
 
+            // For v1.31+ use ENet endpoint; for all other versions use default/LiteNet endpoint
+            var versionParsed = TryParseGameVersion(request.Version);
+            var versionENet = new Version(1, 31, 0);
+            var useENet = versionParsed >= versionENet;
+            var targetEndPoint = useENet ? matchResult.RemoteEndPointENet : matchResult.RemoteEndPoint;
+            
+            // Success result
             _logger.Information("Graph API join success (userId={UserId}, gameVersion={GameVersion}, " +
-                                "platform={Platform}, playerSessionId={SessionId}, targetNode={TargetNode})",
+                                "platform={Platform}, playerSessionId={SessionId}, targetNode={TargetNode}, " +
+                                "useENet={UseENet})",
                 session.UserIdHash, request.Version, session.Platform, session.PlayerSessionId,
-                matchResult.RemoteEndPoint.ToString());
-
+                targetEndPoint, useENet);
+            
             response.ErrorCode = MultiplayerPlacementErrorCode.Success;
             response.PlayerSessionInfo.GameSessionId = matchResult.ManagerId;
-            response.PlayerSessionInfo.DnsName = matchResult.RemoteEndPoint.Address.ToString();
-            response.PlayerSessionInfo.Port = matchResult.RemoteEndPoint.Port;
+            response.PlayerSessionInfo.DnsName = targetEndPoint.Address.ToString();
+            response.PlayerSessionInfo.Port = targetEndPoint.Port;
             response.PlayerSessionInfo.BeatmapLevelSelectionMask = matchResult.BeatmapLevelSelectionMask;
             response.PlayerSessionInfo.GameplayServerConfiguration = matchResult.Configuration;
             response.PlayerSessionInfo.PrivateGameSecret = matchResult.Secret;
@@ -189,6 +198,16 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
                 UserName = "Mystery Beater", // not provided to master through GameLift auth process
                 SessionToken = sessionToken
             };
+        }
+
+        private static Version? TryParseGameVersion(string versionText)
+        {
+            var idxUnderscore = versionText.IndexOf('_');
+
+            if (idxUnderscore >= 0)
+                versionText = versionText.Substring(0, idxUnderscore);
+
+            return Version.TryParse(versionText, out var version) ? version : null;
         }
         
         #endregion
