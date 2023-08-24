@@ -124,7 +124,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                      session.PlayerSessionId, session.ClientVersion, session.PlatformUserId, server.Secret, EncryptionRecieveTimeout))
             {
                 _autobus.Publish(new DisconnectPlayerFromMatchmakingServerEvent(server.Secret, session.UserIdHash, session.EndPoint.ToString()));
-                _logger.Warning("Player: " + session.UserIdHash + " Could not be sent to the node: " + server.ServerEndPoint);
+                _logger.Warning("Player: " + session.UserIdHash + " Could not be sent to the node: " + server.LiteNetEndPoint);
                 return new ConnectToServerResponse()
                 {
                     Result = ConnectToServerResult.UnknownError

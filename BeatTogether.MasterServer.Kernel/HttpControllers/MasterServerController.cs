@@ -129,7 +129,7 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
                 InvitePolicy = (Messaging.Enums.InvitePolicy)server.GameplayServerConfiguration.InvitePolicy,
                 SongSelectionMode = (Messaging.Enums.SongSelectionMode)server.GameplayServerConfiguration.SongSelectionMode
             };
-            GetServerResponse serverResponse = new(server.LiteNetEndPoint.Address, server.ServerName, server.ServerId, server.Secret, server.Code, server.IsPublic, server.IsInGameplay, mask, config, server.CurrentPlayerCount);
+            GetServerResponse serverResponse = new(server.LiteNetEndPoint.Address, server.ServerName, server.ServerId, server.Secret, server.Code, server.IsPublic, server.IsInGameplay, mask, config, server.PlayerHashes.ToArray(), server.GameplayLevelId);
             return new JsonResult(serverResponse);
         }
 
@@ -229,7 +229,7 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
                         InvitePolicy = (Messaging.Enums.InvitePolicy)server[i].GameplayServerConfiguration.InvitePolicy,
                         SongSelectionMode = (Messaging.Enums.SongSelectionMode)server[i].GameplayServerConfiguration.SongSelectionMode
                     };
-                    serverResponses[i] = new(server[i].ServerEndPoint.Address, server[i].ServerName, server[i].ServerId, server[i].Secret, server[i].Code, server[i].IsPublic, server[i].IsInGameplay, mask, config, server[i].PlayerHashes.ToArray(), server[i].GameplayLevelId);
+                    serverResponses[i] = new(server[i].LiteNetEndPoint.Address, server[i].ServerName, server[i].ServerId, server[i].Secret, server[i].Code, server[i].IsPublic, server[i].IsInGameplay, mask, config, server[i].PlayerHashes.ToArray(), server[i].GameplayLevelId);
                 }
                 _LastPublicServers = serverResponses;
             }

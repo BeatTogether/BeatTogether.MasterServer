@@ -7,7 +7,6 @@ using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Configuration;
 using Microsoft.Extensions.Hosting;
 using Serilog;
-using System;
 using System.Linq;
 using System.Net;
 using System.Threading;
