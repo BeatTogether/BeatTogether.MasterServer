@@ -15,10 +15,16 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
         private static ConcurrentDictionary<string, Server> _servers = new();
         private static ConcurrentDictionary<string, string> _secretsByCode = new();
         private long TotalJoins = 0;
+        private long _TotalServersMade = 0;
 
         public Task<long> TotalPlayerJoins()
         {
             return Task.FromResult(TotalJoins);
+        }
+
+        public Task<long> TotalServersMade()
+        {
+            return Task.FromResult(_TotalServersMade);
         }
 
         public Task<string[]> GetServerSecretsList()
@@ -109,18 +115,19 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
                 server.BeatmapDifficultyMask == difficultyMask &&
                 server.GameplayModifiersMask == modifiersMask &&
                 server.SongPackBloomFilterTop == songPackTop &&
-                server.SongPackBloomFilterBottom == songPackBottom &&
-                server.IsInGameplay == false
+                server.SongPackBloomFilterBottom == songPackBottom
             );
             if (!publicServers.Any())
                 return Task.FromResult<Server>(null);
             var server = publicServers.First();
+            bool FoundEmptyServer = !server.IsInGameplay;
             foreach (var publicServer in publicServers)
             {
-                if (publicServer.CurrentPlayerCount < server.CurrentPlayerCount)
-                    server = publicServer;
-                if (server.CurrentPlayerCount <= 1)
-                    break;
+                if ((publicServer.CurrentPlayerCount < server.GameplayServerConfiguration.MaxPlayerCount && publicServer.CurrentPlayerCount > server.CurrentPlayerCount))
+                {
+                    if((!server.IsInGameplay && !publicServer.IsInGameplay) || server.IsInGameplay)
+                        server = publicServer;
+                }
             }
             if (server.CurrentPlayerCount >= server.GameplayServerConfiguration.MaxPlayerCount)
                 return Task.FromResult<Server>(null);
@@ -131,7 +138,12 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
         {
             if (!_servers.TryAdd(server.Secret, server))
                 return Task.FromResult(false);
-            _secretsByCode[server.Code] = server.Secret;
+            if (!_secretsByCode.TryAdd(server.Code, server.Secret))
+            {
+                _servers.TryRemove(server.Secret, out _);
+                return Task.FromResult(false);
+            }
+            Interlocked.Increment(ref _TotalServersMade);
             return Task.FromResult(true);
         }
 
@@ -188,36 +200,48 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
             return Task.FromResult(count);
         }
 
-        public Task<bool> IncrementCurrentPlayerCount(string secret)
+        public Task<bool> AddPlayer(string secret, string playerHash)
         {
             if (!_servers.TryGetValue(secret, out var server))
                 return Task.FromResult(false);
-            server.CurrentPlayerCount++;
-            Interlocked.Increment(ref TotalJoins);
-            return Task.FromResult(true);
+            if (server.PlayerHashes.Count + 1 < server.GameplayServerConfiguration.MaxPlayerCount && server.PlayerHashes.Add(playerHash))
+            {
+                Interlocked.Increment(ref TotalJoins);
+                return Task.FromResult(true);
+            }
+            return Task.FromResult(false);
         }
 
-        public Task<bool> DecrementCurrentPlayerCount(string secret)
+        public Task<bool> RemovePlayer(string secret, string playerHash)
         {
             if (!_servers.TryGetValue(secret, out var server))
                 return Task.FromResult(false);
-            server.CurrentPlayerCount--;
-            return Task.FromResult(true);
+            return Task.FromResult(server.PlayerHashes.Remove(playerHash));
         }
 
-        public Task<bool> UpdateCurrentPlayerCount(string secret, int currentPlayerCount)
+        public Task<bool> UpdateServerConfiguration(string secret, GameplayServerConfiguration gameplayServerConfiguration, string serverName)
         {
             if (!_servers.TryGetValue(secret, out var server))
                 return Task.FromResult(false);
-            server.CurrentPlayerCount = currentPlayerCount;
+            server.GameplayServerConfiguration = gameplayServerConfiguration;
+            server.ServerName = serverName;
             return Task.FromResult(true);
         }
 
-        public Task<bool> UpdateServerGameplayState(string secret, bool InGameplay)
+        public Task<bool> UpdateCurrentPlayers(string secret, string[] players)
+        {
+            if (!_servers.TryGetValue(secret, out var server))
+                return Task.FromResult(false);
+            server.PlayerHashes = players.ToHashSet();
+            return Task.FromResult(true);
+        }
+
+        public Task<bool> UpdateServerGameplayState(string secret, bool InGameplay, string LevelId)
         {
             if (!_servers.TryGetValue(secret, out var server))
                 return Task.FromResult(false);
             server.IsInGameplay = InGameplay;
+            server.GameplayLevelId = LevelId;
             return Task.FromResult(true);
         }
     }

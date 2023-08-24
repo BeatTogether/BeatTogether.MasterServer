@@ -44,12 +44,13 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         {
             _autobus.Subscribe<MatchmakingServerStoppedEvent>(HandleServerStop);
             _autobus.Subscribe<PlayerLeaveServerEvent>(HandlePlayerDisconnect);
+            _autobus.Subscribe<PlayerJoinEvent>(HandlePlayerJoin);
             _autobus.Subscribe<NodeStartedEvent>(NodeStartedHandler);
             _autobus.Subscribe<NodeReceivedPlayerEncryptionEvent>(NodeReceivedPlayerEncryptionHandler);
             _autobus.Subscribe<NodeOnlineEvent>(NodeOnlineHandler);
             _autobus.Subscribe<ServerInGameplayEvent>(HandleServerInGameplay);
-            //_autobus.Subscribe<UpdateInstanceConfigEvent>(InstanceConfigurationUpdateHandler);
-
+            _autobus.Subscribe<UpdateInstanceConfigEvent>(InstanceConfigurationUpdateHandler);
+            _autobus.Subscribe<UpdatePlayersEvent>(HandlePlayersChangedEvent);
             return Task.CompletedTask;
         }
 
@@ -57,11 +58,13 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         {
             _autobus.Unsubscribe<MatchmakingServerStoppedEvent>(HandleServerStop);
             _autobus.Unsubscribe<PlayerLeaveServerEvent>(HandlePlayerDisconnect);
+            _autobus.Unsubscribe<PlayerJoinEvent>(HandlePlayerJoin);
             _autobus.Unsubscribe<NodeStartedEvent>(NodeStartedHandler);
             _autobus.Unsubscribe<NodeReceivedPlayerEncryptionEvent>(NodeReceivedPlayerEncryptionHandler);
             _autobus.Unsubscribe<NodeOnlineEvent>(NodeOnlineHandler);
             _autobus.Unsubscribe<ServerInGameplayEvent>(HandleServerInGameplay);
-            //_autobus.Unsubscribe<UpdateInstanceConfigEvent>(InstanceConfigurationUpdateHandler);
+            _autobus.Unsubscribe<UpdateInstanceConfigEvent>(InstanceConfigurationUpdateHandler);
+            _autobus.Unsubscribe<UpdatePlayersEvent>(HandlePlayersChangedEvent);
             return Task.CompletedTask;
         }
 
@@ -79,17 +82,25 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             return;
         }
 
-        private Task HandlePlayerDisconnect(PlayerLeaveServerEvent integrationEvent) //Handles player disconnects and when the player count changes
+        private Task HandlePlayerDisconnect(PlayerLeaveServerEvent integrationEvent)
         {
-            _ = _serverRepository.UpdateCurrentPlayerCount(integrationEvent.Secret, integrationEvent.NewPlayerCount);
-            if (!string.IsNullOrEmpty(integrationEvent.endPoint) && _masterServerSessionService.TryGetSession(IPEndPoint.Parse(integrationEvent.endPoint), out var session))
-                _masterServerSessionService.RemoveSecretFromSession(session.EndPoint);
+            _ = _serverRepository.RemovePlayer(integrationEvent.Secret, integrationEvent.UserId);
+            return Task.CompletedTask;
+        }        
+        private Task HandlePlayerJoin(PlayerJoinEvent integrationEvent)
+        {
+            _ = _serverRepository.AddPlayer(integrationEvent.Secret, integrationEvent.UserId);
+            return Task.CompletedTask;
+        }        
+        private Task HandlePlayersChangedEvent(UpdatePlayersEvent integrationEvent)
+        {
+            _ = _serverRepository.UpdateCurrentPlayers(integrationEvent.Secret, integrationEvent.Users);
             return Task.CompletedTask;
         }
 
         private Task HandleServerInGameplay(ServerInGameplayEvent serverInGameplayEvent)
         {
-            _ = _serverRepository.UpdateServerGameplayState(serverInGameplayEvent.Secret, serverInGameplayEvent.InGame);
+            _ = _serverRepository.UpdateServerGameplayState(serverInGameplayEvent.Secret, serverInGameplayEvent.InGame, serverInGameplayEvent.LevelID);
             return Task.CompletedTask;
         }
 
@@ -118,23 +129,21 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             return Task.CompletedTask;
         }
 
-        /*
+ 
         private Task InstanceConfigurationUpdateHandler(UpdateInstanceConfigEvent updateInstanceConfigEvent)
         {
-            Server server = _serverRepository.GetServer(updateInstanceConfigEvent.Secret).Result;
-            if(server == null)
-                return Task.CompletedTask;
-            server.GameplayServerConfiguration.MaxPlayerCount = updateInstanceConfigEvent.Configuration.MaxPlayerCount;
-            server.GameplayServerConfiguration.DiscoveryPolicy = (Domain.Enums.DiscoveryPolicy)updateInstanceConfigEvent.Configuration.DiscoveryPolicy;
-            server.GameplayServerConfiguration.InvitePolicy = (Domain.Enums.InvitePolicy)updateInstanceConfigEvent.Configuration.InvitePolicy;
-            server.GameplayServerConfiguration.GameplayServerMode = (Domain.Enums.GameplayServerMode)updateInstanceConfigEvent.Configuration.GameplayServerMode;
-            server.GameplayServerConfiguration.SongSelectionMode = (Domain.Enums.SongSelectionMode)updateInstanceConfigEvent.Configuration.SongSelectionMode;
-            server.GameplayServerConfiguration.GameplayServerControlSettings = (Domain.Enums.GameplayServerControlSettings)updateInstanceConfigEvent.Configuration.GameplayServerControlSettings;
-            server.Host.UserName = updateInstanceConfigEvent.ServerName;
-            server.Code = updateInstanceConfigEvent.Code;
+            GameplayServerConfiguration gameplayServerConfiguration = new
+                (
+                updateInstanceConfigEvent.Configuration.MaxPlayerCount,
+                (Domain.Enums.DiscoveryPolicy)updateInstanceConfigEvent.Configuration.DiscoveryPolicy,
+                (Domain.Enums.InvitePolicy)updateInstanceConfigEvent.Configuration.InvitePolicy,
+                (Domain.Enums.GameplayServerMode)updateInstanceConfigEvent.Configuration.GameplayServerMode,
+                (Domain.Enums.SongSelectionMode)updateInstanceConfigEvent.Configuration.SongSelectionMode,
+                (Domain.Enums.GameplayServerControlSettings)updateInstanceConfigEvent.Configuration.GameplayServerControlSettings
+                );
+            _serverRepository.UpdateServerConfiguration(updateInstanceConfigEvent.Secret, gameplayServerConfiguration, updateInstanceConfigEvent.ServerName);
             return Task.CompletedTask;
         }
-        */
 
 
 

@@ -18,7 +18,7 @@ namespace BeatTogether.MasterServer.Data.Abstractions.Repositories
             GameplayModifiersMask modifiersMask,
             ulong songPackTop,
             ulong songPackBottom);
-
+        Task<bool> UpdateServerConfiguration(string secret, GameplayServerConfiguration gameplayServerConfiguration, string serverName);
         Task<string[]> GetPublicServerSecrets();
         Task<string[]> GetPublicServerCodes();
         Task<Server[]> GetPublicServerList();
@@ -29,16 +29,13 @@ namespace BeatTogether.MasterServer.Data.Abstractions.Repositories
         Task<bool> AddServer(Server server);
         Task<bool> RemoveServer(string secret);
         Task<bool> RemoveServersWithEndpoint(IPAddress EndPoint);
-
         Task<int> GetServerCountOnEndpoint(IPAddress EndPoint);
         Task<int> GetPlayerCountOnEndpoint(IPAddress EndPoint);
-
-        Task<bool> IncrementCurrentPlayerCount(string secret);
-        Task<bool> DecrementCurrentPlayerCount(string secret);
-        Task<bool> UpdateCurrentPlayerCount(string secret, int currentPlayerCount);
-
-        Task<bool> UpdateServerGameplayState(string secret, bool InGameplay);
-
+        Task<bool> UpdateCurrentPlayers(string secret, string[] Players);
+        Task<bool> AddPlayer(string secret, string UserHash);
+        Task<bool> RemovePlayer(string secret, string UserHash);
+        Task<bool> UpdateServerGameplayState(string secret, bool InGameplay, string LevelId);
         Task<long> TotalPlayerJoins();
+        Task<long> TotalServersMade();
     }
 }

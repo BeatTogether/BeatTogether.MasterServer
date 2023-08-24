@@ -35,7 +35,13 @@ namespace BeatTogether.MasterServer.Messaging.Models.HttpApi
         [JsonProperty("Player_count")]
         public int CurrentPlayerCount { get; set; }
 
-        public GetServerResponse(IPAddress endPoint, string Name, string Id, string secret, string code, bool isPublic, bool isInGameplay, BeatmapLevelSelectionMask levelSelectionMask, GameplayServerConfiguration configuration, int PlayerCount)
+        [JsonProperty("CurrentLevelId")]
+        public string BeatmapLevelId { get; set; }
+
+        [JsonProperty("Players")]
+        public string[] UserHashes { get; set; }
+
+        public GetServerResponse(IPAddress endPoint, string Name, string Id, string secret, string code, bool isPublic, bool isInGameplay, BeatmapLevelSelectionMask levelSelectionMask, GameplayServerConfiguration configuration, string[] userHashes, string beatmapLevelId)
         {
             ServerEndPoint = endPoint.ToString();
             ServerName = Name;
@@ -46,7 +52,9 @@ namespace BeatTogether.MasterServer.Messaging.Models.HttpApi
             IsInGameplay = isInGameplay;
             BeatmapLevelSelectionMask = levelSelectionMask;
             GameplayServerConfiguration = configuration;
-            CurrentPlayerCount = PlayerCount;
+            CurrentPlayerCount = userHashes.Length;
+            BeatmapLevelId = beatmapLevelId;
+            UserHashes = userHashes;
         }
     }
 }

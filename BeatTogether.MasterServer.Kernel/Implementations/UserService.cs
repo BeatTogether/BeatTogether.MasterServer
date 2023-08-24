@@ -109,9 +109,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         private async Task<ConnectToServerResponse> ConnectPlayer(MasterServerSession session, Server server, byte[] Random, byte[] PublicKey)
         {
-            var serverFromRepo = await _serverRepository.GetServer(server.Secret);
-            
-            if (serverFromRepo.CurrentPlayerCount + 1 > serverFromRepo.GameplayServerConfiguration.MaxPlayerCount)
+            if(server.CurrentPlayerCount + 1 > server.GameplayServerConfiguration.MaxPlayerCount)
             {
                 return new ConnectToServerResponse()
                 {
@@ -119,20 +117,19 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 };
             }
 
+            _logger.Information("Player: " + session.UserIdHash + " Is being sent to node: " + server.LiteNetEndPoint + ", Server name: " + server.ServerName + ", Player count before join: " + server.CurrentPlayerCount);
+
             if (!await _nodeRepository.SendAndAwaitPlayerEncryptionRecievedFromNode(server.LiteNetEndPoint,
                     session.EndPoint, session.UserIdHash, session.UserName, session.Platform, Random, PublicKey,
-                     session.PlayerSessionId, server.Secret, EncryptionRecieveTimeout))
+                     session.PlayerSessionId, session.ClientVersion, session.PlatformUserId, server.Secret, EncryptionRecieveTimeout))
             {
                 _autobus.Publish(new DisconnectPlayerFromMatchmakingServerEvent(server.Secret, session.UserIdHash, session.EndPoint.ToString()));
+                _logger.Warning("Player: " + session.UserIdHash + " Could not be sent to the node: " + server.ServerEndPoint);
                 return new ConnectToServerResponse()
                 {
                     Result = ConnectToServerResult.UnknownError
                 };
             }
-
-            _sessionService.AddSession(session.EndPoint, server.Secret);
-
-            _logger.Information("Player: " + session.UserIdHash + " Is being sent to node: " + server.LiteNetEndPoint + ", Server name: " + serverFromRepo.ServerName + ", PlayerCountBeforeJoin: " + serverFromRepo.CurrentPlayerCount);
 
             return new ConnectToServerResponse
             {
@@ -182,7 +179,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 GameplayModifiersMask = (Domain.Enums.GameplayModifiersMask)request.BeatmapLevelSelectionMask.GameplayModifiersMask,
                 GameplayServerConfiguration = new Domain.Models.GameplayServerConfiguration
                     (
-                        Math.Min(request.GameplayServerConfiguration.MaxPlayerCount, 250), //New max player count
+                        Math.Min(request.GameplayServerConfiguration.MaxPlayerCount, 100), //max player count //TODO more if patreon?
                         (Domain.Enums.DiscoveryPolicy)request.GameplayServerConfiguration.DiscoveryPolicy,
                         (Domain.Enums.InvitePolicy)request.GameplayServerConfiguration.InvitePolicy,
                         (Domain.Enums.GameplayServerMode)request.GameplayServerConfiguration.GameplayServerMode,
@@ -191,10 +188,11 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                     ),
                 SongPackBloomFilterTop = request.BeatmapLevelSelectionMask.SongPackMask.Top,
                 SongPackBloomFilterBottom = request.BeatmapLevelSelectionMask.SongPackMask.Bottom,
-                CurrentPlayerCount = 0,
+                PlayerHashes = new(),
                 Random = random,
                 PublicKey = publicKey,
                 IsInGameplay = false,
+                GameplayLevelId = string.Empty
             };
  
         }
@@ -257,10 +255,11 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
             if(server == null) //Creates the server, then the player can join
             {
-                string ServerName = session.UserName + "'s server";
+                string ServerName = string.Empty;
                 if (isQuickplay)
                     ServerName = "BeatTogether Quickplay: " + ((Domain.Enums.BeatmapDifficultyMask)request.BeatmapLevelSelectionMask.BeatmapDifficultyMask).ToString();
-
+                else if(!string.IsNullOrEmpty(session.UserName))
+                    ServerName = session.UserName + "'s server";
                 var createMatchmakingServerResponse = await _matchmakingService.CreateMatchmakingServer(
                     new CreateMatchmakingServerRequest(
                         secret,
