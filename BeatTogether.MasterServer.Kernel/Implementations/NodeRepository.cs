@@ -20,7 +20,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         private bool WaitingForResponses;
         private readonly CheckNodesEvent checkNodes;
 
-        private readonly int EndpointRecieveTimeout = 4000;
+        private readonly int EndpointRecieveTimeout = 6000;
 
         private readonly IServerRepository _serverRepository;
         private readonly IAutobus _autobus;
@@ -48,9 +48,9 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
             foreach (var node in _nodes)
             {
-                if (node.Value.Online && (DateTime.UtcNow - node.Value.LastOnline).TotalSeconds > 10) //10 seconds is the delay before StartWaitForAllNodesTask is called again
+                if (node.Value.Online && (DateTime.UtcNow - node.Value.LastOnline).TotalSeconds > 20) //10 seconds is the delay before StartWaitForAllNodesTask is called again, check its missed two pings
                 {
-                    _logger.Error("SERVER NODE IS OFFLINE or has not responded in 10 seconds: " + node.Key);
+                    _logger.Error("SERVER NODE IS OFFLINE or has not responded: " + node.Key);
 
                     await SetNodeOffline(node.Key);
                 }
