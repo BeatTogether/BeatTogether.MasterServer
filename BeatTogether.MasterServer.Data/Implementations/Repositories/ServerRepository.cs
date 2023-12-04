@@ -119,7 +119,8 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
                     publicServersByPlayerCountKey = RedisKeys.PublicServersByPlayerCount,
                     ServerId = (RedisValue)server.ServerId,
                     ServerName = (RedisValue)server.ServerName,
-                    remoteEndPoint = (RedisValue)server.ServerEndPoint.ToString(),
+                    remoteEndPoint = (RedisValue)server.LiteNetEndPoint.ToString(),
+                    // TODO ENetEndPoint (if that's still a thing by the time we use Redis...)
                     secret = (RedisValue)server.Secret,
                     code = (RedisValue)server.Code,
                     isPublic = (RedisValue)server.IsPublic,

@@ -39,6 +39,12 @@ namespace BeatTogether.MasterServer.Messaging.Messages.User
         public string ManagerId { get; set; }
 
         public bool Success => Result == ConnectToServerResult.Success;
+        
+        /// <summary>
+        /// Temporary alt endpoint for users connecting on 1.31+ via Ignorance/ENet.
+        /// Not part of the master server response, only used internally.
+        /// </summary>
+        public IPEndPoint RemoteEndPointENet { get; set; } = null;
 
         public void WriteTo(ref SpanBufferWriter bufferWriter)
         {

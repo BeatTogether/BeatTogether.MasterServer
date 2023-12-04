@@ -24,6 +24,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 {
     public class UserService : IUserService
     {
+        public const string FixedServerUserId = "ziuMSceapEuNN7wRGQXrZg";
         public const string VerifyUserURL = "https://api.beatsaver.com/users/verify";
         public const int EncryptionRecieveTimeout = 2000;
 
@@ -103,7 +104,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         private bool DoesServerExist(Server server)
         {
-            return _nodeRepository.EndpointExists(server.ServerEndPoint);
+            return _nodeRepository.EndpointExists(server.LiteNetEndPoint);
         }
 
         private async Task<ConnectToServerResponse> ConnectPlayer(MasterServerSession session, Server server, byte[] Random, byte[] PublicKey)
@@ -118,7 +119,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 };
             }
 
-            if (!await _nodeRepository.SendAndAwaitPlayerEncryptionRecievedFromNode(server.ServerEndPoint,
+            if (!await _nodeRepository.SendAndAwaitPlayerEncryptionRecievedFromNode(server.LiteNetEndPoint,
                     session.EndPoint, session.UserIdHash, session.UserName, session.Platform, Random, PublicKey,
                      session.PlayerSessionId, server.Secret, EncryptionRecieveTimeout))
             {
@@ -131,11 +132,11 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
             _sessionService.AddSession(session.EndPoint, server.Secret);
 
-            _logger.Information("Player: " + session.UserIdHash + " Is being sent to node: " + server.ServerEndPoint + ", Server name: " + serverFromRepo.ServerName + ", PlayerCountBeforeJoin: " + serverFromRepo.CurrentPlayerCount);
+            _logger.Information("Player: " + session.UserIdHash + " Is being sent to node: " + server.LiteNetEndPoint + ", Server name: " + serverFromRepo.ServerName + ", PlayerCountBeforeJoin: " + serverFromRepo.CurrentPlayerCount);
 
             return new ConnectToServerResponse
             {
-                UserId = "ziuMSceapEuNN7wRGQXrZg",
+                UserId = FixedServerUserId,
                 UserName = server.ServerName,
                 Secret = server.Secret,
                 BeatmapLevelSelectionMask = new BeatmapLevelSelectionMask
@@ -146,7 +147,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 },
                 IsConnectionOwner = true,
                 IsDedicatedServer = true,
-                RemoteEndPoint = server.ServerEndPoint,
+                RemoteEndPoint = server.LiteNetEndPoint,
+                RemoteEndPointENet = server.ENetEndPoint,
                 Random = server.Random,
                 PublicKey = server.PublicKey,
                 Code = server.Code,
@@ -163,17 +165,19 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             };
         }
 
-        public Server CreateServer(ConnectToMatchmakingServerRequest request ,string ServerName, string ManagerName,string secret, IPEndPoint DediEndpoint, bool IsQuickplay, byte[] random, byte[] publicKey)
+        public Server CreateServer(ConnectToMatchmakingServerRequest request ,string serverName, string managerName,
+            string secret, IPEndPoint liteNetEndPoint, bool isQuickplay, byte[] random, byte[] publicKey,
+            IPEndPoint eNetEndPoint)
         {
             return new Server
             {
-
-                ServerId = "ziuMSceapEuNN7wRGQXrZg", //Server UserId is the host, always
-                ServerName = ServerName,
-                ServerEndPoint = DediEndpoint,
+                ServerId = FixedServerUserId,
+                ServerName = serverName,
+                LiteNetEndPoint = liteNetEndPoint,
+                ENetEndPoint = eNetEndPoint,
                 Secret = secret,
                 Code = _serverCodeProvider.Generate(),
-                IsPublic = IsQuickplay,
+                IsPublic = isQuickplay,
                 BeatmapDifficultyMask = (Domain.Enums.BeatmapDifficultyMask)request.BeatmapLevelSelectionMask.BeatmapDifficultyMask,
                 GameplayModifiersMask = (Domain.Enums.GameplayModifiersMask)request.BeatmapLevelSelectionMask.GameplayModifiersMask,
                 GameplayServerConfiguration = new Domain.Models.GameplayServerConfiguration
@@ -245,7 +249,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 }
             }
             string secret = request.Secret;
-            string ManagerId = "ziuMSceapEuNN7wRGQXrZg";
+            string ManagerId = FixedServerUserId;
             if (!isQuickplay)
                 ManagerId = session.UserIdHash;//sets the manager to the player who is requesting
             else
@@ -273,8 +277,13 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                         Result = ConnectToServerResult.NoAvailableDedicatedServers
                     };
 
-                var remoteEndPoint = IPEndPoint.Parse(createMatchmakingServerResponse.RemoteEndPoint);
-                server = CreateServer(request, ServerName, session.UserName, secret, remoteEndPoint, isQuickplay, createMatchmakingServerResponse.Random, createMatchmakingServerResponse.PublicKey);
+                var liteNetEndPoint = IPEndPoint.Parse(createMatchmakingServerResponse.RemoteEndPoint);
+                var eNetEndPoint = IPEndPoint.Parse(createMatchmakingServerResponse.RemoteEndPointENet);
+                
+                server = CreateServer(request, ServerName, session.UserName, secret, liteNetEndPoint,
+                    isQuickplay, createMatchmakingServerResponse.Random, createMatchmakingServerResponse.PublicKey,
+                    eNetEndPoint);
+                
                 if (!await _serverRepository.AddServer(server))
                 {
                     _autobus.Publish(new CloseServerInstanceEvent(secret));//Closes the server on the dedi side because master could not add it to the repository

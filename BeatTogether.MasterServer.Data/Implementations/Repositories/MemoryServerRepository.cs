@@ -147,7 +147,8 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
             List<string> secrets = new();
             foreach (var server in _servers)
             {
-                if(server.Value.ServerEndPoint.Address.ToString() == EndPoint.ToString())
+                if(server.Value.LiteNetEndPoint.Address.ToString() == EndPoint.ToString()
+                   || server.Value.ENetEndPoint.Address.ToString() == EndPoint.ToString())
                 {
                     secrets.Add(server.Key);
                 }
@@ -165,7 +166,8 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
 
             foreach (var server in _servers)
             {
-                if (server.Value.ServerEndPoint.Address.ToString() == EndPoint.ToString())
+                if (server.Value.LiteNetEndPoint.Address.ToString() == EndPoint.ToString()
+                    || server.Value.ENetEndPoint.Address.ToString() == EndPoint.ToString())
                 {
                     count++;
                 }
@@ -177,7 +179,8 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
             int count = 0;
             foreach (var server in _servers)
             {
-                if (server.Value.ServerEndPoint.Address.ToString() == EndPoint.ToString())
+                if (server.Value.LiteNetEndPoint.Address.ToString() == EndPoint.ToString()
+                    || server.Value.ENetEndPoint.Address.ToString() == EndPoint.ToString())
                 {
                     count += server.Value.CurrentPlayerCount;
                 }
