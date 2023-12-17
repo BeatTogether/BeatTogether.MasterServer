@@ -7,9 +7,9 @@ namespace BeatTogether.MasterServer.Kernel.Implementations.Providers
     {
         private const int _randomLength = 32;
 
-        private readonly RNGCryptoServiceProvider _rngCryptoServiceProvider;
+        private readonly RandomNumberGenerator _rngCryptoServiceProvider;
 
-        public RandomProvider(RNGCryptoServiceProvider rngCryptoServiceProvider)
+        public RandomProvider(RandomNumberGenerator rngCryptoServiceProvider)
         {
             _rngCryptoServiceProvider = rngCryptoServiceProvider;
         }

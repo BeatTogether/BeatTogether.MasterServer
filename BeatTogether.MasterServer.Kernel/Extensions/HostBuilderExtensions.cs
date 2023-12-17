@@ -42,7 +42,7 @@ namespace BeatTogether.Extensions
                                 })
                                 .AddConfiguration<MasterServerConfiguration>("MasterServer")
                                 .AddTransient<SecureRandom>()
-                                .AddTransient<RNGCryptoServiceProvider>()
+                                .AddSingleton(RandomNumberGenerator.Create())
                                 .AddSingleton<HttpClient>()
                                 .AddSingleton<ICookieProvider, CookieProvider>()
                                 .AddSingleton<IRandomProvider, RandomProvider>()

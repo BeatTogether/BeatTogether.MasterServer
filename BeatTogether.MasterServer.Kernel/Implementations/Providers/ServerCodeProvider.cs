@@ -7,9 +7,9 @@ namespace BeatTogether.MasterServer.Kernel.Implementations.Providers
     {
         private static readonly string _alphanumeric = "ABCEFGHJKLMNPQRSTUVWXYZ01234579";
 
-        private readonly RNGCryptoServiceProvider _rngCryptoServiceProvider;
+        private readonly RandomNumberGenerator _rngCryptoServiceProvider;
 
-        public ServerCodeProvider(RNGCryptoServiceProvider rngCryptoServiceProvider)
+        public ServerCodeProvider(RandomNumberGenerator rngCryptoServiceProvider)
         {
             _rngCryptoServiceProvider = rngCryptoServiceProvider;
         }
