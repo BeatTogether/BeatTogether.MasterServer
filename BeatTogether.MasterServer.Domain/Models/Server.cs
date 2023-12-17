@@ -19,8 +19,10 @@ namespace BeatTogether.MasterServer.Domain.Models
         public BeatmapDifficultyMask BeatmapDifficultyMask { get; set; }
         public GameplayModifiersMask GameplayModifiersMask { get; set; }
         public GameplayServerConfiguration GameplayServerConfiguration { get; set; }
-        public ulong SongPackBloomFilterTop { get; set; }
-        public ulong SongPackBloomFilterBottom { get; set; }
+        public ulong SongPackBloomFilterD0 { get; set; }
+        public ulong SongPackBloomFilterD1 { get; set; }
+        public ulong SongPackBloomFilterD2 { get; set; }
+        public ulong SongPackBloomFilterD3 { get; set; }
         public int CurrentPlayerCount => PlayerHashes.Count;
         public HashSet<string> PlayerHashes { get; set; }
         public byte[] Random { get; set; }

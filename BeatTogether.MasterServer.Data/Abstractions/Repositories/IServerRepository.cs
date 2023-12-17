@@ -16,8 +16,10 @@ namespace BeatTogether.MasterServer.Data.Abstractions.Repositories
             GameplayServerControlSettings serverControlSettings,
             BeatmapDifficultyMask difficultyMask,
             GameplayModifiersMask modifiersMask,
-            ulong songPackTop,
-            ulong songPackBottom);
+            ulong songPackD0,
+            ulong songPackD1,
+            ulong songPackD2,
+            ulong songPackD3);
         Task<bool> UpdateServerConfiguration(string secret, GameplayServerConfiguration gameplayServerConfiguration, string serverName);
         Task<string[]> GetPublicServerSecrets();
         Task<string[]> GetPublicServerCodes();
