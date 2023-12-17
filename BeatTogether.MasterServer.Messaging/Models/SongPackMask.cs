@@ -12,19 +12,22 @@ namespace BeatTogether.MasterServer.Messaging.Models
         private const string StringPrefix = "[SongPackMask ";
         private const string StringSuffix = "]";
 
-        private BitMask128 _bitMask;
+        private BitMask256 _bitMask;
 
-        public ulong Top => _bitMask.Top;
-        public ulong Bottom => _bitMask.Bottom;
+        public ulong D0 => _bitMask.D0;
+        public ulong D1 => _bitMask.D1;
+        public ulong D2 => _bitMask.D2;
+        public ulong D3 => _bitMask.D3;
 
-        public SongPackMask(BitMask128 bitMask = null)
+
+        public SongPackMask(BitMask256 bitMask = null)
         {
-            _bitMask = bitMask ?? BitMask128.MinValue;
+            _bitMask = bitMask ?? BitMask256.MinValue;
         }
 
-        public SongPackMask(ulong top, ulong bottom)
+        public SongPackMask(ulong d0, ulong d1, ulong d2, ulong d3)
         {
-            _bitMask = new BitMask128(top, bottom);
+            _bitMask = new BitMask256(d0, d1, d2, d3);
         }
 
         public void WriteTo(ref SpanBufferWriter bufferWriter)
@@ -41,15 +44,15 @@ namespace BeatTogether.MasterServer.Messaging.Models
 
         public static bool TryParse(string str, out SongPackMask result)
         {
-            BitMask128 bloomFilter;
+            BitMask256 bloomFilter;
 
-            if (BitMask128.TryParse(str, out bloomFilter))
+            if (BitMask256.TryParse(str, out bloomFilter))
             {
                 result = new SongPackMask(bloomFilter);
                 return true;
             }
 
-            if (str.StartsWith(StringPrefix) && str.EndsWith(StringSuffix) && BitMask128.TryParse(str,
+            if (str.StartsWith(StringPrefix) && str.EndsWith(StringSuffix) && BitMask256.TryParse(str,
                     StringPrefix.Length, str.Length - StringPrefix.Length - StringSuffix.Length, out bloomFilter))
             {
                 result = new SongPackMask(bloomFilter);
