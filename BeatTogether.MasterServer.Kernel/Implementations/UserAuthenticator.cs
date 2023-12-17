@@ -70,7 +70,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                         authLogReason = "Authentication success";
                     }
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     authPasses = true;
                     authLogReason = "BeatSaver verify request failed, skipping authentication";
