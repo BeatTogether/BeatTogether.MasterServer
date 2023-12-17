@@ -96,8 +96,10 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
             GameplayServerControlSettings serverControlSettings,
             BeatmapDifficultyMask difficultyMask,
             GameplayModifiersMask modifiersMask,
-            ulong songPackTop,
-            ulong songPackBottom)
+            ulong songPackD0,
+            ulong songPackD1,
+            ulong songPackD2,
+            ulong songPackD3)
         {
             var database = _connectionMultiplexer.GetDatabase();
             var redisValues = await database.SortedSetRangeByScoreAsync(RedisKeys.PublicServersByPlayerCount, take: 1);
@@ -119,7 +121,7 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
                     publicServersByPlayerCountKey = RedisKeys.PublicServersByPlayerCount,
                     ServerId = (RedisValue)server.ServerId,
                     ServerName = (RedisValue)server.ServerName,
-                    remoteEndPoint = (RedisValue)server.LiteNetEndPoint.ToString(),
+                    remoteEndPoint = (RedisValue)server.ENetEndPoint.ToString(),
                     // TODO ENetEndPoint (if that's still a thing by the time we use Redis...)
                     secret = (RedisValue)server.Secret,
                     code = (RedisValue)server.Code,
@@ -128,8 +130,10 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
                     invitePolicy = (RedisValue)(int)server.GameplayServerConfiguration.InvitePolicy,
                     beatmapDifficultyMask = (RedisValue)(int)server.BeatmapDifficultyMask,
                     gameplayModifiersMask = (RedisValue)(int)server.GameplayModifiersMask,
-                    songPackBloomFilterTop = (RedisValue)server.SongPackBloomFilterTop,
-                    songPackBloomFilterBottom = (RedisValue)server.SongPackBloomFilterBottom,
+                    songPackBloomFilterD0 = (RedisValue)server.SongPackBloomFilterD0,
+                    songPackBloomFilterD1 = (RedisValue)server.SongPackBloomFilterD1,
+                    songPackBloomFilterD2 = (RedisValue)server.SongPackBloomFilterD2,
+                    songPackBloomFilterD3 = (RedisValue)server.SongPackBloomFilterD3,
                     currentPlayerCount = (RedisValue)server.CurrentPlayerCount,
                     random = (RedisValue)server.Random,
                     publicKey = (RedisValue)server.PublicKey

@@ -101,8 +101,10 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
             GameplayServerControlSettings serverControlSettings, 
             BeatmapDifficultyMask difficultyMask, 
             GameplayModifiersMask modifiersMask, 
-            ulong songPackTop, 
-            ulong songPackBottom)
+            ulong songPackD0, 
+            ulong songPackD1,
+            ulong songPackD2,
+            ulong songPackD3)
         {
             if (!_servers.Any())
                 return Task.FromResult<Server>(null);
@@ -114,8 +116,10 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
                 server.GameplayServerConfiguration.GameplayServerControlSettings == serverControlSettings &&
                 server.BeatmapDifficultyMask == difficultyMask &&
                 server.GameplayModifiersMask == modifiersMask &&
-                server.SongPackBloomFilterTop == songPackTop &&
-                server.SongPackBloomFilterBottom == songPackBottom
+                server.SongPackBloomFilterD0 == songPackD0 &&
+                server.SongPackBloomFilterD1 == songPackD1 &&
+                server.SongPackBloomFilterD2 == songPackD2 &&
+                server.SongPackBloomFilterD3 == songPackD3
             );
             if (!publicServers.Any())
                 return Task.FromResult<Server>(null);
