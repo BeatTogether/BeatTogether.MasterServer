@@ -202,6 +202,7 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
             };
         }
 
+#nullable enable
         private static Version? TryParseGameVersion(string versionText)
         {
             var idxUnderscore = versionText.IndexOf('_');
@@ -214,4 +215,5 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
         
         #endregion
     }
+#nullable restore
 }
