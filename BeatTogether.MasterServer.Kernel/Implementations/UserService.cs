@@ -98,8 +98,10 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 (Domain.Enums.GameplayServerControlSettings)request.GameplayServerConfiguration.GameplayServerControlSettings,
                 (Domain.Enums.BeatmapDifficultyMask)request.BeatmapLevelSelectionMask.BeatmapDifficultyMask,
                 (Domain.Enums.GameplayModifiersMask)request.BeatmapLevelSelectionMask.GameplayModifiersMask,
-                request.BeatmapLevelSelectionMask.SongPackMask.Top,
-                request.BeatmapLevelSelectionMask.SongPackMask.Bottom);
+                request.BeatmapLevelSelectionMask.SongPackMask.D0,
+                request.BeatmapLevelSelectionMask.SongPackMask.D1,
+                request.BeatmapLevelSelectionMask.SongPackMask.D2,
+                request.BeatmapLevelSelectionMask.SongPackMask.D3);
         }
 
         private bool DoesServerExist(Server server)
@@ -140,7 +142,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 {
                     BeatmapDifficultyMask = (BeatmapDifficultyMask)server.BeatmapDifficultyMask,
                     GameplayModifiersMask = (GameplayModifiersMask)server.GameplayModifiersMask,
-                    SongPackMask = new SongPackMask(server.SongPackBloomFilterTop, server.SongPackBloomFilterBottom)
+                    SongPackMask = new SongPackMask(server.SongPackBloomFilterD0, server.SongPackBloomFilterD1, server.SongPackBloomFilterD2, server.SongPackBloomFilterD3)
                 },
                 IsConnectionOwner = true,
                 IsDedicatedServer = true,
@@ -186,8 +188,10 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                         (Domain.Enums.SongSelectionMode)request.GameplayServerConfiguration.SongSelectionMode,
                         (Domain.Enums.GameplayServerControlSettings)request.GameplayServerConfiguration.GameplayServerControlSettings
                     ),
-                SongPackBloomFilterTop = request.BeatmapLevelSelectionMask.SongPackMask.Top,
-                SongPackBloomFilterBottom = request.BeatmapLevelSelectionMask.SongPackMask.Bottom,
+                SongPackBloomFilterD0 = request.BeatmapLevelSelectionMask.SongPackMask.D0,
+                SongPackBloomFilterD1 = request.BeatmapLevelSelectionMask.SongPackMask.D1,
+                SongPackBloomFilterD2 = request.BeatmapLevelSelectionMask.SongPackMask.D2,
+                SongPackBloomFilterD3 = request.BeatmapLevelSelectionMask.SongPackMask.D3,
                 PlayerHashes = new(),
                 Random = random,
                 PublicKey = publicKey,

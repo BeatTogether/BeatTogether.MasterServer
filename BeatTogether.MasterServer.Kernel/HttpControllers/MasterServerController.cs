@@ -116,7 +116,7 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
             BeatmapLevelSelectionMask mask = new()
             {
                 BeatmapDifficultyMask = (Messaging.Enums.BeatmapDifficultyMask)server.BeatmapDifficultyMask,
-                SongPackMask = new(server.SongPackBloomFilterTop, server.SongPackBloomFilterBottom),
+                SongPackMask = new(server.SongPackBloomFilterD0, server.SongPackBloomFilterD1, server.SongPackBloomFilterD2, server.SongPackBloomFilterD3),
                 GameplayModifiersMask = (Messaging.Enums.GameplayModifiersMask)server.GameplayModifiersMask
             };
 
@@ -148,7 +148,7 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
             BeatmapLevelSelectionMask mask = new()
             {
                 BeatmapDifficultyMask = (Messaging.Enums.BeatmapDifficultyMask)server.BeatmapDifficultyMask,
-                SongPackMask = new(server.SongPackBloomFilterTop, server.SongPackBloomFilterBottom),
+                SongPackMask = new(server.SongPackBloomFilterD0, server.SongPackBloomFilterD1, server.SongPackBloomFilterD2, server.SongPackBloomFilterD3),
                 GameplayModifiersMask = (Messaging.Enums.GameplayModifiersMask)server.GameplayModifiersMask
             };
             var config = new Messaging.Models.GameplayServerConfiguration()
@@ -217,7 +217,7 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
                     BeatmapLevelSelectionMask mask = new()
                     {
                         BeatmapDifficultyMask = (Messaging.Enums.BeatmapDifficultyMask)server[i].BeatmapDifficultyMask,
-                        SongPackMask = new(server[i].SongPackBloomFilterTop, server[i].SongPackBloomFilterBottom),
+                        SongPackMask = new(server[i].SongPackBloomFilterD0, server[i].SongPackBloomFilterD1, server[i].SongPackBloomFilterD2, server[i].SongPackBloomFilterD3),
                         GameplayModifiersMask = (Messaging.Enums.GameplayModifiersMask)server[i].GameplayModifiersMask
                     };
                     var config = new Messaging.Models.GameplayServerConfiguration()
