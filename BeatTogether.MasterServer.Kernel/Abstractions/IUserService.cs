@@ -8,6 +8,8 @@ namespace BeatTogether.MasterServer.Kernel.Abstractions
     {
         Task<AuthenticateUserResponse> Authenticate(MasterServerSession session, AuthenticateUserRequest request);
         Task<ConnectToServerResponse> ConnectToMatchmakingServer(MasterServerSession session, ConnectToMatchmakingServerRequest request);
+        Task<ConnectToServerResponse> ConnectToMatchmakingServer(MasterServerSession session, Messaging.Messages.User.LegacyRequests.ConnectToMatchmakingServerRequest request);
+
         Task SessionKeepalive(MasterServerSession session, SessionKeepaliveMessage message);
     }
 }

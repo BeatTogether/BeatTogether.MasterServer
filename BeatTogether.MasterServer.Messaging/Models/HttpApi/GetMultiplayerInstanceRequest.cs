@@ -17,7 +17,7 @@ namespace BeatTogether.MasterServer.Messaging.Models.HttpApi
         public string SingleUseAuthToken { get; set; }
 
         [JsonProperty("beatmap_level_selection_mask")]
-        public BeatmapLevelSelectionMask BeatmapLevelSelectionMask { get; set; }
+        public BeatmapLevelSelectionMaskSimple BeatmapLevelSelectionMask { get; set; }
 
         [JsonProperty("gameplay_server_configuration")]
         public GameplayServerConfiguration GameplayServerConfiguration { get; set; }

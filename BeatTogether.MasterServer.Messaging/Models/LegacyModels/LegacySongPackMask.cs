@@ -1,45 +1,42 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using BeatTogether.Core.Messaging.Abstractions;
 using BeatTogether.MasterServer.Messaging.Extensions;
 using BeatTogether.MasterServer.Messaging.Models.JsonConverters;
 using Krypton.Buffers;
 using Newtonsoft.Json;
 
-namespace BeatTogether.MasterServer.Messaging.Models
+namespace BeatTogether.MasterServer.Messaging.Models.LegacyModels
 {
-    [JsonConverter(typeof(SongPackMaskConverter))]
-    public sealed class SongPackMask : IMessage
+    public sealed class LegacySongPackMask : IMessage
     {
         private const string StringPrefix = "[SongPackMask ";
         private const string StringSuffix = "]";
 
-        private BitMask256 _bitMask;
+        private BitMask128 _bitMask;
 
-        public ulong D0 => _bitMask.D0;
-        public ulong D1 => _bitMask.D1;
-        public ulong D2 => _bitMask.D2;
-        public ulong D3 => _bitMask.D3;
+        public ulong D0 => _bitMask.Top;
+        public ulong D1 => _bitMask.Bottom;
 
-        public SongPackMask(string packId)
+        public LegacySongPackMask(string packId)
         {
-            _bitMask = packId.ToBloomFilter<BitMask256>(2, 13);
+            _bitMask = packId.ToBloomFilter<BitMask128>(2, 13);
         }
 
-        public SongPackMask(IEnumerable<string> packs)
+        public LegacySongPackMask(IEnumerable<string> packs)
         {
-            _bitMask = packs.ToBloomFilter<BitMask256>(2, 13);
+            _bitMask = packs.ToBloomFilter<BitMask128>(2, 13);
         }
 
-        public SongPackMask(BitMask256 bitMask = null)
+
+        public LegacySongPackMask(BitMask128 bitMask = null)
         {
-            _bitMask = bitMask ?? BitMask256.MinValue;
+            _bitMask = bitMask ?? BitMask128.MinValue;
         }
 
-        public SongPackMask(ulong d0, ulong d1, ulong d2, ulong d3)
+        public LegacySongPackMask(ulong d0, ulong d1)
         {
-            _bitMask = new BitMask256(d0, d1, d2, d3);
+            _bitMask = new BitMask128(d0, d1);
         }
 
         public void WriteTo(ref SpanBufferWriter bufferWriter)
@@ -54,28 +51,28 @@ namespace BeatTogether.MasterServer.Messaging.Models
 
         #region String serialize
 
-        public static bool TryParse(string str, out SongPackMask result)
+        public static bool TryParse(string str, out LegacySongPackMask result)
         {
-            BitMask256 bloomFilter;
+            BitMask128 bloomFilter;
 
-            if (BitMask256.TryParse(str, out bloomFilter))
+            if (BitMask128.TryParse(str, out bloomFilter))
             {
-                result = new SongPackMask(bloomFilter);
+                result = new LegacySongPackMask(bloomFilter);
                 return true;
             }
 
-            if (str.StartsWith(StringPrefix) && str.EndsWith(StringSuffix) && BitMask256.TryParse(str,
+            if (str.StartsWith(StringPrefix) && str.EndsWith(StringSuffix) && BitMask128.TryParse(str,
                     StringPrefix.Length, str.Length - StringPrefix.Length - StringSuffix.Length, out bloomFilter))
             {
-                result = new SongPackMask(bloomFilter);
+                result = new LegacySongPackMask(bloomFilter);
                 return true;
             }
 
-            result = default(SongPackMask);
+            result = default;
             return false;
         }
 
-        public static SongPackMask Parse(string str)
+        public static LegacySongPackMask Parse(string str)
         {
             if (TryParse(str, out var result))
                 return result;

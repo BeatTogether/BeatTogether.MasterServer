@@ -7,6 +7,7 @@ using BeatTogether.MasterServer.Messaging.Enums;
 using BeatTogether.MasterServer.Messaging.Messages.User;
 using BeatTogether.MasterServer.Messaging.Models;
 using BeatTogether.MasterServer.Messaging.Models.HttpApi;
+using BeatTogether.MasterServer.Messaging.Models.LegacyModels;
 using Microsoft.AspNetCore.Mvc;
 using Org.BouncyCastle.Asn1;
 using Serilog;
@@ -108,20 +109,44 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
             // Process matchmaking / create server / join server request
             ConnectToServerResponse matchResult = null;
 
+            var versionParsed = TryParseGameVersion(request.Version);
+
             try
             {
-                matchResult = await _userService.ConnectToMatchmakingServer(session,
+                if (versionParsed >= new Version(1, 34, 0))
+                {
+                    _logger.Debug("Sending matchmaking response for client version {Version}", request.Version);
+                    matchResult = await _userService.ConnectToMatchmakingServer(session,
                     new ConnectToMatchmakingServerRequest()
                     {
                         UserId = session.UserIdHash,
                         UserName = session.UserName,
                         Random = null,
                         PublicKey = null,
-                        BeatmapLevelSelectionMask = request.BeatmapLevelSelectionMask,
+                        BeatmapLevelSelectionMask = new Messaging.Models.BeatmapLevelSelectionMask(request.BeatmapLevelSelectionMask),
                         Secret = request.PrivateGameSecret ?? "",
                         Code = request.PrivateGameCode ?? "",
                         GameplayServerConfiguration = request.GameplayServerConfiguration
                     });
+                }
+                else
+                {
+                    _logger.Debug("Sending matchmaking response for older client version {Version}", request.Version);
+                    matchResult = await _userService.ConnectToMatchmakingServer(session,
+                    new Messaging.Messages.User.LegacyRequests.ConnectToMatchmakingServerRequest()
+                    {
+                        UserId = session.UserIdHash,
+                        UserName = session.UserName,
+                        Random = null,
+                        PublicKey = null,
+                        BeatmapLevelSelectionMask = new Messaging.Models.LegacyModels.BeatmapLevelSelectionMask(request.BeatmapLevelSelectionMask),
+                        Secret = request.PrivateGameSecret ?? "",
+                        Code = request.PrivateGameCode ?? "",
+                        GameplayServerConfiguration = request.GameplayServerConfiguration
+                    });
+
+                }
+
             }
             catch (Exception ex)
             {
@@ -146,7 +171,6 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
             }
 
             // For v1.31+ use ENet endpoint; for all other versions use default/LiteNet endpoint
-            var versionParsed = TryParseGameVersion(request.Version);
             var versionENet = new Version(1, 31, 0);
             var useENet = versionParsed >= versionENet;
             var targetEndPoint = useENet ? matchResult.RemoteEndPointENet : matchResult.RemoteEndPoint;
@@ -157,12 +181,12 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
                                 "useENet={UseENet})",
                 session.UserIdHash, request.Version, session.Platform, session.PlayerSessionId,
                 targetEndPoint, useENet);
-            
+
             response.ErrorCode = MultiplayerPlacementErrorCode.Success;
             response.PlayerSessionInfo.GameSessionId = matchResult.ManagerId;
             response.PlayerSessionInfo.DnsName = targetEndPoint.Address.ToString();
             response.PlayerSessionInfo.Port = targetEndPoint.Port;
-            response.PlayerSessionInfo.BeatmapLevelSelectionMask = matchResult.BeatmapLevelSelectionMask;
+            response.PlayerSessionInfo.BeatmapLevelSelectionMask = new BeatmapLevelSelectionMaskSimple(matchResult.BeatmapLevelSelectionMask);
             response.PlayerSessionInfo.GameplayServerConfiguration = matchResult.Configuration;
             response.PlayerSessionInfo.PrivateGameSecret = matchResult.Secret;
             response.PlayerSessionInfo.PrivateGameCode = matchResult.Code;

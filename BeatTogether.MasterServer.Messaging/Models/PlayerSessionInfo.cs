@@ -17,7 +17,7 @@ namespace BeatTogether.MasterServer.Messaging.Models
         public int Port { get; set; } = -1;
 
         [JsonProperty("beatmap_level_selection_mask")]
-        public BeatmapLevelSelectionMask BeatmapLevelSelectionMask { get; set; } = new();
+        public BeatmapLevelSelectionMaskSimple BeatmapLevelSelectionMask { get; set; } = new();
 
         [JsonProperty("gameplay_server_configuration")]
         public GameplayServerConfiguration GameplayServerConfiguration { get; set; } = new();

@@ -3,16 +3,18 @@ using BeatTogether.MasterServer.Messaging.Enums;
 using Krypton.Buffers;
 using Newtonsoft.Json;
 
-namespace BeatTogether.MasterServer.Messaging.Models
+namespace BeatTogether.MasterServer.Messaging.Models.LegacyModels
 {
     public sealed class BeatmapLevelSelectionMask : IMessage
     {
+
         public BeatmapLevelSelectionMask() { }
-        public BeatmapLevelSelectionMask(BeatmapLevelSelectionMaskSimple simpleMask) 
+
+        public BeatmapLevelSelectionMask(BeatmapLevelSelectionMaskSimple simpleMask)
         {
             BeatmapDifficultyMask = simpleMask.BeatmapDifficultyMask;
             GameplayModifiersMask = simpleMask.GameplayModifiersMask;
-            SongPackMask = SongPackMask.Parse(simpleMask.SongPackMasks);
+            SongPackMask = LegacySongPackMask.Parse(simpleMask.SongPackMasks);
         }
 
         [JsonProperty("difficulties")]
@@ -22,7 +24,7 @@ namespace BeatTogether.MasterServer.Messaging.Models
         public GameplayModifiersMask GameplayModifiersMask { get; set; }
         
         [JsonProperty("song_packs")]
-        public SongPackMask SongPackMask { get; set; } = new();
+        public LegacySongPackMask SongPackMask { get; set; } = new();
 
         public void WriteTo(ref SpanBufferWriter bufferWriter)
         {

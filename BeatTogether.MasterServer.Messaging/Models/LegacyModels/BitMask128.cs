@@ -2,17 +2,23 @@
 using BeatTogether.MasterServer.Messaging.Extensions;
 using Krypton.Buffers;
 
-namespace BeatTogether.MasterServer.Messaging.Models
+namespace BeatTogether.MasterServer.Messaging.Models.LegacyModels
 {
-    public class BitMask128 : IMessage
+    public class BitMask128 : IMessage, IBitMask<BitMask128>
     {
         public ulong Top { get; set; }
         public ulong Bottom { get; set; }
 
         public const int BitCount = 128;
 
+        public int bitCount { get => BitCount; }
+
         public static BitMask128 MaxValue => new(ulong.MaxValue, ulong.MaxValue);
         public static BitMask128 MinValue => new(0U, 0U);
+
+        public BitMask128()
+        {
+        }
 
         public BitMask128(ulong top = 0U, ulong bottom = 0U)
         {
@@ -117,11 +123,11 @@ namespace BeatTogether.MasterServer.Messaging.Models
         private static char GetBase64Char(ulong digit)
         {
             if (digit < 26UL)
-                return (char) (65UL + digit);
+                return (char)(65UL + digit);
             if (digit < 52UL)
-                return (char) (97UL + digit - 26UL);
+                return (char)(97UL + digit - 26UL);
             if (digit < 62UL)
-                return (char) (48UL + digit - 52UL);
+                return (char)(48UL + digit - 52UL);
             if (digit != 62UL)
                 return '/';
             return '+';
@@ -130,11 +136,11 @@ namespace BeatTogether.MasterServer.Messaging.Models
         private static uint GetBase64Digit(char c)
         {
             if (c >= 'A' && c <= 'Z')
-                return (uint) (c - 'A');
+                return (uint)(c - 'A');
             if (c >= 'a' && c <= 'z')
-                return (uint) ('\u001a' + (c - 'a'));
+                return (uint)('\u001a' + (c - 'a'));
             if (c >= '0' && c <= '9')
-                return (uint) ('4' + (c - '0'));
+                return (uint)('4' + (c - '0'));
             if (c == '+')
                 return 62U;
             if (c == '/')
@@ -145,11 +151,11 @@ namespace BeatTogether.MasterServer.Messaging.Models
         private static uint GetHexDigit(char c)
         {
             if (c >= '0' && c <= '9')
-                return (uint) (c - '0');
+                return (uint)(c - '0');
             if (c >= 'a' && c <= 'f')
-                return (uint) ('\n' + (c - 'a'));
+                return (uint)('\n' + (c - 'a'));
             if (c >= 'A' && c <= 'F')
-                return (uint) ('\n' + (c - 'A'));
+                return (uint)('\n' + (c - 'A'));
             return uint.MaxValue;
         }
 

@@ -4,7 +4,7 @@ using Krypton.Buffers;
 
 namespace BeatTogether.MasterServer.Messaging.Models
 {
-    public class BitMask256 : IMessage
+    public class BitMask256 : IMessage, IBitMask<BitMask256>
     {
         public ulong D0 { get; set; }
         public ulong D1 { get; set; }
@@ -13,8 +13,14 @@ namespace BeatTogether.MasterServer.Messaging.Models
 
         public const int BitCount = 256;
 
+        public int bitCount { get => BitCount; }
+
         public static BitMask256 MaxValue => new(ulong.MaxValue, ulong.MaxValue, ulong.MaxValue, ulong.MaxValue);
         public static BitMask256 MinValue => new();
+
+        public BitMask256()
+        {
+        }
 
         public BitMask256(ulong d0 = 0U, ulong d1 = 0U, ulong d2 = 0U, ulong d3 = 0U)
         {
