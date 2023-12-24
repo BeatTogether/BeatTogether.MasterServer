@@ -9,12 +9,23 @@ namespace BeatTogether.MasterServer.Messaging.Models
     public sealed class BeatmapLevelSelectionMaskSimple
     {
         public BeatmapLevelSelectionMaskSimple() { }
-        public BeatmapLevelSelectionMaskSimple(BeatmapLevelSelectionMask mask) 
+        public static BeatmapLevelSelectionMaskSimple WithLegacySongPackMask(BeatmapLevelSelectionMask mask) 
         {
+            BeatmapLevelSelectionMaskSimple beatmapLevelSelectionMaskSimple = new BeatmapLevelSelectionMaskSimple();
             CompatibleSongPackMask compatMask = new CompatibleSongPackMask(mask.SongPackMask);
-            BeatmapDifficultyMask = mask.BeatmapDifficultyMask;
-            GameplayModifiersMask = mask.GameplayModifiersMask;
-            SongPackMasks = compatMask.LegacySongPackMask.ToShortString();
+            beatmapLevelSelectionMaskSimple.BeatmapDifficultyMask = mask.BeatmapDifficultyMask;
+            beatmapLevelSelectionMaskSimple.GameplayModifiersMask = mask.GameplayModifiersMask;
+            beatmapLevelSelectionMaskSimple.SongPackMasks = compatMask.LegacySongPackMask.ToShortString();
+            return beatmapLevelSelectionMaskSimple;
+        }
+
+        public static BeatmapLevelSelectionMaskSimple WithNewSongPackMask(BeatmapLevelSelectionMask mask)
+        {
+            BeatmapLevelSelectionMaskSimple beatmapLevelSelectionMaskSimple = new BeatmapLevelSelectionMaskSimple();
+            beatmapLevelSelectionMaskSimple.BeatmapDifficultyMask = mask.BeatmapDifficultyMask;
+            beatmapLevelSelectionMaskSimple.GameplayModifiersMask = mask.GameplayModifiersMask;
+            beatmapLevelSelectionMaskSimple.SongPackMasks = mask.SongPackMask.ToShortString();
+            return beatmapLevelSelectionMaskSimple;
         }
 
 

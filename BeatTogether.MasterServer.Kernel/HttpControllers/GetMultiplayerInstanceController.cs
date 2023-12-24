@@ -110,10 +110,11 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
             ConnectToServerResponse matchResult = null;
 
             var versionParsed = TryParseGameVersion(request.Version);
-
+            Version newSongPackMask = new Version(1, 34, 0);
             try
             {
-                if (versionParsed >= new Version(1, 34, 0))
+                _logger.Debug("Processing matchmaking request for client version {Version}", request.Version);
+                if (versionParsed >= newSongPackMask)
                 {
                     _logger.Debug("Sending matchmaking response for client version {Version}", request.Version);
                     matchResult = await _userService.ConnectToMatchmakingServer(session,
@@ -186,7 +187,17 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
             response.PlayerSessionInfo.GameSessionId = matchResult.ManagerId;
             response.PlayerSessionInfo.DnsName = targetEndPoint.Address.ToString();
             response.PlayerSessionInfo.Port = targetEndPoint.Port;
-            response.PlayerSessionInfo.BeatmapLevelSelectionMask = new BeatmapLevelSelectionMaskSimple(matchResult.BeatmapLevelSelectionMask);
+            if (versionParsed >= newSongPackMask)
+            {
+                _logger.Verbose($"Sending matchmaking response with NewSongPackMask for client {request.Version}");
+                response.PlayerSessionInfo.BeatmapLevelSelectionMask = BeatmapLevelSelectionMaskSimple.WithNewSongPackMask(matchResult.BeatmapLevelSelectionMask);
+            }
+            else
+            {
+                _logger.Verbose($"Sending matchmaking response with LegacySongPackMask for client {request.Version}");
+                response.PlayerSessionInfo.BeatmapLevelSelectionMask = BeatmapLevelSelectionMaskSimple.WithLegacySongPackMask(matchResult.BeatmapLevelSelectionMask);
+            }
+
             response.PlayerSessionInfo.GameplayServerConfiguration = matchResult.Configuration;
             response.PlayerSessionInfo.PrivateGameSecret = matchResult.Secret;
             response.PlayerSessionInfo.PrivateGameCode = matchResult.Code;
