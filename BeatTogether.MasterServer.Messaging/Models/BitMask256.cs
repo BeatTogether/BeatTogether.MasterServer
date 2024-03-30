@@ -1,10 +1,8 @@
-﻿using BeatTogether.Core.Messaging.Abstractions;
-using BeatTogether.MasterServer.Messaging.Extensions;
-using Krypton.Buffers;
+﻿using BeatTogether.MasterServer.Messaging.Extensions;
 
 namespace BeatTogether.MasterServer.Messaging.Models
 {
-    public class BitMask256 : IMessage, IBitMask<BitMask256>
+    public class BitMask256 : IBitMask<BitMask256>
     {
         public ulong D0 { get; set; }
         public ulong D1 { get; set; }
@@ -54,26 +52,6 @@ namespace BeatTogether.MasterServer.Messaging.Models
             ulong num5 = num3 | (D1).ShiftRight(num4);
             int num6 = offset - 64;
             return (num5 | (D2).ShiftRight(num6) | (D3).ShiftRight(offset)) & num;
-        }
-
-        #endregion
-
-        #region Network
-
-        public void WriteTo(ref SpanBufferWriter bufferWriter)
-        {
-            bufferWriter.WriteUInt64(D0);
-            bufferWriter.WriteUInt64(D1);
-            bufferWriter.WriteUInt64(D2);
-            bufferWriter.WriteUInt64(D3);
-        }
-
-        public void ReadFrom(ref SpanBufferReader bufferReader)
-        {
-            D0 = bufferReader.ReadUInt64();
-            D1 = bufferReader.ReadUInt64();
-            D2 = bufferReader.ReadUInt64();
-            D3 = bufferReader.ReadUInt64();
         }
 
         #endregion

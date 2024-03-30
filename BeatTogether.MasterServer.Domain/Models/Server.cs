@@ -9,8 +9,7 @@ namespace BeatTogether.MasterServer.Domain.Models
 
         public string ServerName { get; set; }
         public string ServerId { get; set; }
-        public IPEndPoint LiteNetEndPoint { get; set; }
-        public IPEndPoint ENetEndPoint { get; set; }
+        public IPEndPoint EndPoint { get; set; }
         public string Secret { get; set; }
         public string Code { get; set; }
         public bool IsPublic { get; set; }

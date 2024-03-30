@@ -30,7 +30,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         private readonly IAutobus _autobus;
         private readonly IMapper _mapper;
-        private readonly MasterServerMessageDispatcher _messageDispatcher;
         private readonly IMatchmakingService _matchmakingService;
         private readonly IServerRepository _serverRepository;
         private readonly IMasterServerSessionService _sessionService;
@@ -45,7 +44,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         public UserService(
             IAutobus autobus,
             IMapper mapper,
-            MasterServerMessageDispatcher messageDispatcher,
             IMatchmakingService matchmakingService,
             IServerRepository serverRepository,
             IMasterServerSessionService sessionService,
@@ -58,7 +56,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         {
             _autobus = autobus;
             _mapper = mapper;
-            _messageDispatcher = messageDispatcher;
             _matchmakingService = matchmakingService;
             _serverRepository = serverRepository;
             _sessionService = sessionService;
@@ -104,7 +101,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 request.BeatmapLevelSelectionMask.SongPackMask.D3);
         }
 
-        private async Task<Server> GetServerToConnectTo(Messaging.Messages.User.LegacyRequests.ConnectToMatchmakingServerRequest request, bool IsQuickplay)
+/*        private async Task<Server> GetServerToConnectTo(Messaging.Messages.User.LegacyRequests.ConnectToMatchmakingServerRequest request, bool IsQuickplay)
         {
             if (!IsQuickplay)
             {
@@ -128,12 +125,12 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 compatMask.SongPackMask.D1,
                 compatMask.SongPackMask.D2,
                 compatMask.SongPackMask.D3);
-        }
+        }*/
 
 
         private bool DoesServerExist(Server server)
         {
-            return _nodeRepository.EndpointExists(server.LiteNetEndPoint);
+            return _nodeRepository.EndpointExists(server.EndPoint);
         }
 
         private async Task<ConnectToServerResponse> ConnectPlayer(MasterServerSession session, Server server, byte[] Random, byte[] PublicKey)
@@ -146,14 +143,14 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 };
             }
 
-            _logger.Information("Player: " + session.UserIdHash + " Is being sent to node: " + server.LiteNetEndPoint + ", Server name: " + server.ServerName + ", Player count before join: " + server.CurrentPlayerCount);
+            _logger.Information("Player: " + session.UserIdHash + " Is being sent to node: " + server.EndPoint + ", Server name: " + server.ServerName + ", Player count before join: " + server.CurrentPlayerCount);
 
-            if (!await _nodeRepository.SendAndAwaitPlayerEncryptionRecievedFromNode(server.LiteNetEndPoint,
+            if (!await _nodeRepository.SendAndAwaitPlayerEncryptionRecievedFromNode(server.EndPoint,
                     session.EndPoint, session.UserIdHash, session.UserName, session.Platform, Random, PublicKey,
                      session.PlayerSessionId, session.ClientVersion, session.PlatformUserId, server.Secret, EncryptionRecieveTimeout))
             {
                 _autobus.Publish(new DisconnectPlayerFromMatchmakingServerEvent(server.Secret, session.UserIdHash, session.EndPoint.ToString()));
-                _logger.Warning("Player: " + session.UserIdHash + " Could not be sent to the node: " + server.LiteNetEndPoint);
+                _logger.Warning("Player: " + session.UserIdHash + " Could not be sent to the node: " + server.EndPoint);
                 return new ConnectToServerResponse()
                 {
                     Result = ConnectToServerResult.UnknownError
@@ -173,8 +170,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 },
                 IsConnectionOwner = true,
                 IsDedicatedServer = true,
-                RemoteEndPoint = server.LiteNetEndPoint,
-                RemoteEndPointENet = server.ENetEndPoint,
+                RemoteEndPoint = server.EndPoint,
                 Random = server.Random,
                 PublicKey = server.PublicKey,
                 Code = server.Code,
@@ -192,15 +188,14 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         }
 
         public Server CreateServer(ConnectToMatchmakingServerRequest request ,string serverName, string managerName,
-            string secret, IPEndPoint liteNetEndPoint, bool isQuickplay, byte[] random, byte[] publicKey,
-            IPEndPoint eNetEndPoint)
+            string secret, IPEndPoint endPoint, bool isQuickplay, byte[] random, byte[] publicKey)
         {
             return new Server
             {
                 ServerId = FixedServerUserId,
                 ServerName = serverName,
-                LiteNetEndPoint = liteNetEndPoint,
-                ENetEndPoint = eNetEndPoint,
+                EndPoint = endPoint,
+                //ENetEndPoint = eNetEndPoint,
                 Secret = secret,
                 Code = _serverCodeProvider.Generate(),
                 IsPublic = isQuickplay,
@@ -227,9 +222,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             };
         }
 
-        public Server CreateServer(Messaging.Messages.User.LegacyRequests.ConnectToMatchmakingServerRequest request, string serverName, string managerName,
-    string secret, IPEndPoint liteNetEndPoint, bool isQuickplay, byte[] random, byte[] publicKey,
-    IPEndPoint eNetEndPoint)
+/*        public Server CreateServer(Messaging.Messages.User.LegacyRequests.ConnectToMatchmakingServerRequest request, string serverName, string managerName,
+            string secret, IPEndPoint EndPoint, bool isQuickplay, byte[] random, byte[] publicKey)
         {
             CompatibleSongPackMask compatMask = new CompatibleSongPackMask(request.BeatmapLevelSelectionMask.SongPackMask);
 
@@ -237,8 +231,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             {
                 ServerId = FixedServerUserId,
                 ServerName = serverName,
-                LiteNetEndPoint = liteNetEndPoint,
-                ENetEndPoint = eNetEndPoint,
+                EndPoint = EndPoint,
                 Secret = secret,
                 Code = _serverCodeProvider.Generate(),
                 IsPublic = isQuickplay,
@@ -263,7 +256,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 IsInGameplay = false,
                 GameplayLevelId = string.Empty
             };
-        }
+        }*/
 
         public async Task<ConnectToServerResponse> ConnectToMatchmakingServer(MasterServerSession session, ConnectToMatchmakingServerRequest request)
         {
@@ -344,12 +337,10 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                         Result = ConnectToServerResult.NoAvailableDedicatedServers
                     };
 
-                var liteNetEndPoint = IPEndPoint.Parse(createMatchmakingServerResponse.RemoteEndPoint);
-                var eNetEndPoint = IPEndPoint.Parse(createMatchmakingServerResponse.RemoteEndPointENet);
+                var EndPoint = IPEndPoint.Parse(createMatchmakingServerResponse.RemoteEndPoint);
                 
-                server = CreateServer(request, ServerName, session.UserName, secret, liteNetEndPoint,
-                    isQuickplay, createMatchmakingServerResponse.Random, createMatchmakingServerResponse.PublicKey,
-                    eNetEndPoint);
+                server = CreateServer(request, ServerName, session.UserName, secret, EndPoint,
+                    isQuickplay, createMatchmakingServerResponse.Random, createMatchmakingServerResponse.PublicKey);
                 
                 if (!await _serverRepository.AddServer(server))
                 {
@@ -364,7 +355,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             return await ConnectPlayer(session, server, request.Random, request.PublicKey);
         }
 
-        public async Task<ConnectToServerResponse> ConnectToMatchmakingServer(MasterServerSession session, Messaging.Messages.User.LegacyRequests.ConnectToMatchmakingServerRequest request)
+/*        public async Task<ConnectToServerResponse> ConnectToMatchmakingServer(MasterServerSession session, Messaging.Messages.User.LegacyRequests.ConnectToMatchmakingServerRequest request)
         {
             var randomLog = request.Random != null ? BitConverter.ToString(request.Random) : "Pending";
             var pubKeyLog = request.PublicKey != null ? BitConverter.ToString(request.PublicKey) : "Pending";
@@ -461,7 +452,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
             }
             return await ConnectPlayer(session, server, request.Random, request.PublicKey);
-        }
+        }*/
 
         public Task SessionKeepalive(MasterServerSession session, SessionKeepaliveMessage message)
         {

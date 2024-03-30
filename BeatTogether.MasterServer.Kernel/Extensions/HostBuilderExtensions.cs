@@ -8,10 +8,10 @@ using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions.Providers;
 using BeatTogether.MasterServer.Kernel.Configuration;
 using BeatTogether.MasterServer.Kernel.Implementations;
-using BeatTogether.MasterServer.Kernel.Implementations.MessageReceivers;
+//using BeatTogether.MasterServer.Kernel.Implementations.MessageReceivers;
 using BeatTogether.MasterServer.Kernel.Implementations.Providers;
 using BeatTogether.MasterServer.Kernel.Implementations.Sessions;
-using BeatTogether.MasterServer.Messaging.Extensions;
+//using BeatTogether.MasterServer.Messaging.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -33,7 +33,7 @@ namespace BeatTogether.Extensions
                         .ConfigureServices((hostBuilderContext, services) =>
                             services
                                 .AddCoreSecurity()
-                                .AddMasterServerMessaging()
+                                //.AddMasterServerMessaging()
                                 .AddSingleton<MasterInterfaceService>()
                                 .AddAutoMapper(configuration =>
                                 {
@@ -49,18 +49,18 @@ namespace BeatTogether.Extensions
                                 .AddSingleton<IServerCodeProvider, ServerCodeProvider>()
                                 .AddSingleton<ISecretProvider, SecretProvider>()
                                 .AddSingleton<IUserAuthenticator, UserAuthenticator>()
-                                .AddScoped<IHandshakeService, HandshakeService>()
+                                //.AddScoped<IHandshakeService, HandshakeService>()
                                 .AddScoped<IUserService, UserService>()
                                 .AddSingleton<IMasterServerSessionService, MasterServerSessionService>()
                                 .AddSingleton<INodeRepository, NodeRepository>()
-                                .AddSingleton<MasterServerMessageSource>()
-                                .AddSingleton<MasterServerMessageDispatcher>()
+                                //.AddSingleton<MasterServerMessageSource>()
+                                //.AddSingleton<MasterServerMessageDispatcher>()
                                 .AddServiceClient<IMatchmakingService>()
                                 .AddHostedService<DedicatedServerEventHandler>()
-                                .AddHostedService<MasterServer.Kernel.Implementations.MasterServer>()
+                                //.AddHostedService<MasterServer.Kernel.Implementations.MasterServer>()
                                 .AddHostedService<MasterServerSessionTickService>()
-                                .AddHostedService<HandshakeMessageHandler>()
-                                .AddHostedService<UserMessageHandler>()
+                                //.AddHostedService<HandshakeMessageHandler>()
+                                //.AddHostedService<UserMessageHandler>()
                                 .AddOptions()
                                 .AddControllers()
                                 .AddNewtonsoftJson()

@@ -39,6 +39,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations.Sessions
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
+            _logger.Information($"Starting master server, Version: {_configuration.MasterServerVersion} (EndPoint='{_configuration.EndPoint}').");
             if (_task != null)
                 await StopAsync(cancellationToken);
 

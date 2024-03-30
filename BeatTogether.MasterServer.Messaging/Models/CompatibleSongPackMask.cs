@@ -1,4 +1,4 @@
-﻿using BeatTogether.Core.Messaging.Abstractions;
+﻿/*using BeatTogether.Core.Messaging.Abstractions;
 using BeatTogether.MasterServer.Messaging.Models.LegacyModels;
 using Krypton.Buffers;
 using System;
@@ -57,3 +57,4 @@ namespace BeatTogether.MasterServer.Messaging.Models
         }
     }
 }
+*/

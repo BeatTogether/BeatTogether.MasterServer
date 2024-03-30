@@ -1,16 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using BeatTogether.Core.Messaging.Abstractions;
 using BeatTogether.MasterServer.Messaging.Extensions;
 using BeatTogether.MasterServer.Messaging.Models.JsonConverters;
-using Krypton.Buffers;
 using Newtonsoft.Json;
 
 namespace BeatTogether.MasterServer.Messaging.Models
 {
     [JsonConverter(typeof(SongPackMaskConverter))]
-    public sealed class SongPackMask : IMessage
+    public sealed class SongPackMask
     {
         private const string StringPrefix = "[SongPackMask ";
         private const string StringSuffix = "]";
@@ -40,16 +37,6 @@ namespace BeatTogether.MasterServer.Messaging.Models
         public SongPackMask(ulong d0, ulong d1, ulong d2, ulong d3)
         {
             _bitMask = new BitMask256(d0, d1, d2, d3);
-        }
-
-        public void WriteTo(ref SpanBufferWriter bufferWriter)
-        {
-            _bitMask.WriteTo(ref bufferWriter);
-        }
-
-        public void ReadFrom(ref SpanBufferReader bufferReader)
-        {
-            _bitMask.ReadFrom(ref bufferReader);
         }
 
         #region String serialize

@@ -1,7 +1,4 @@
-﻿using BeatTogether.Core.Messaging.Abstractions;
-using BeatTogether.MasterServer.Messaging.Enums;
-using BeatTogether.MasterServer.Messaging.Models.LegacyModels;
-using Krypton.Buffers;
+﻿using BeatTogether.MasterServer.Messaging.Enums;
 using Newtonsoft.Json;
 
 namespace BeatTogether.MasterServer.Messaging.Models
@@ -9,7 +6,7 @@ namespace BeatTogether.MasterServer.Messaging.Models
     public sealed class BeatmapLevelSelectionMaskSimple
     {
         public BeatmapLevelSelectionMaskSimple() { }
-        public static BeatmapLevelSelectionMaskSimple WithLegacySongPackMask(BeatmapLevelSelectionMask mask) 
+/*        public static BeatmapLevelSelectionMaskSimple WithLegacySongPackMask(BeatmapLevelSelectionMask mask) 
         {
             BeatmapLevelSelectionMaskSimple beatmapLevelSelectionMaskSimple = new BeatmapLevelSelectionMaskSimple();
             CompatibleSongPackMask compatMask = new CompatibleSongPackMask(mask.SongPackMask);
@@ -17,7 +14,7 @@ namespace BeatTogether.MasterServer.Messaging.Models
             beatmapLevelSelectionMaskSimple.GameplayModifiersMask = mask.GameplayModifiersMask;
             beatmapLevelSelectionMaskSimple.SongPackMasks = compatMask.LegacySongPackMask.ToShortString();
             return beatmapLevelSelectionMaskSimple;
-        }
+        }*/
 
         public static BeatmapLevelSelectionMaskSimple WithNewSongPackMask(BeatmapLevelSelectionMask mask)
         {
