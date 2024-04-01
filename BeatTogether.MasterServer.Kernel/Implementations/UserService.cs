@@ -319,17 +319,47 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 string ServerName = string.Empty;
                 if (isQuickplay)
                     ServerName = "BeatTogether Quickplay: " + ((Domain.Enums.BeatmapDifficultyMask)request.BeatmapLevelSelectionMask.BeatmapDifficultyMask).ToString();
-                else if(!string.IsNullOrEmpty(session.UserName))
+                else if (request.ExtraServerConfiguration != null && request.ExtraServerConfiguration.ServerName != null  )
+                {
+                    ServerName = request.ExtraServerConfiguration.ServerName;
+                }
+                else if (!string.IsNullOrEmpty(session.UserName))
+                {
                     ServerName = session.UserName + "'s server";
-                var createMatchmakingServerResponse = await _matchmakingService.CreateMatchmakingServer(
-                    new CreateMatchmakingServerRequest(
-                        secret,
-                        ManagerId,
-                        _mapper.Map<DedicatedServer.Interface.Models.GameplayServerConfiguration>(request.GameplayServerConfiguration)
-                     )
-                    {
-                    ServerName = ServerName,
-                    });
+                }
+                CreateMatchmakingServerRequest CreateServerRequest;
+                if (request.ExtraServerConfiguration != null)
+                {
+                    CreateServerRequest = new CreateMatchmakingServerRequest(
+                            secret,
+                            ManagerId,
+                            _mapper.Map<DedicatedServer.Interface.Models.GameplayServerConfiguration>(request.GameplayServerConfiguration)
+                         )
+                        {
+                            ServerName = ServerName,
+                            AllowChroma = request.ExtraServerConfiguration.AllowChroma ?? true,
+                            AllowME = request.ExtraServerConfiguration.AllowME ?? true,
+                            AllowNE = request.ExtraServerConfiguration.AllowNE ?? true,
+                            AllowPerPlayerDifficulties = request.ExtraServerConfiguration.AllowPerPlayerDifficulties ?? false,
+                            AllowPerPlayerModifiers = request.ExtraServerConfiguration.AllowPerPlayerModifiers ?? false,
+                            BeatmapStartTime = request.ExtraServerConfiguration.BeatmapStartTime ?? 5,
+                            PlayersReadyCountdownTime = request.ExtraServerConfiguration.PlayersReadyCountdownTime ?? 0,
+                            //Timeout = request.ExtraServerConfiguration.Timeout ?? 10,
+                            PermanentManager = request.ExtraServerConfiguration.PermenantManger ?? true,
+                        };
+                }
+                else
+                {
+                    CreateServerRequest = new CreateMatchmakingServerRequest(
+                            secret,
+                            ManagerId,
+                            _mapper.Map<DedicatedServer.Interface.Models.GameplayServerConfiguration>(request.GameplayServerConfiguration)
+                         )
+                        {
+                            ServerName = ServerName,
+                        };
+                }
+                var createMatchmakingServerResponse = await _matchmakingService.CreateMatchmakingServer(CreateServerRequest);
 
                 if (!createMatchmakingServerResponse.Success)
                     return new ConnectToServerResponse

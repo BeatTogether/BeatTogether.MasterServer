@@ -7,9 +7,7 @@ using BeatTogether.MasterServer.Messaging.Enums;
 using BeatTogether.MasterServer.Messaging.Messages.User;
 using BeatTogether.MasterServer.Messaging.Models;
 using BeatTogether.MasterServer.Messaging.Models.HttpApi;
-//using BeatTogether.MasterServer.Messaging.Models.LegacyModels;
 using Microsoft.AspNetCore.Mvc;
-//using Org.BouncyCastle.Asn1;
 using Serilog;
 
 namespace BeatTogether.MasterServer.Kernel.HttpControllers
@@ -127,7 +125,8 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
                         BeatmapLevelSelectionMask = new BeatmapLevelSelectionMask(request.BeatmapLevelSelectionMask),
                         Secret = request.PrivateGameSecret ?? "",
                         Code = request.PrivateGameCode ?? "",
-                        GameplayServerConfiguration = request.GameplayServerConfiguration
+                        GameplayServerConfiguration = request.GameplayServerConfiguration,
+                        ExtraServerConfiguration = request.ExtraServerConfiguration ?? null
                     });
                 }
                 else

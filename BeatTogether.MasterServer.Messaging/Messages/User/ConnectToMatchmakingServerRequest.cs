@@ -14,5 +14,6 @@ namespace BeatTogether.MasterServer.Messaging.Messages.User
         public string Secret { get; set; }
         public string Code { get; set; }
         public GameplayServerConfiguration GameplayServerConfiguration { get; set; } = new();
+        public ExtraServerConfiguration? ExtraServerConfiguration { get; set; }
     }
 }

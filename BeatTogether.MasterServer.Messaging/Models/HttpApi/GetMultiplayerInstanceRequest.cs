@@ -22,6 +22,9 @@ namespace BeatTogether.MasterServer.Messaging.Models.HttpApi
         [JsonProperty("gameplay_server_configuration")]
         public GameplayServerConfiguration GameplayServerConfiguration { get; set; }
 
+        [JsonProperty("extra_server_configuration")]
+        public ExtraServerConfiguration? ExtraServerConfiguration { get; set; }
+
         [JsonProperty("user_id")]
         public string UserId { get; set; }
 
