@@ -7,6 +7,7 @@ using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Configuration;
 using Microsoft.Extensions.Hosting;
 using Serilog;
+using System;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -105,7 +106,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         private Task NodeStartedHandler(NodeStartedEvent startedEvent)
         {
-            if (_configuration.SupportedDediServerVersions.Where(N => startedEvent.NodeVersion.StartsWith(N)).Any())
+            var version = new Version(startedEvent.NodeVersion);
+            if (_configuration.SupportedDediServerVersions.Where(N => version.Major == N.Major && version.Minor == N.Minor).Any())
             {
                 _nodeRepository.SetNodeOnline(IPAddress.Parse(startedEvent.endPoint), startedEvent.NodeVersion);
             }

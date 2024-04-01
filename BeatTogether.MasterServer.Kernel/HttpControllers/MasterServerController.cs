@@ -252,7 +252,7 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
                 GetNodeResponse[] nodesResponse = new GetNodeResponse[nodes.Length];
                 for (int i = 0; i < nodes.Length; i++)
                 {
-                    nodesResponse[i] = new GetNodeResponse(nodes[i].endpoint, nodes[i].Online, nodes[i].LastStart, nodes[i].LastOnline, nodes[i].NodeVersion);
+                    nodesResponse[i] = new GetNodeResponse(nodes[i].endpoint, nodes[i].Online, nodes[i].LastStart, nodes[i].LastOnline, nodes[i].NodeVersion.ToString());
                     nodesResponse[i].Players = await _ServerRepository.GetPlayerCountOnEndpoint(nodes[i].endpoint);
                     nodesResponse[i].Servers = await _ServerRepository.GetServerCountOnEndpoint(nodes[i].endpoint);
                 }

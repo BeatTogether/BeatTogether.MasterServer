@@ -65,12 +65,13 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         public async Task SetNodeOnline(IPAddress endPoint, string Version)
         {
-            _logger.Information($"Node is online: " + endPoint);
-            if (!_nodes.TryAdd(endPoint, new Node(endPoint, Version)))
+            var _version = new Version(Version);
+            _logger.Information($"Node is online: " + endPoint + " Node version: " + _version.ToString());
+            if (!_nodes.TryAdd(endPoint, new Node(endPoint, _version)))
             {
                 _logger.Information($"Resetting restarted node: " + endPoint);
                 await SetNodeOffline(endPoint); 
-                _nodes[endPoint].NodeVersion = Version;
+                _nodes[endPoint].NodeVersion = _version;
                 _nodes[endPoint].LastStart = DateTime.UtcNow;
                 _nodes[endPoint].LastOnline = DateTime.UtcNow;
                 _nodes[endPoint].Online = true;
