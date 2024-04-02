@@ -101,31 +101,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 request.BeatmapLevelSelectionMask.SongPackMask.D3);
         }
 
-/*        private async Task<Server> GetServerToConnectTo(Messaging.Messages.User.LegacyRequests.ConnectToMatchmakingServerRequest request, bool IsQuickplay)
-        {
-            if (!IsQuickplay)
-            {
-                Server server = await _serverRepository.GetServerByCode(request.Code.Replace('8', 'B').Replace('D', '0')); //Similar characters are replaced
-                if (server == null)
-                    server = await _serverRepository.GetServer(request.Secret);
-                return server;
-            }
 
-            CompatibleSongPackMask compatMask = new CompatibleSongPackMask(request.BeatmapLevelSelectionMask.SongPackMask);
-            
-
-            return await _serverRepository.GetAvailablePublicServer(
-                (Domain.Enums.InvitePolicy)request.GameplayServerConfiguration.InvitePolicy,
-                (Domain.Enums.GameplayServerMode)request.GameplayServerConfiguration.GameplayServerMode,
-                (Domain.Enums.SongSelectionMode)request.GameplayServerConfiguration.SongSelectionMode,
-                (Domain.Enums.GameplayServerControlSettings)request.GameplayServerConfiguration.GameplayServerControlSettings,
-                (Domain.Enums.BeatmapDifficultyMask)request.BeatmapLevelSelectionMask.BeatmapDifficultyMask,
-                (Domain.Enums.GameplayModifiersMask)request.BeatmapLevelSelectionMask.GameplayModifiersMask,
-                compatMask.SongPackMask.D0,
-                compatMask.SongPackMask.D1,
-                compatMask.SongPackMask.D2,
-                compatMask.SongPackMask.D3);
-        }*/
 
 
         private bool DoesServerExist(Server server)
@@ -222,41 +198,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             };
         }
 
-/*        public Server CreateServer(Messaging.Messages.User.LegacyRequests.ConnectToMatchmakingServerRequest request, string serverName, string managerName,
-            string secret, IPEndPoint EndPoint, bool isQuickplay, byte[] random, byte[] publicKey)
-        {
-            CompatibleSongPackMask compatMask = new CompatibleSongPackMask(request.BeatmapLevelSelectionMask.SongPackMask);
 
-            return new Server
-            {
-                ServerId = FixedServerUserId,
-                ServerName = serverName,
-                EndPoint = EndPoint,
-                Secret = secret,
-                Code = _serverCodeProvider.Generate(),
-                IsPublic = isQuickplay,
-                BeatmapDifficultyMask = (Domain.Enums.BeatmapDifficultyMask)request.BeatmapLevelSelectionMask.BeatmapDifficultyMask,
-                GameplayModifiersMask = (Domain.Enums.GameplayModifiersMask)request.BeatmapLevelSelectionMask.GameplayModifiersMask,
-                GameplayServerConfiguration = new Domain.Models.GameplayServerConfiguration
-                    (
-                        Math.Min(request.GameplayServerConfiguration.MaxPlayerCount, 100), //max player count //TODO more if patreon?
-                        (Domain.Enums.DiscoveryPolicy)request.GameplayServerConfiguration.DiscoveryPolicy,
-                        (Domain.Enums.InvitePolicy)request.GameplayServerConfiguration.InvitePolicy,
-                        (Domain.Enums.GameplayServerMode)request.GameplayServerConfiguration.GameplayServerMode,
-                        (Domain.Enums.SongSelectionMode)request.GameplayServerConfiguration.SongSelectionMode,
-                        (Domain.Enums.GameplayServerControlSettings)request.GameplayServerConfiguration.GameplayServerControlSettings
-                    ),
-                SongPackBloomFilterD0 = compatMask.SongPackMask.D0,
-                SongPackBloomFilterD1 = compatMask.SongPackMask.D1,
-                SongPackBloomFilterD2 = compatMask.SongPackMask.D2,
-                SongPackBloomFilterD3 = compatMask.SongPackMask.D3,
-                PlayerHashes = new(),
-                Random = random,
-                PublicKey = publicKey,
-                IsInGameplay = false,
-                GameplayLevelId = string.Empty
-            };
-        }*/
 
         public async Task<ConnectToServerResponse> ConnectToMatchmakingServer(MasterServerSession session, ConnectToMatchmakingServerRequest request)
         {
@@ -344,7 +286,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                             AllowPerPlayerModifiers = request.ExtraServerConfiguration.AllowPerPlayerModifiers ?? false,
                             BeatmapStartTime = request.ExtraServerConfiguration.BeatmapStartTime ?? 5,
                             PlayersReadyCountdownTime = request.ExtraServerConfiguration.PlayersReadyCountdownTime ?? 0,
-                            //Timeout = request.ExtraServerConfiguration.Timeout ?? 10,
+                            //Timeout = request.ExtraServerConfiguration.Timeout ?? 10, //Dont allow everyone to do this as -1 means infinite server online time, server wont turn off when a player leaves
                             PermanentManager = request.ExtraServerConfiguration.PermenantManger ?? true,
                         };
                 }
@@ -385,104 +327,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             return await ConnectPlayer(session, server, request.Random, request.PublicKey);
         }
 
-/*        public async Task<ConnectToServerResponse> ConnectToMatchmakingServer(MasterServerSession session, Messaging.Messages.User.LegacyRequests.ConnectToMatchmakingServerRequest request)
-        {
-            var randomLog = request.Random != null ? BitConverter.ToString(request.Random) : "Pending";
-            var pubKeyLog = request.PublicKey != null ? BitConverter.ToString(request.PublicKey) : "Pending";
-            _logger.Verbose(
-                $"Handling {nameof(ConnectToMatchmakingServerRequest)} " +
-                $"(UserId='{request.UserId}', " +
-                $"UserName='{request.UserName}', " +
-                $"Random='{randomLog}', " +
-                $"PublicKey='{pubKeyLog}', " +
-                $"BeatmapDifficultyMask={request.BeatmapLevelSelectionMask.BeatmapDifficultyMask}, " +
-                $"GameplayModifiersMask={request.BeatmapLevelSelectionMask.GameplayModifiersMask}, " +
-                $"Secret='{request.Secret}', " +
-                $"Code='{request.Code}')."
-            );
 
-            bool isQuickplay = string.IsNullOrEmpty(request.Code) && string.IsNullOrEmpty(request.Secret); //Quickplay is true if there is no code and no secret
-
-            Server server = await GetServerToConnectTo(request, isQuickplay); //Gets the server that is requested to join
-            if (server == null && !isQuickplay)
-            {
-                if (!string.IsNullOrEmpty(request.Code)) //if code was incorrect then server does not exist
-                {
-                    return new ConnectToServerResponse
-                    {
-                        Result = ConnectToServerResult.InvalidCode
-                    };
-                }
-                if (string.IsNullOrEmpty(request.Secret))//If secret is empty then a server cannot be made/joined
-                {
-                    return new ConnectToServerResponse
-                    {
-                        Result = ConnectToServerResult.InvalidSecret
-                    };
-                }
-
-            }
-            if (server != null)
-            {
-                if (!DoesServerExist(server))
-                {
-                    _logger.Information("NODE OFFLINE removing server with ID: " + server.Secret + " from the server list");
-                    await _serverRepository.RemoveServer(server.Secret);
-                    return new ConnectToServerResponse
-                    {
-                        Result = ConnectToServerResult.UnknownError //there is no specific error result for this
-                    };
-                }
-            }
-            string secret = request.Secret;
-            string ManagerId = FixedServerUserId;
-            if (!isQuickplay)
-                ManagerId = session.UserIdHash;//sets the manager to the player who is requesting
-            else
-                secret = _secretProvider.GetSecret();
-
-            if (server == null) //Creates the server, then the player can join
-            {
-                string ServerName = string.Empty;
-                if (isQuickplay)
-                    ServerName = "BeatTogether Quickplay: " + ((Domain.Enums.BeatmapDifficultyMask)request.BeatmapLevelSelectionMask.BeatmapDifficultyMask).ToString();
-                else if (!string.IsNullOrEmpty(session.UserName))
-                    ServerName = session.UserName + "'s server";
-                var createMatchmakingServerResponse = await _matchmakingService.CreateMatchmakingServer(
-                    new CreateMatchmakingServerRequest(
-                        secret,
-                        ManagerId,
-                        _mapper.Map<DedicatedServer.Interface.Models.GameplayServerConfiguration>(request.GameplayServerConfiguration)
-                     )
-                    {
-                        ServerName = ServerName,
-                    });
-
-                if (!createMatchmakingServerResponse.Success)
-                    return new ConnectToServerResponse
-                    {
-                        Result = ConnectToServerResult.NoAvailableDedicatedServers
-                    };
-
-                var liteNetEndPoint = IPEndPoint.Parse(createMatchmakingServerResponse.RemoteEndPoint);
-                var eNetEndPoint = IPEndPoint.Parse(createMatchmakingServerResponse.RemoteEndPointENet);
-
-                server = CreateServer(request, ServerName, session.UserName, secret, liteNetEndPoint,
-                    isQuickplay, createMatchmakingServerResponse.Random, createMatchmakingServerResponse.PublicKey,
-                    eNetEndPoint);
-
-                if (!await _serverRepository.AddServer(server))
-                {
-                    _autobus.Publish(new CloseServerInstanceEvent(secret));//Closes the server on the dedi side because master could not add it to the repository
-                    return new ConnectToServerResponse
-                    {
-                        Result = ConnectToServerResult.UnknownError
-                    };
-                }
-
-            }
-            return await ConnectPlayer(session, server, request.Random, request.PublicKey);
-        }*/
 
         public Task SessionKeepalive(MasterServerSession session, SessionKeepaliveMessage message)
         {
