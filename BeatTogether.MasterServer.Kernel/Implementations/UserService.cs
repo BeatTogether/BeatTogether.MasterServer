@@ -171,7 +171,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 ServerId = FixedServerUserId,
                 ServerName = serverName,
                 EndPoint = endPoint,
-                //ENetEndPoint = eNetEndPoint,
                 Secret = secret,
                 Code = _serverCodeProvider.Generate(),
                 IsPublic = isQuickplay,
