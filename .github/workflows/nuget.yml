@@ -4,8 +4,7 @@ on:
     branches:
       - master
       - dev
-      - dev-1.29
-      - dev-1.29-Net6.0
+      - dev-1.35.0
 
 jobs:
   nuget-1:
