@@ -109,21 +109,21 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             var version = new Version(startedEvent.NodeVersion);
             if (_configuration.SupportedDediServerVersions.Where(N => version.Major == N.Major && version.Minor == N.Minor).Any())
             {
-                _nodeRepository.SetNodeOnline(IPAddress.Parse(startedEvent.endPoint), startedEvent.NodeVersion);
+                _nodeRepository.SetNodeOnline(IPAddress.Parse(startedEvent.EndPoint), startedEvent.NodeVersion);
             }
             else
             {
-                _logger.Information($"Node is an incompatable version: " + startedEvent.endPoint + " Please check the master and dedicated servers are up to date");
+                _logger.Information($"Node is an incompatable version: " + startedEvent.EndPoint + " Please check the master and dedicated servers are up to date");
             }
             return Task.CompletedTask;
         }
 
         private Task NodeOnlineHandler(NodeOnlineEvent nodeOnlineEvent)
         {
-            IPAddress address = IPAddress.Parse(nodeOnlineEvent.endPoint);
-            if (!_nodeRepository.GetNodes().Keys.Contains(address))
+            IPAddress address = IPAddress.Parse(nodeOnlineEvent.EndPoint);
+            if (!_nodeRepository.GetNodes().ContainsKey(address))
             {
-                NodeStartedHandler(new NodeStartedEvent(nodeOnlineEvent.endPoint, nodeOnlineEvent.NodeVersion));
+                NodeStartedHandler(new NodeStartedEvent(nodeOnlineEvent.EndPoint, nodeOnlineEvent.NodeVersion));
                 return Task.CompletedTask;
             }
             _nodeRepository.ReceivedOK(address);
@@ -150,7 +150,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         private Task NodeReceivedPlayerEncryptionHandler(NodeReceivedPlayerEncryptionEvent RecievedEvent)
         {
-            _nodeRepository.OnNodeRecievedEncryptionParameters(IPEndPoint.Parse(RecievedEvent.endPoint), IPEndPoint.Parse(RecievedEvent.PlayerEndPoint));
+            _nodeRepository.OnNodeRecievedEncryptionParameters(IPEndPoint.Parse(RecievedEvent.EndPoint), IPEndPoint.Parse(RecievedEvent.PlayerEndPoint));
             return Task.CompletedTask;
         }
         #endregion

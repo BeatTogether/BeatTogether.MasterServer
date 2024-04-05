@@ -7,7 +7,7 @@ namespace BeatTogether.MasterServer.Messaging.Models.HttpApi
     public class GetNodeResponse
     {
         [JsonProperty("Endpoint")]
-        public string endpoint { get; set; }
+        public string Endpoint { get; set; }
 
         [JsonProperty("Online")]
         public bool Online { get; set; }
@@ -27,9 +27,9 @@ namespace BeatTogether.MasterServer.Messaging.Models.HttpApi
         [JsonProperty("CurrentServers")]
         public int Servers { get; set; } = 0;
 
-        public GetNodeResponse(IPAddress endPoint, bool online,DateTime lastStart, DateTime lastOnline, string version)
+        public GetNodeResponse(IPAddress endPoint, bool online, DateTime lastStart, DateTime lastOnline, string version)
         {
-            endpoint = endPoint.ToString();
+            Endpoint = endPoint.ToString();
             Online = online;
             LastStart = lastStart;
             LastOnline = lastOnline;

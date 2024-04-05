@@ -12,8 +12,8 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
 {
     public sealed class MemoryServerRepository : IServerRepository
     {
-        private static ConcurrentDictionary<string, Server> _servers = new();
-        private static ConcurrentDictionary<string, string> _secretsByCode = new();
+        private readonly ConcurrentDictionary<string, Server> _servers = new();
+        private readonly ConcurrentDictionary<string, string> _secretsByCode = new();
         private long TotalJoins = 0;
         private long _TotalServersMade = 0;
 
@@ -31,6 +31,7 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
         {
             return Task.FromResult(_servers.Keys.ToArray());
         }
+
         public Task<Server[]> GetServerList()
         {
             return Task.FromResult(_servers.Values.ToArray());

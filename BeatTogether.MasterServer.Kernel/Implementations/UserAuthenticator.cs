@@ -106,19 +106,11 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         {
             // TODO figure out why oculus does not authenticate correctly at some point
 
-            switch (platform)
+            return platform switch
             {
-                case Platform.Steam:
-                    return true;
-                case Platform.Test:
-                case Platform.OculusRift:
-                case Platform.OculusQuest:
-                case Platform.PS4:
-                case Platform.PS4Dev:
-                case Platform.PS4Cert:
-                default:
-                    return false;
-            }
+                Platform.Steam => true,
+                _ => false,
+            };
         }
     }
 }

@@ -5,7 +5,7 @@ namespace BeatTogether.MasterServer.Domain.Models
 {
     public class Node
     {
-        public IPAddress endpoint { get; }
+        public IPAddress Endpoint { get; }
         public bool Online { get; set; }
         public DateTime LastStart { get; set; }
         public DateTime LastOnline { get; set; }
@@ -13,7 +13,7 @@ namespace BeatTogether.MasterServer.Domain.Models
 
         public Node(IPAddress endPoint, Version Version)
         {
-            endpoint = endPoint;
+            Endpoint = endPoint;
             Online = true;
             LastStart = DateTime.UtcNow;
             LastOnline = DateTime.UtcNow;

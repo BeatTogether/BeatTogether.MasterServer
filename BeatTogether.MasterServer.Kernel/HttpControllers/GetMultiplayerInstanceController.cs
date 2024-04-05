@@ -108,7 +108,7 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
             ConnectToServerResponse matchResult = null;
 
             var versionParsed = TryParseGameVersion(request.Version);
-            Version newSongPackMask = new Version(1, 35, 0);
+            Version newSongPackMask = new(1, 35, 0);
             try
             {
                 _logger.Debug($"Processing matchmaking request for client version {request.Version}");
@@ -232,7 +232,7 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
             var idxUnderscore = versionText.IndexOf('_');
 
             if (idxUnderscore >= 0)
-                versionText = versionText.Substring(0, idxUnderscore);
+                versionText = versionText[..idxUnderscore];
 
             return Version.TryParse(versionText, out var version) ? version : null;
         }

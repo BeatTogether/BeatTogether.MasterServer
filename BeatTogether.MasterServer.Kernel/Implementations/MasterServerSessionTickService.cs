@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Autobus;
-using BeatTogether.MasterServer.Interface.Events;
 using BeatTogether.MasterServer.Kernal.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Configuration;
@@ -16,7 +14,6 @@ namespace BeatTogether.MasterServer.Kernel.Implementations.Sessions
         private readonly MasterServerConfiguration _configuration;
         private readonly IMasterServerSessionService _sessionService;
         private readonly ILogger _logger;
-        private readonly IAutobus _autobus;
         private readonly INodeRepository _nodeRepository;
 
         private Task _task;
@@ -25,13 +22,11 @@ namespace BeatTogether.MasterServer.Kernel.Implementations.Sessions
         public MasterServerSessionTickService(
             MasterServerConfiguration configuration,
             IMasterServerSessionService sessionService,
-            IAutobus autobus,
             INodeRepository nodeRepository)
         {
             _configuration = configuration;
             _sessionService = sessionService;
             _logger = Log.ForContext<MasterServerSessionTickService>();
-            _autobus = autobus;
             _nodeRepository = nodeRepository;
         }
 
@@ -57,8 +52,9 @@ namespace BeatTogether.MasterServer.Kernel.Implementations.Sessions
             {
                 await _task;
             }
-            catch (OperationCanceledException)
+            catch (Exception ex)
             {
+                _logger?.Error(ex.Message);
             }
             finally
             {

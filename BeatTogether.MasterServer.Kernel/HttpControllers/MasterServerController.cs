@@ -16,14 +16,9 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
     [ApiController]
     public class MasterServerController : Controller
     {
-        /*//TODO
-         * Cache values and only update them if a request is made X amount of time since last updated
-         * 
-         * 
-         */
         private readonly IServerRepository _ServerRepository;
         private readonly INodeRepository _NodeRepository;
-        private readonly ILogger _logger;
+        //private readonly ILogger _logger;
         private readonly MasterServerConfiguration _Configuration;
 
         public MasterServerController(
@@ -35,7 +30,7 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
             _NodeRepository = nodeRepository;
             _Configuration = masterServerConfiguration;
 
-            _logger = Log.ForContext<MasterServerController>();
+            //_logger = Log.ForContext<MasterServerController>();
         }
 
         /// <summary>
@@ -252,9 +247,9 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
                 GetNodeResponse[] nodesResponse = new GetNodeResponse[nodes.Length];
                 for (int i = 0; i < nodes.Length; i++)
                 {
-                    nodesResponse[i] = new GetNodeResponse(nodes[i].endpoint, nodes[i].Online, nodes[i].LastStart, nodes[i].LastOnline, nodes[i].NodeVersion.ToString());
-                    nodesResponse[i].Players = await _ServerRepository.GetPlayerCountOnEndpoint(nodes[i].endpoint);
-                    nodesResponse[i].Servers = await _ServerRepository.GetServerCountOnEndpoint(nodes[i].endpoint);
+                    nodesResponse[i] = new GetNodeResponse(nodes[i].Endpoint, nodes[i].Online, nodes[i].LastStart, nodes[i].LastOnline, nodes[i].NodeVersion.ToString());
+                    nodesResponse[i].Players = await _ServerRepository.GetPlayerCountOnEndpoint(nodes[i].Endpoint);
+                    nodesResponse[i].Servers = await _ServerRepository.GetServerCountOnEndpoint(nodes[i].Endpoint);
                 }
                 _LastStatusOfNodes = nodesResponse;
             }

@@ -18,7 +18,7 @@ namespace BeatTogether.MasterServer.Messaging.Models
 
         public static BeatmapLevelSelectionMaskSimple WithNewSongPackMask(BeatmapLevelSelectionMask mask)
         {
-            BeatmapLevelSelectionMaskSimple beatmapLevelSelectionMaskSimple = new BeatmapLevelSelectionMaskSimple();
+            BeatmapLevelSelectionMaskSimple beatmapLevelSelectionMaskSimple = new();
             beatmapLevelSelectionMaskSimple.BeatmapDifficultyMask = mask.BeatmapDifficultyMask;
             beatmapLevelSelectionMaskSimple.GameplayModifiersMask = mask.GameplayModifiersMask;
             beatmapLevelSelectionMaskSimple.SongPackMasks = mask.SongPackMask.ToShortString();
