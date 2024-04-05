@@ -24,8 +24,7 @@ namespace BeatTogether.MasterServer.Messaging.Models
             beatmapLevelSelectionMaskSimple.SongPackMasks = mask.SongPackMask.ToShortString();
             return beatmapLevelSelectionMaskSimple;
         }
-
-
+        
         [JsonProperty("difficulties")]
         public BeatmapDifficultyMask BeatmapDifficultyMask { get; set; }
         
