@@ -12,10 +12,10 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
 {
     public sealed class MemoryServerRepository : IServerRepository
     {
-        private readonly ConcurrentDictionary<string, Server> _servers = new();
-        private readonly ConcurrentDictionary<string, string> _secretsByCode = new();
-        private long TotalJoins = 0;
-        private long _TotalServersMade = 0;
+        private static readonly ConcurrentDictionary<string, Server> _servers = new();
+        private static readonly ConcurrentDictionary<string, string> _secretsByCode = new();
+        private static long TotalJoins = 0;
+        private static long _TotalServersMade = 0;
 
         public Task<long> TotalPlayerJoins()
         {

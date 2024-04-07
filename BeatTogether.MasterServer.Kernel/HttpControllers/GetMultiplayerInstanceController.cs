@@ -157,6 +157,7 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
                     _ => MultiplayerPlacementErrorCode.Unknown
                 };
                 response.PollIntervalMs = -1;
+                _logger.Information($"Matchmaking was unsuccessfull (userId={session.UserIdHash}, gameVersion={request.Version}, client error result={response.ErrorCode}, Server error={matchResult.Result}");
                 return new JsonResult(response);
             }
 
@@ -174,7 +175,7 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
             response.PlayerSessionInfo.DnsName = matchResult.RemoteEndPoint.Address.ToString();
             response.PlayerSessionInfo.Port = matchResult.RemoteEndPoint.Port;
 
-            _logger.Verbose($"Sending matchmaking response with NewSongPackMask for client {request.Version}");
+            //_logger.Verbose($"Sending matchmaking response with NewSongPackMask for client {request.Version}");
             response.PlayerSessionInfo.BeatmapLevelSelectionMask = BeatmapLevelSelectionMaskSimple.WithNewSongPackMask(matchResult.BeatmapLevelSelectionMask);
 /*            if (versionParsed >= newSongPackMask)
             {
