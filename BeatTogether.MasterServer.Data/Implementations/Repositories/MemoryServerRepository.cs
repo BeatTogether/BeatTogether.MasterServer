@@ -125,13 +125,11 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
             if (!publicServers.Any())
                 return Task.FromResult<Server>(null);
             var server = publicServers.First();
-            bool FoundEmptyServer = !server.IsInGameplay;
             foreach (var publicServer in publicServers)
             {
-                if ((publicServer.CurrentPlayerCount < server.GameplayServerConfiguration.MaxPlayerCount && publicServer.CurrentPlayerCount > server.CurrentPlayerCount))
+                if ((publicServer.CurrentPlayerCount < publicServer.GameplayServerConfiguration.MaxPlayerCount && publicServer.CurrentPlayerCount > server.CurrentPlayerCount))
                 {
-                    if((!server.IsInGameplay && !publicServer.IsInGameplay) || server.IsInGameplay)
-                        server = publicServer;
+                    server = publicServer;
                 }
             }
             if (server.CurrentPlayerCount >= server.GameplayServerConfiguration.MaxPlayerCount)
