@@ -86,18 +86,17 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             {
                 _logger.Information("Authentication failure (reason={Reason}, platform={Platform}, " +
                                 "userId={UserId}, userName={UserName})",
-                    authLogReason, token.Platform, token.UserId, token.UserName);
+                    authLogReason, token.Platform, token.UserId);
                 return false;
             }
 
             _logger.Information("Authentication success (platform={Platform}, userId={UserId}, " +
                                 "userName={UserName})",
-                token.Platform, token.UserId, token.UserName);
+                token.Platform, token.UserId);
             
             session.Platform = token.Platform;
             session.PlatformUserId = token.UserId;
             session.UserIdHash = UserIdHash.Generate(session.Platform, session.PlatformUserId);
-            session.UserName = token.UserName;
             
             return true;
         }

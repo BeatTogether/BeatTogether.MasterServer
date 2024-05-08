@@ -1,4 +1,5 @@
 ﻿namespace BeatTogether.MasterServer.Interface.Events
 {
-    public record CloseServerInstanceEvent(string Secret);
+    public record CloseServerInstanceEvent(
+        string Secret);
 }

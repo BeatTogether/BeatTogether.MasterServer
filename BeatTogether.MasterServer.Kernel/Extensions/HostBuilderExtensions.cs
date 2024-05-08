@@ -8,10 +8,8 @@ using BeatTogether.MasterServer.Kernel.Abstractions;
 using BeatTogether.MasterServer.Kernel.Abstractions.Providers;
 using BeatTogether.MasterServer.Kernel.Configuration;
 using BeatTogether.MasterServer.Kernel.Implementations;
-//using BeatTogether.MasterServer.Kernel.Implementations.MessageReceivers;
 using BeatTogether.MasterServer.Kernel.Implementations.Providers;
 using BeatTogether.MasterServer.Kernel.Implementations.Sessions;
-//using BeatTogether.MasterServer.Messaging.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -35,11 +33,11 @@ namespace BeatTogether.Extensions
                                 .AddCoreSecurity()
                                 //.AddMasterServerMessaging()
                                 .AddSingleton<MasterInterfaceService>()
-                                .AddAutoMapper(configuration =>
+/*                                .AddAutoMapper(configuration =>
                                 {
                                     configuration.CreateMap<BeatTogether.MasterServer.Messaging.Models.GameplayServerConfiguration,
                                         DedicatedServer.Interface.Models.GameplayServerConfiguration>();
-                                })
+                                })*/
                                 .AddConfiguration<MasterServerConfiguration>("MasterServer")
                                 .AddTransient<SecureRandom>()
                                 .AddSingleton(RandomNumberGenerator.Create())
@@ -50,7 +48,7 @@ namespace BeatTogether.Extensions
                                 .AddSingleton<ISecretProvider, SecretProvider>()
                                 .AddSingleton<IUserAuthenticator, UserAuthenticator>()
                                 //.AddScoped<IHandshakeService, HandshakeService>()
-                                .AddScoped<IUserService, UserService>()
+                                //.AddScoped<IUserService, UserService>()
                                 .AddSingleton<IMasterServerSessionService, MasterServerSessionService>()
                                 .AddSingleton<INodeRepository, NodeRepository>()
                                 //.AddSingleton<MasterServerMessageSource>()

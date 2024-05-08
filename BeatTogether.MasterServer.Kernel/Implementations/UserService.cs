@@ -1,4 +1,4 @@
-﻿using System;
+﻿/*using System;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -25,7 +25,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
     public class UserService : IUserService
     {
         public const string FixedServerUserId = "ziuMSceapEuNN7wRGQXrZg";
-        public const string VerifyUserURL = "https://api.beatsaver.com/users/verify";
+       // public const string VerifyUserURL = "https://api.beatsaver.com/users/verify";
         public const int EncryptionRecieveTimeout = 2000;
 
         private readonly IAutobus _autobus;
@@ -218,6 +218,8 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             bool isQuickplay = string.IsNullOrEmpty(request.Code) && string.IsNullOrEmpty(request.Secret); //Quickplay is true if there is no code and no secret
 
             Server server = await GetServerToConnectTo(request, isQuickplay); //Gets the server that is requested to join
+
+
             if (server == null && !isQuickplay)
             {
                 if (!string.IsNullOrEmpty(request.Code)) //if code was incorrect then server does not exist
@@ -342,3 +344,4 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         }
     }
 }
+*/

@@ -222,7 +222,7 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
             {
                 Platform = request.Platform,
                 UserId = request.AuthUserId,
-                UserName = string.Empty,// not provided to master through GameLift auth process
+               // UserName = string.Empty,// not provided to master through GameLift auth process
                 SessionToken = sessionToken
             };
         }

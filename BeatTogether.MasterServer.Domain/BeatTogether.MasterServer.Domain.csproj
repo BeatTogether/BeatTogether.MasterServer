@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BeatTogether.MasterServer.Interface\BeatTogether.MasterServer.Interface.csproj" />
+    <PackageReference Include="BeatTogether.Core" Version="1.0.2" />
   </ItemGroup>
 
 </Project>

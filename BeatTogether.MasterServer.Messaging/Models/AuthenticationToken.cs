@@ -8,7 +8,6 @@ namespace BeatTogether.MasterServer.Messaging.Models
     {
         public Platform Platform { get; set; }
         public string UserId { get; set; }
-        public string UserName { get; set; }
         public byte[] SessionToken { get; set; }
 
         public static byte[] SessionTokenFromHex(string str)

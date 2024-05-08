@@ -21,7 +21,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BeatTogether.MasterServer.Kernel\BeatTogether.MasterServer.Kernel.csproj" />
+    <ProjectReference Include="..\BeatTogether.MasterServer.Api\BeatTogether.MasterServer.Api.csproj" />
+    <ProjectReference Include="..\BeatTogether.MasterServer.NodeController\BeatTogether.MasterServer.NodeController.csproj" />
   </ItemGroup>
 
   <ItemGroup>

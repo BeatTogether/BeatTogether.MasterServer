@@ -8,16 +8,19 @@ namespace BeatTogether.MasterServer.Messaging.Models
         public bool? PermenantManger { get; set; }
 
         [JsonProperty("instance_destroy_timeout")]
-        public float? Timeout { get; set; }
+        public long? Timeout { get; set; }
 
         [JsonProperty("server_name")]
         public string? ServerName { get; set; }
 
         [JsonProperty("lock_in_beatmap_time")]
-        public float? BeatmapStartTime { get; set; }
+        public long? BeatmapStartTime { get; set; }
 
         [JsonProperty("countdown_time")]
-        public float? PlayersReadyCountdownTime { get; set; }
+        public long? PlayersReadyCountdownTime { get; set; }
+
+        [JsonProperty("results_time")]
+        public long? ResultsScreenTime { get; set; }
 
         [JsonProperty("per_player_modifiers")]
         public bool? AllowPerPlayerModifiers { get; set; }

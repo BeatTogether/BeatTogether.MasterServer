@@ -136,7 +136,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 return false;
             }
 
-            _autobus.Publish(new PlayerConnectedToMatchmakingServerEvent(
+/*            _autobus.Publish(new PlayerConnectedToMatchmakingServerEvent(
                 NodeEndPoint.Address.ToString(),
                 SessionEndPoint.ToString(),
                 Random ?? Array.Empty<byte>(),
@@ -146,7 +146,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 (byte)platform,
                 PlatformUserId,
                 Secret
-            ));
+            ));*/
 
             EndpointsTimeout.CancelAfter(TimeOut);
             bool PlayerAdded = await AwaitNodeResponses[NodeEndPoint.Address][SessionEndPoint].Task;

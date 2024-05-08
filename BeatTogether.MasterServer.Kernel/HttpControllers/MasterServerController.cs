@@ -96,7 +96,7 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
             return await _ServerRepository.TotalServersMade();
         }
 
-        /// <summary>
+/*        /// <summary>
         /// Returns a server from a server code
         /// </summary>
         [HttpGet]
@@ -124,10 +124,10 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
                 InvitePolicy = (Messaging.Enums.InvitePolicy)server.GameplayServerConfiguration.InvitePolicy,
                 SongSelectionMode = (Messaging.Enums.SongSelectionMode)server.GameplayServerConfiguration.SongSelectionMode
             };
-            GetServerResponse serverResponse = new(server.EndPoint.Address, server.ServerName, server.ServerId, server.Secret, server.Code, server.IsPublic, server.IsInGameplay, mask, config, server.PlayerHashes.ToArray(), server.GameplayLevelId);
+            GetServerResponse serverResponse = new(server.EndPoint.Address, server.ServerName, server.InstanceId, server.Secret, server.Code, server.IsPublic, server.IsInGameplay, mask, config, server.PlayerHashes.ToArray(), server.GameplayLevelId);
             return new JsonResult(serverResponse);
-        }
-
+        }*/
+/*
         /// <summary>
         /// Returns a server from a server secret
         /// </summary>
@@ -156,8 +156,9 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
                 SongSelectionMode = (Messaging.Enums.SongSelectionMode)server.GameplayServerConfiguration.SongSelectionMode
             };
             GetServerResponse serverResponse = new(server.EndPoint.Address, server.ServerName, server.ServerId, server.Secret, server.Code, server.IsPublic, server.IsInGameplay, mask, config, server.PlayerHashes.ToArray(), server.GameplayLevelId);
+            
             return new JsonResult(serverResponse);
-        }
+        }*/
 
         /// <summary>
         /// Returns a list of public server codes
@@ -202,7 +203,7 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
         {
 
 
-            if (DateTime.UtcNow.Ticks - _TimeOfLastPublicServers > _Configuration.TicksBetweenUpdatingCachedApiResponses)
+/*            if (DateTime.UtcNow.Ticks - _TimeOfLastPublicServers > _Configuration.TicksBetweenUpdatingCachedApiResponses)
             {
                 _TimeOfLastPublicServers = DateTime.UtcNow.Ticks;
                 Server[] server = await _ServerRepository.GetPublicServerList();
@@ -227,7 +228,7 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
                     serverResponses[i] = new(server[i].EndPoint.Address, server[i].ServerName, server[i].ServerId, server[i].Secret, server[i].Code, server[i].IsPublic, server[i].IsInGameplay, mask, config, server[i].PlayerHashes.ToArray(), server[i].GameplayLevelId);
                 }
                 _LastPublicServers = serverResponses;
-            }
+            }*/
             return _LastPublicServers;
         }
         private GetServerResponse[] _LastPublicServers = Array.Empty<GetServerResponse>();
@@ -247,9 +248,9 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
                 GetNodeResponse[] nodesResponse = new GetNodeResponse[nodes.Length];
                 for (int i = 0; i < nodes.Length; i++)
                 {
-                    nodesResponse[i] = new GetNodeResponse(nodes[i].Endpoint, nodes[i].Online, nodes[i].LastStart, nodes[i].LastOnline, nodes[i].NodeVersion.ToString());
-                    nodesResponse[i].Players = await _ServerRepository.GetPlayerCountOnEndpoint(nodes[i].Endpoint);
-                    nodesResponse[i].Servers = await _ServerRepository.GetServerCountOnEndpoint(nodes[i].Endpoint);
+/*                    nodesResponse[i] = new GetNodeResponse(nodes[i].endpoint, nodes[i].Online, nodes[i].LastStart, nodes[i].LastOnline, nodes[i].NodeVersion.ToString());
+                    nodesResponse[i].Players = await _ServerRepository.GetPlayerCountOnEndpoint(nodes[i].endpoint);
+                    nodesResponse[i].Servers = await _ServerRepository.GetServerCountOnEndpoint(nodes[i].endpoint);*/
                 }
                 _LastStatusOfNodes = nodesResponse;
             }

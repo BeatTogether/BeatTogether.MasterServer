@@ -9,6 +9,6 @@ namespace BeatTogether.MasterServer
             CreateHostBuilder(args).Build().Run();
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args).UseMasterServerKernel();
+            Host.CreateDefaultBuilder(args).UseMasterServerNodeController().UseMasterServerApi();
     }
 }

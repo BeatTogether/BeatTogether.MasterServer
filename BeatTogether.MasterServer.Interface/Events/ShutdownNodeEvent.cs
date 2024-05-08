@@ -1,4 +1,5 @@
 ﻿namespace BeatTogether.MasterServer.Interface.Events
 {
-    public record ShutdownNodeEvent(string Endpoint);
+    public record ShutdownNodeEvent(
+        string Endpoint);
 }

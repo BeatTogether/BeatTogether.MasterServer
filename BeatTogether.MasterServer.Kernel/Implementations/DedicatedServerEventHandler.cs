@@ -20,20 +20,17 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         private readonly IAutobus _autobus;
         private readonly IServerRepository _serverRepository;
         private readonly ILogger _logger = Log.ForContext<DedicatedServerEventHandler>();
-        private readonly IMasterServerSessionService _masterServerSessionService;
         private readonly INodeRepository _nodeRepository;
         private readonly MasterServerConfiguration _configuration;
 
         public DedicatedServerEventHandler(
             IAutobus autobus,
             IServerRepository serverRepository,
-            IMasterServerSessionService masterServerSessionService,
             INodeRepository nodeRepository,
             MasterServerConfiguration configuration)
         {
             _autobus = autobus;
             _serverRepository = serverRepository;
-            _masterServerSessionService = masterServerSessionService;
             _nodeRepository = nodeRepository;
             _configuration = configuration;
         }
@@ -42,29 +39,29 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            _autobus.Subscribe<MatchmakingServerStoppedEvent>(HandleServerStop);
-            _autobus.Subscribe<PlayerLeaveServerEvent>(HandlePlayerDisconnect);
-            _autobus.Subscribe<PlayerJoinEvent>(HandlePlayerJoin);
-            _autobus.Subscribe<NodeStartedEvent>(NodeStartedHandler);
-            _autobus.Subscribe<NodeReceivedPlayerEncryptionEvent>(NodeReceivedPlayerEncryptionHandler);
-            _autobus.Subscribe<NodeOnlineEvent>(NodeOnlineHandler);
-            _autobus.Subscribe<ServerInGameplayEvent>(HandleServerInGameplay);
-            _autobus.Subscribe<UpdateInstanceConfigEvent>(InstanceConfigurationUpdateHandler);
-            _autobus.Subscribe<UpdatePlayersEvent>(HandlePlayersChangedEvent);
+            /*            _autobus.Subscribe<MatchmakingServerStoppedEvent>(HandleServerStop);
+                        _autobus.Subscribe<PlayerLeaveServerEvent>(HandlePlayerDisconnect);
+                        _autobus.Subscribe<PlayerJoinEvent>(HandlePlayerJoin);
+                        _autobus.Subscribe<NodeStartedEvent>(NodeStartedHandler);
+                        _autobus.Subscribe<NodeReceivedPlayerEncryptionEvent>(NodeReceivedPlayerEncryptionHandler);
+                        _autobus.Subscribe<NodeOnlineEvent>(NodeOnlineHandler);
+                        _autobus.Subscribe<ServerInGameplayEvent>(HandleServerInGameplay);
+                        _autobus.Subscribe<UpdateInstanceConfigEvent>(InstanceConfigurationUpdateHandler);
+                        _autobus.Subscribe<UpdatePlayersEvent>(HandlePlayersChangedEvent);*/
             return Task.CompletedTask;
         }
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
-            _autobus.Unsubscribe<MatchmakingServerStoppedEvent>(HandleServerStop);
-            _autobus.Unsubscribe<PlayerLeaveServerEvent>(HandlePlayerDisconnect);
-            _autobus.Unsubscribe<PlayerJoinEvent>(HandlePlayerJoin);
-            _autobus.Unsubscribe<NodeStartedEvent>(NodeStartedHandler);
-            _autobus.Unsubscribe<NodeReceivedPlayerEncryptionEvent>(NodeReceivedPlayerEncryptionHandler);
-            _autobus.Unsubscribe<NodeOnlineEvent>(NodeOnlineHandler);
-            _autobus.Unsubscribe<ServerInGameplayEvent>(HandleServerInGameplay);
-            _autobus.Unsubscribe<UpdateInstanceConfigEvent>(InstanceConfigurationUpdateHandler);
-            _autobus.Unsubscribe<UpdatePlayersEvent>(HandlePlayersChangedEvent);
+            /*            _autobus.Unsubscribe<MatchmakingServerStoppedEvent>(HandleServerStop);
+                        _autobus.Unsubscribe<PlayerLeaveServerEvent>(HandlePlayerDisconnect);
+                        _autobus.Unsubscribe<PlayerJoinEvent>(HandlePlayerJoin);
+                        _autobus.Unsubscribe<NodeStartedEvent>(NodeStartedHandler);
+                        _autobus.Unsubscribe<NodeReceivedPlayerEncryptionEvent>(NodeReceivedPlayerEncryptionHandler);
+                        _autobus.Unsubscribe<NodeOnlineEvent>(NodeOnlineHandler);
+                        _autobus.Unsubscribe<ServerInGameplayEvent>(HandleServerInGameplay);
+                        _autobus.Unsubscribe<UpdateInstanceConfigEvent>(InstanceConfigurationUpdateHandler);
+                        _autobus.Unsubscribe<UpdatePlayersEvent>(HandlePlayersChangedEvent);*/
             return Task.CompletedTask;
         }
 
@@ -82,7 +79,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
             return;
         }
 
-        private Task HandlePlayerDisconnect(PlayerLeaveServerEvent integrationEvent)
+/*        private Task HandlePlayerDisconnect(PlayerLeaveServerEvent integrationEvent)
         {
             _ = _serverRepository.RemovePlayer(integrationEvent.Secret, integrationEvent.UserId);
             return Task.CompletedTask;
@@ -96,11 +93,11 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
         {
             _ = _serverRepository.UpdateCurrentPlayers(integrationEvent.Secret, integrationEvent.Users);
             return Task.CompletedTask;
-        }
+        }*/
 
         private Task HandleServerInGameplay(ServerInGameplayEvent serverInGameplayEvent)
         {
-            _ = _serverRepository.UpdateServerGameplayState(serverInGameplayEvent.Secret, serverInGameplayEvent.InGame, serverInGameplayEvent.LevelID);
+           // _ = _serverRepository.UpdateServerGameplayState(serverInGameplayEvent.Secret, serverInGameplayEvent.InGame, serverInGameplayEvent.LevelID);
             return Task.CompletedTask;
         }
 
@@ -133,7 +130,7 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
  
         private Task InstanceConfigurationUpdateHandler(UpdateInstanceConfigEvent updateInstanceConfigEvent)
         {
-            GameplayServerConfiguration gameplayServerConfiguration = new
+/*            GameplayServerConfiguration gameplayServerConfiguration = new
                 (
                 updateInstanceConfigEvent.Configuration.MaxPlayerCount,
                 (Domain.Enums.DiscoveryPolicy)updateInstanceConfigEvent.Configuration.DiscoveryPolicy,
@@ -142,17 +139,17 @@ namespace BeatTogether.MasterServer.Kernel.Implementations
                 (Domain.Enums.SongSelectionMode)updateInstanceConfigEvent.Configuration.SongSelectionMode,
                 (Domain.Enums.GameplayServerControlSettings)updateInstanceConfigEvent.Configuration.GameplayServerControlSettings
                 );
-            _serverRepository.UpdateServerConfiguration(updateInstanceConfigEvent.Secret, gameplayServerConfiguration, updateInstanceConfigEvent.ServerName);
+            _serverRepository.UpdateServerConfiguration(updateInstanceConfigEvent.Secret, gameplayServerConfiguration, updateInstanceConfigEvent.ServerName);*/
             return Task.CompletedTask;
         }
 
 
 
-        private Task NodeReceivedPlayerEncryptionHandler(NodeReceivedPlayerEncryptionEvent RecievedEvent)
+/*        private Task NodeReceivedPlayerEncryptionHandler(NodeReceivedPlayerEncryptionEvent RecievedEvent)
         {
             _nodeRepository.OnNodeRecievedEncryptionParameters(IPEndPoint.Parse(RecievedEvent.EndPoint), IPEndPoint.Parse(RecievedEvent.PlayerEndPoint));
             return Task.CompletedTask;
-        }
+        }*/
         #endregion
     }
 }
