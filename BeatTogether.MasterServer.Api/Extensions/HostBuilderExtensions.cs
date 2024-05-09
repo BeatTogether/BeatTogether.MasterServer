@@ -1,5 +1,4 @@
 ﻿using System.Net.Http;
-using System.Reflection;
 using System.Security.Cryptography;
 using BeatTogether.MasterServer.Api.Abstractions;
 using BeatTogether.MasterServer.Api.Abstractions.Providers;
@@ -20,20 +19,17 @@ namespace BeatTogether.Extensions
             hostBuilder
                 .ConfigureAppConfiguration()
                 .UseSerilog()
-                .ConfigureServices((hostBuilderContext, services) =>
-                    services
-                        .AddConfiguration<ApiServerConfiguration>("ApiServer")
-                        .AddSingleton(RandomNumberGenerator.Create())
-                        .AddSingleton<IServerCodeProvider, ServerCodeProvider>()
-                        .AddSingleton<ISecretProvider, SecretProvider>()
-                        .AddSingleton<IUserAuthenticator, UserAuthenticator>()
-                        .AddSingleton<IMasterServerSessionService, MasterServerSessionService>()
-                        .AddHostedService<MasterServerSessionTickService>()
-                )
                 .ConfigureWebHostDefaults(webHostBuilder =>
                     webHostBuilder
                         .ConfigureServices((hostBuilderContext, services) =>
                             services
+                                .AddConfiguration<ApiServerConfiguration>("ApiServer")
+                                .AddSingleton(RandomNumberGenerator.Create())
+                                .AddSingleton<IServerCodeProvider, ServerCodeProvider>()
+                                .AddSingleton<ISecretProvider, SecretProvider>()
+                                .AddSingleton<IUserAuthenticator, UserAuthenticator>()
+                                .AddSingleton<IMasterServerSessionService, MasterServerSessionService>()
+                                .AddHostedService<MasterServerSessionTickService>()
                                 .AddSingleton<HttpClient>()
                                 .AddOptions()
                                 .AddControllers()

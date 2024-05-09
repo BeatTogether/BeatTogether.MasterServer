@@ -80,8 +80,11 @@ namespace BeatTogether.MasterServer.NodeController
         {
             var instance = await _serverRepository.GetServer(InstanceSecret);
             if (instance == null)
+            {
+                _logger.Warning("Tried sending player data to an instance that is not in the server repository");
                 return false;
-            _logger.Information("Sending player data to node");
+            }
+            _logger.Information("Sending player data to node: " + instance.InstanceEndPoint);
             return await _nodeRepository.SendAndAwaitPlayerSessionDataRecievedFromNode(instance.InstanceEndPoint, InstanceSecret, playerSessionData, EncryptionRecieveTimeout);
         }
 
