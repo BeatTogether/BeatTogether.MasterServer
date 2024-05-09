@@ -13,7 +13,7 @@ using System.Text;
 using BeatTogether.MasterServer.Domain.Models;
 using BeatTogether.MasterServer.Api.Abstractions.Providers;
 
-namespace BeatTogether.MasterServer.Kernel.HttpControllers
+namespace BeatTogether.MasterServer.Api.HttpControllers
 {
     [ApiController]
     public class GetMultiplayerInstanceController : Controller
