@@ -124,7 +124,10 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
                     (Core.Enums.GameplayModifiersMask)request.BeatmapLevelSelectionMask.GameplayModifiersMask,
                     request.BeatmapLevelSelectionMask.SongPackMasks);
             }
+
             //If the server is still null, then make new server
+
+            //Check if trying join a server via a code still
             if (server == null && !isQuickplay)
             {
                 if (!string.IsNullOrEmpty(request.PrivateGameCode) || string.IsNullOrEmpty(request.PrivateGameSecret)) //if code was incorrect then server does not exist OR if secret is empty then a server cannot be made/joined
@@ -133,7 +136,6 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
                     response.PollIntervalMs = -1;
                     return new JsonResult(response);
                 }
-
             }
 
             if (server == null)
@@ -141,7 +143,7 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
                 string secret = request.PrivateGameSecret;
                 string managerId = FixedServerUserId;
                 if (!isQuickplay)
-                    managerId = session.HashedUserId;//sets the manager to the player who is requesting
+                    managerId = FixedServerUserId;// session.HashedUserId;//sets the manager to the player who is requesting
                 else
                     secret = _secretProvider.GetSecret();
 
@@ -217,7 +219,7 @@ namespace BeatTogether.MasterServer.Kernel.HttpControllers
                                 $"platform={session.PlayerPlatform}, playerSessionId={session.PlayerSessionId}, targetNode={server.InstanceEndPoint}");
 
             response.ErrorCode = MultiplayerPlacementErrorCode.Success;
-            response.PlayerSessionInfo.GameSessionId = server.ManagerId;
+            response.PlayerSessionInfo.GameSessionId = FixedServerUserId;
             response.PlayerSessionInfo.DnsName = server.InstanceEndPoint.Address.ToString();
             response.PlayerSessionInfo.Port = server.InstanceEndPoint.Port;
 
