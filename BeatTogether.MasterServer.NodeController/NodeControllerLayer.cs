@@ -49,17 +49,7 @@ namespace BeatTogether.MasterServer.NodeController
             if (response.Success)
             {
                 serverInstance.InstanceEndPoint = IPEndPoint.Parse(response.RemoteEndPoint);
-                var result = await _serverRepository.AddServer((Domain.Models.Server)serverInstance);
-                var Fetched = await _serverRepository.GetServer(serverInstance.Secret);
-                if(Fetched != null)
-                {
-                    _logger.Information("Found server: " + Fetched.Secret.ToString());
-                }
-                else
-                {
-                    _logger.Warning("Cannot get server from repo even tho it was just added");
-                }
-                return result;
+                return await _serverRepository.AddServer((Domain.Models.Server)serverInstance);
             }
             _logger.Warning("Dedi replied no");
             return false;
