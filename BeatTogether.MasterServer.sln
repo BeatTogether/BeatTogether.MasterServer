@@ -9,15 +9,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BeatTogether.MasterServer.D
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BeatTogether.MasterServer.Messaging", "BeatTogether.MasterServer.Messaging\BeatTogether.MasterServer.Messaging.csproj", "{7144B9EE-45BD-4934-BCB3-9CCCAE101D1C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BeatTogether.MasterServer.Kernal", "BeatTogether.MasterServer.Kernel\BeatTogether.MasterServer.Kernal.csproj", "{95889E1B-3DE3-4341-8C10-AFAE0F481C9B}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BeatTogether.MasterServer.Domain", "BeatTogether.MasterServer.Domain\BeatTogether.MasterServer.Domain.csproj", "{6BCD1B23-4EAE-478A-AFC8-53DE393E1413}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BeatTogether.MasterServer.Interface", "BeatTogether.MasterServer.Interface\BeatTogether.MasterServer.Interface.csproj", "{91037874-E18D-45EA-8429-77789D135621}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BeatTogether.MasterServer.Api", "BeatTogether.MasterServer.Api\BeatTogether.MasterServer.Api.csproj", "{7BD10FB4-C331-4DA3-A1AE-BB8E4A86FC4E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BeatTogether.MasterServer.NodeController", "BeatTogether.MasterServer.NodeController\BeatTogether.MasterServer.NodeController.csproj", "{34250167-FC1E-41B4-A78B-1DAE56D41978}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BeatTogether.MasterServer.NodeController", "BeatTogether.MasterServer.NodeController\BeatTogether.MasterServer.NodeController.csproj", "{34250167-FC1E-41B4-A78B-1DAE56D41978}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -37,10 +35,6 @@ Global
 		{7144B9EE-45BD-4934-BCB3-9CCCAE101D1C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7144B9EE-45BD-4934-BCB3-9CCCAE101D1C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7144B9EE-45BD-4934-BCB3-9CCCAE101D1C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{95889E1B-3DE3-4341-8C10-AFAE0F481C9B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{95889E1B-3DE3-4341-8C10-AFAE0F481C9B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{95889E1B-3DE3-4341-8C10-AFAE0F481C9B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{95889E1B-3DE3-4341-8C10-AFAE0F481C9B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{6BCD1B23-4EAE-478A-AFC8-53DE393E1413}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{6BCD1B23-4EAE-478A-AFC8-53DE393E1413}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6BCD1B23-4EAE-478A-AFC8-53DE393E1413}.Release|Any CPU.ActiveCfg = Release|Any CPU
