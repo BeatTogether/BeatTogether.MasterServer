@@ -51,7 +51,7 @@ namespace BeatTogether.MasterServer.NodeController
                 serverInstance.InstanceEndPoint = IPEndPoint.Parse(response.RemoteEndPoint);
                 return await _serverRepository.AddServer((Domain.Models.Server)serverInstance);
             }
-            _logger.Information("Dedi replied no");
+            _logger.Warning("Dedi replied no");
             return false;
         }
 
