@@ -5,6 +5,7 @@ on:
       - master
       - dev
       - dev-1.35.0
+      - dev-1.35.0-ReStructured
 
 jobs:
   nuget-1:
