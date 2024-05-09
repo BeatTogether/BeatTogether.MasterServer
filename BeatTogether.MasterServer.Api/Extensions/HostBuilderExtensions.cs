@@ -1,4 +1,5 @@
-﻿using System.Net.Http;
+﻿using System;
+using System.Net.Http;
 using System.Security.Cryptography;
 using BeatTogether.MasterServer.Api.Abstractions;
 using BeatTogether.MasterServer.Api.Abstractions.Providers;

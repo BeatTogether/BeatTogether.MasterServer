@@ -16,7 +16,7 @@ namespace BeatTogether.MasterServer
             CreateHostBuilder(args).Build().Run();
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args).ConfigureAPIServices().UseMasterServerApi().UseMasterServerNodeController();
+            Host.CreateDefaultBuilder(args).ConfigureAPIServices().UseMasterServerNodeController().UseMasterServerApi();
 
         public static IHostBuilder ConfigureAPIServices(this IHostBuilder hostBuilder) =>
             hostBuilder.ConfigureServices( services => services.AddControllers()

@@ -143,7 +143,7 @@ namespace BeatTogether.MasterServer.Api.HttpControllers
                 string secret = request.PrivateGameSecret;
                 string managerId = FixedServerUserId;
                 if (!isQuickplay)
-                    managerId = FixedServerUserId;// session.HashedUserId;//sets the manager to the player who is requesting
+                    managerId = session.HashedUserId;//sets the manager to the player who is requesting
                 else
                     secret = _secretProvider.GetSecret();
 

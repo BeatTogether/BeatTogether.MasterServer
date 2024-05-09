@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using BeatTogether.MasterServer.Data.Abstractions.Repositories;
 using BeatTogether.Core.Enums;
-using BeatTogether.Core.Models;
 using BeatTogether.MasterServer.Domain.Models;
 
 namespace BeatTogether.MasterServer.Data.Implementations.Repositories
