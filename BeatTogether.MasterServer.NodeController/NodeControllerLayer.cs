@@ -44,14 +44,13 @@ namespace BeatTogether.MasterServer.NodeController
 
         public async Task<bool> CreateInstance(IServerInstance serverInstance)
         {
-            _logger.Information("Sending message to create matchmaking server");
             var response = await _matchmakingService.CreateMatchmakingServer(new CreateMatchmakingServerRequest(new Server(serverInstance)));
             if (response.Success)
             {
                 serverInstance.InstanceEndPoint = IPEndPoint.Parse(response.RemoteEndPoint);
                 return await _serverRepository.AddServer((Domain.Models.Server)serverInstance);
             }
-            _logger.Warning("Dedi replied no");
+            _logger.Warning("Dedi failed to create server");
             return false;
         }
 
@@ -84,7 +83,6 @@ namespace BeatTogether.MasterServer.NodeController
                 _logger.Warning("Tried sending player data to an instance that is not in the server repository");
                 return false;
             }
-            _logger.Information("Sending player data to node: " + instance.InstanceEndPoint);
             return await _nodeRepository.SendAndAwaitPlayerSessionDataRecievedFromNode(instance.InstanceEndPoint, InstanceSecret, playerSessionData, EncryptionRecieveTimeout);
         }
 

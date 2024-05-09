@@ -113,32 +113,25 @@ namespace BeatTogether.MasterServer.NodeController.Implementations
 
         public async Task<bool> SendAndAwaitPlayerSessionDataRecievedFromNode(IPEndPoint NodeEndPoint, string ServerInstanceSecret, IPlayer playerSessionData, int TimeOut)
         {
-            _logger.Information("StartingSend player session info");
             if (!EndpointExists(NodeEndPoint))
                 return false;
-            _logger.Information("Node exists");
             if (!AwaitNodeResponses.TryGetValue(NodeEndPoint.Address, out var NodeResponses))//This happens if the node has gone offline
                 return false;
-            _logger.Information("Node is still online/there is a node response in the dict for it");
             var task = new TaskCompletionSource<bool>();
             var EndpointsTimeout = new CancellationTokenSource();
             EndpointsTimeout.Token.Register(() => {
-                _logger.Information("Timed out, setting recieved to false");
                 task.TrySetResult(false);
             });
 
             if (!NodeResponses.TryAdd(playerSessionData.PlayerSessionId, task))
             {
                 NodeResponses[playerSessionData.PlayerSessionId].SetResult(false);
-                _logger.Information("Returning false as the session ID cannot be added to the await task list");
                 return false;
             }
             _autobus.Publish(new PlayerSessionDataSendToDediEvent(NodeEndPoint.Address.ToString(), ServerInstanceSecret, new Core.ServerMessaging.Models.Player(playerSessionData)));
-            _logger.Information("Published message for dedi to respond to, and now awaiting up to 2 sec for a response");
             EndpointsTimeout.CancelAfter(TimeOut);
             bool PlayerAdded = await AwaitNodeResponses[NodeEndPoint.Address][playerSessionData.PlayerSessionId].Task;
             AwaitNodeResponses[NodeEndPoint.Address].TryRemove(playerSessionData.PlayerSessionId, out _);
-            _logger.Information("Removed player session from dict, and returning the value for their session data: " +  PlayerAdded);
             return PlayerAdded;
         }
 
