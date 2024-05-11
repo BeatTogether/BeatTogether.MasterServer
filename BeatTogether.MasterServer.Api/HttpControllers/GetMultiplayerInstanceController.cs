@@ -110,13 +110,13 @@ namespace BeatTogether.MasterServer.Api.HttpControllers
             if (!isQuickplay)
             {
                 if(!string.IsNullOrEmpty(request.PrivateGameCode))
-                    server = (Server)await _layer2.GetServerByCode(request.PrivateGameCode.Replace('8', 'B').Replace('D', '0'));
+                    server = await _layer2.GetServerByCode(request.PrivateGameCode.Replace('8', 'B').Replace('D', '0'));
                 if (server == null && !string.IsNullOrEmpty(request.PrivateGameSecret))
-                    server = (Server)await _layer2.GetServer(request.PrivateGameSecret);
+                    server = await _layer2.GetServer(request.PrivateGameSecret);
             }
             else
             {
-                server = (Server)await _layer2.GetAvailablePublicServer(
+                server = await _layer2.GetAvailablePublicServer(
                     (Core.Enums.InvitePolicy)request.GameplayServerConfiguration.InvitePolicy,
                     (Core.Enums.GameplayServerMode)request.GameplayServerConfiguration.GameplayServerMode,
                     (Core.Enums.SongSelectionMode)request.GameplayServerConfiguration.SongSelectionMode,
