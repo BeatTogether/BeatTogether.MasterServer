@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using BeatTogether.MasterServer.Api.Abstractions;
 using BeatTogether.MasterServer.Api.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
@@ -11,6 +12,7 @@ namespace BeatTogether.MasterServer.Api.Implimentations
     public class MasterServerSessionTickService : IHostedService
     {
         private readonly ApiServerConfiguration _configuration;
+        private readonly IConfiguration _rootConfig;
         private readonly IMasterServerSessionService _sessionService;
         private readonly ILogger _logger;
 
@@ -19,10 +21,12 @@ namespace BeatTogether.MasterServer.Api.Implimentations
 
         public MasterServerSessionTickService(
             ApiServerConfiguration configuration,
+            IConfiguration rootConfig,
             IMasterServerSessionService sessionService)
         {
             _configuration = configuration;
             _sessionService = sessionService;
+            _rootConfig = rootConfig;
             _logger = Log.ForContext<MasterServerSessionTickService>();
         }
 
@@ -30,7 +34,7 @@ namespace BeatTogether.MasterServer.Api.Implimentations
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            _logger.Information($"Starting api server, (EndPoint='{_configuration.EndPoint}').");
+            _logger.Information($"Starting api server. Url: {_rootConfig.GetValue<string>("Urls")}");
             if (_task != null)
                 await StopAsync(cancellationToken);
 

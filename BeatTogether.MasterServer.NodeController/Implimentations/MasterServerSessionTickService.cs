@@ -38,7 +38,8 @@ namespace BeatTogether.MasterServer.NodeController.Implementations.Sessions
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            _logger.Information($"Starting node repository, Version: {_configuration.MasterServerVersion} (EndPoint='{_configuration.EndPoint}').");
+            
+            _logger.Information($"Starting node repository, Version: {_configuration.MasterServerVersion}.");
             if (_task != null)
                 await StopAsync(cancellationToken);
 

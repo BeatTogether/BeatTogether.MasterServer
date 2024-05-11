@@ -24,7 +24,7 @@ namespace BeatTogether.Extensions
                     webHostBuilder
                         .ConfigureServices((hostBuilderContext, services) =>
                             services
-                                .AddConfiguration<ApiServerConfiguration>("ApiServer")
+                                .AddConfiguration<ApiServerConfiguration>("ServerConfiguration")
                                 .AddSingleton(RandomNumberGenerator.Create())
                                 .AddSingleton<IServerCodeProvider, ServerCodeProvider>()
                                 .AddSingleton<ISecretProvider, SecretProvider>()

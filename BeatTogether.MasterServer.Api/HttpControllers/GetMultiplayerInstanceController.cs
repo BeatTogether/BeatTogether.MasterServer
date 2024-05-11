@@ -42,6 +42,7 @@ namespace BeatTogether.MasterServer.Api.HttpControllers
             _serverCodeProvider = serverCodeProvider;
             _secretProvider = secretProvider;
             _userAuthenticator = userAuthenticator;
+
             
             _logger = Log.ForContext<GetMultiplayerInstanceController>();
         }

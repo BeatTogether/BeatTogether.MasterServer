@@ -23,7 +23,7 @@ namespace BeatTogether.Extensions
                 .ConfigureServices((hostBuilderContext, services) =>
                     services
                         .AddSingleton<MasterInterfaceService>()
-                        .AddConfiguration<NodeControllerConfiguration>("MasterServerNodeController")
+                        .AddConfiguration<NodeControllerConfiguration>("ServerConfiguration")
                         .AddSingleton(RandomNumberGenerator.Create())
                         .AddSingleton<INodeRepository, NodeRepository>()
                         .AddSingleton<ILayer2, NodeControllerLayer>()
