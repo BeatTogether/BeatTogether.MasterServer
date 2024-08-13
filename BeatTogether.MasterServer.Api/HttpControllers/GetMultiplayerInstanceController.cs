@@ -110,7 +110,7 @@ namespace BeatTogether.MasterServer.Api.HttpControllers
             if (!isQuickplay)
             {
                 if(!string.IsNullOrEmpty(request.PrivateGameCode))
-                    server = await _layer2.GetServerByCode(request.PrivateGameCode.Replace('8', 'B').Replace('D', '0'));
+                    server = await _layer2.GetServerByCode(GetFixedCode(request.PrivateGameCode));
                 if (server == null && !string.IsNullOrEmpty(request.PrivateGameSecret))
                     server = await _layer2.GetServer(request.PrivateGameSecret);
             }
@@ -258,7 +258,13 @@ namespace BeatTogether.MasterServer.Api.HttpControllers
         }
 
         #region Util
-        
+
+        public static string GetFixedCode(string code)
+        {
+			// Allowed chars ABCEFGHJKLMNPQRSTUVWXYZ01234579
+			return code.Replace('8', 'B').Replace('D', '0').Replace('O', '0').Replace('I', '1').Replace('6', 'G');
+        }
+
         private static byte[] GetSessionTokenFromRequest(GetMultiplayerInstanceRequest request)
         {
             byte[] sessionToken;
