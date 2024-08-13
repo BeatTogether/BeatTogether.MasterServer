@@ -44,10 +44,6 @@ namespace BeatTogether.MasterServer.Api.Implementations
                     oculusId = session.PlayerPlatform == Platform.Oculus || session.PlayerPlatform == Platform.OculusQuest ? session.PlatformUserId : null,
                     steamId = session.PlayerPlatform == Platform.Steam ? session.PlatformUserId : null
                 };
-
-                _logger.Verbose($"Proof {requestContent.proof}");
-
-
 				try
 				{
                     using var verifyResponse = await _httpClient.PostAsync(BeatSaverVerifyUserUrl,
