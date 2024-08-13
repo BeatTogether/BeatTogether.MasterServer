@@ -26,12 +26,13 @@ namespace BeatTogether.MasterServer.Messaging.Models
         }
         
         [JsonProperty("difficulties")]
-        public BeatmapDifficultyMask BeatmapDifficultyMask { get; set; }
-        
+        public BeatmapDifficultyMask BeatmapDifficultyMask { get; set; } = BeatmapDifficultyMask.All;
+
         [JsonProperty("modifiers")]
-        public GameplayModifiersMask GameplayModifiersMask { get; set; }
-        
+        public GameplayModifiersMask GameplayModifiersMask { get; set; } = GameplayModifiersMask.All;
+
         [JsonProperty("song_packs")]
-        public string SongPackMasks { get; set; }
+        public string SongPackMasks { get; set; } = "//////////////////////////////////////////8"; // This always has to be set otherwise the client only shows CFR-9 when something fails
+
     }
 }
