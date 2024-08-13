@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net.Http;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using BeatTogether.MasterServer.Api.Configuration;
@@ -39,13 +40,16 @@ namespace BeatTogether.MasterServer.Api.Implementations
 
                 var requestContent = new
                 {
-                    proof = BitConverter.ToString(session.SessionToken).Replace("-", ""),
-                    oculusId = session.PlayerPlatform == Platform.Oculus ? session.PlatformUserId : "",
-                    steamId = session.PlayerPlatform == Platform.Steam ? session.PlatformUserId : ""
+                    proof = session.PlayerPlatform == Platform.Steam ? BitConverter.ToString(session.SessionToken).Replace("-", "") : Encoding.UTF8.GetString(session.SessionToken),
+                    oculusId = session.PlayerPlatform == Platform.Oculus || session.PlayerPlatform == Platform.OculusQuest ? session.PlatformUserId : null,
+                    steamId = session.PlayerPlatform == Platform.Steam ? session.PlatformUserId : null
                 };
 
-                try
-                {
+                _logger.Verbose($"Proof {requestContent.proof}");
+
+
+				try
+				{
                     using var verifyResponse = await _httpClient.PostAsync(BeatSaverVerifyUserUrl,
                         new StringContent(JsonSerializer.Serialize(requestContent), null, "application/json"));
 
@@ -83,19 +87,19 @@ namespace BeatTogether.MasterServer.Api.Implementations
                 return false;
             }
 
-            _logger.Information("Authentication success (platform={Platform}, userId={UserId})",
-                session.PlayerPlatform, session.PlatformUserId);
+            _logger.Information("Authentication success (reason={Reason} platform={Platform}, userId={UserId})", 
+	            authLogReason, session.PlayerPlatform, session.PlatformUserId);
             
             return true;
         }
 
         private bool GetPlatformRequiresAuth(Platform platform)
         {
-            // TODO figure out why oculus does not authenticate correctly at some point
-
             return platform switch
             {
                 Platform.Steam => true,
+                Platform.OculusQuest => true,
+                Platform.Oculus => true,
                 _ => false,
             };
         }
