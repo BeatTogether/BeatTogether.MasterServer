@@ -3,7 +3,8 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using BeatTogether.MasterServer.Data.Abstractions.Repositories;
-using BeatTogether.MasterServer.Domain.Enums;
+using BeatTogether.Core.Enums;
+using BeatTogether.Core.Models;
 using BeatTogether.MasterServer.Domain.Models;
 using StackExchange.Redis;
 
@@ -96,8 +97,7 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
             GameplayServerControlSettings serverControlSettings,
             BeatmapDifficultyMask difficultyMask,
             GameplayModifiersMask modifiersMask,
-            ulong songPackTop,
-            ulong songPackBottom)
+            string SongPackMasks)
         {
             var database = _connectionMultiplexer.GetDatabase();
             var redisValues = await database.SortedSetRangeByScoreAsync(RedisKeys.PublicServersByPlayerCount, take: 1);
@@ -117,21 +117,21 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
                     serverKey = RedisKeys.Servers(server.Secret),
                     serversByCodeKey = RedisKeys.ServersByCode,
                     publicServersByPlayerCountKey = RedisKeys.PublicServersByPlayerCount,
-                    ServerId = (RedisValue)server.ServerId,
+                    //ServerId = (RedisValue)server.ServerId,
                     ServerName = (RedisValue)server.ServerName,
-                    remoteEndPoint = (RedisValue)server.ServerEndPoint.ToString(),
+                    remoteEndPoint = (RedisValue)server.InstanceEndPoint.ToString(),
+                    // TODO ENetEndPoint (if that's still a thing by the time we use Redis...)
                     secret = (RedisValue)server.Secret,
                     code = (RedisValue)server.Code,
-                    isPublic = (RedisValue)server.IsPublic,
+                    //isPublic = (RedisValue)server.IsPublic,
                     discoveryPolicy = (RedisValue)(int)server.GameplayServerConfiguration.DiscoveryPolicy,
                     invitePolicy = (RedisValue)(int)server.GameplayServerConfiguration.InvitePolicy,
                     beatmapDifficultyMask = (RedisValue)(int)server.BeatmapDifficultyMask,
                     gameplayModifiersMask = (RedisValue)(int)server.GameplayModifiersMask,
-                    songPackBloomFilterTop = (RedisValue)server.SongPackBloomFilterTop,
-                    songPackBloomFilterBottom = (RedisValue)server.SongPackBloomFilterBottom,
+                    SongPackMasks = (RedisValue)server.SongPackMasks,
                     currentPlayerCount = (RedisValue)server.CurrentPlayerCount,
-                    random = (RedisValue)server.Random,
-                    publicKey = (RedisValue)server.PublicKey
+                    //random = (RedisValue)server.Random,
+                    //publicKey = (RedisValue)server.PublicKey
                 },
                 flags: CommandFlags.DemandMaster
             );
@@ -166,8 +166,8 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
             var server = await GetServer(secret);
             if (server == null)
                 return false;
-            if (server.IsPublic)
-                database.SortedSetIncrement(RedisKeys.PublicServersByPlayerCount, secret, 1.0);
+            //if (server.IsPublic)
+            //    database.SortedSetIncrement(RedisKeys.PublicServersByPlayerCount, secret, 1.0);
             return true;
         }
         public async Task<bool> DecrementCurrentPlayerCount(string secret)
@@ -176,8 +176,8 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
             var server = await GetServer(secret);
             if (server == null)
                 return false;
-            if (server.IsPublic)
-                database.SortedSetDecrement(RedisKeys.PublicServersByPlayerCount, secret, 1.0);
+            //if (server.IsPublic)
+            //    database.SortedSetDecrement(RedisKeys.PublicServersByPlayerCount, secret, 1.0);
             return true;
         }
 
@@ -258,6 +258,41 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
         }
 
         public Task<int> GetPlayerCountOnEndpoint(IPAddress EndPoint)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public Task<long> TotalServersMade()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public Task<bool> UpdateServerConfiguration(string secret, GameplayServerConfiguration gameplayServerConfiguration, string serverName)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public Task<bool> UpdateCurrentPlayers(string secret, string[] Players)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public Task<bool> AddPlayer(string secret, string UserHash)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public Task<bool> RemovePlayer(string secret, string UserHash)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public Task<bool> UpdateServerGameplayState(string secret, bool InGameplay, string LevelId)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public Task<bool> UpdateServer(string secret, Server server)
         {
             throw new System.NotImplementedException();
         }

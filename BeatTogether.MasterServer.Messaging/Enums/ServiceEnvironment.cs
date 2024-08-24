@@ -1,4 +1,6 @@
-﻿namespace BeatTogether.MasterServer.HttpApi.Models.Enums
+﻿using System;
+
+namespace BeatTogether.MasterServer.HttpApi.Models.Enums
 {
     public enum ServiceEnvironment
     {
@@ -6,8 +8,13 @@
         ReleaseCandidate,
         InternalPlayTest,
         QATesting,
+        [Obsolete("Use DevelopmentA or DevelopmentB")]
         Development,
         ProductionA,
-        ProductionB
+        ProductionB,
+        DevelopmentA,
+        DevelopmentB,
+        ProductionC,
+        ProductionQuest1
     }
 }

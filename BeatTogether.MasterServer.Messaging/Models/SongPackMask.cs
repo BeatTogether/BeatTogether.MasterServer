@@ -1,55 +1,57 @@
 ﻿using System;
-using BeatTogether.Core.Messaging.Abstractions;
+using System.Collections.Generic;
+using BeatTogether.MasterServer.Messaging.Extensions;
 using BeatTogether.MasterServer.Messaging.Models.JsonConverters;
-using Krypton.Buffers;
 using Newtonsoft.Json;
 
 namespace BeatTogether.MasterServer.Messaging.Models
 {
     [JsonConverter(typeof(SongPackMaskConverter))]
-    public sealed class SongPackMask : IMessage
+    public sealed class SongPackMask
     {
         private const string StringPrefix = "[SongPackMask ";
         private const string StringSuffix = "]";
 
-        private BitMask128 _bitMask;
+        private BitMask256 _bitMask;
 
-        public ulong Top => _bitMask.Top;
-        public ulong Bottom => _bitMask.Bottom;
+        public ulong D0 => _bitMask.D0;
+        public ulong D1 => _bitMask.D1;
+        public ulong D2 => _bitMask.D2;
+        public ulong D3 => _bitMask.D3;
 
-        public SongPackMask(BitMask128 bitMask = null)
+        public SongPackMask(string packId)
         {
-            _bitMask = bitMask ?? BitMask128.MinValue;
+            _bitMask = packId.ToBloomFilter<BitMask256>(2, 13);
         }
 
-        public SongPackMask(ulong top, ulong bottom)
+        public SongPackMask(IEnumerable<string> packs)
         {
-            _bitMask = new BitMask128(top, bottom);
+            _bitMask = packs.ToBloomFilter<BitMask256>(2, 13);
         }
 
-        public void WriteTo(ref SpanBufferWriter bufferWriter)
+        public SongPackMask(BitMask256 bitMask = null)
         {
-            _bitMask.WriteTo(ref bufferWriter);
+            _bitMask = bitMask ?? BitMask256.MinValue;
         }
 
-        public void ReadFrom(ref SpanBufferReader bufferReader)
+        public SongPackMask(ulong d0, ulong d1, ulong d2, ulong d3)
         {
-            _bitMask.ReadFrom(ref bufferReader);
+            _bitMask = new BitMask256(d0, d1, d2, d3);
         }
 
         #region String serialize
 
         public static bool TryParse(string str, out SongPackMask result)
         {
-            BitMask128 bloomFilter;
+            BitMask256 bloomFilter;
 
-            if (BitMask128.TryParse(str, out bloomFilter))
+            if (BitMask256.TryParse(str, out bloomFilter))
             {
                 result = new SongPackMask(bloomFilter);
                 return true;
             }
 
-            if (str.StartsWith(StringPrefix) && str.EndsWith(StringSuffix) && BitMask128.TryParse(str,
+            if (str.StartsWith(StringPrefix) && str.EndsWith(StringSuffix) && BitMask256.TryParse(str,
                     StringPrefix.Length, str.Length - StringPrefix.Length - StringSuffix.Length, out bloomFilter))
             {
                 result = new SongPackMask(bloomFilter);

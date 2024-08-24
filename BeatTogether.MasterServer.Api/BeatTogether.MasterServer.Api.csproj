@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <LangVersion>9</LangVersion>
+    <OutputType>Library</OutputType>
+    <PackageIcon>icon.png</PackageIcon>
+    <Authors>cubic</Authors>
+    <Company>BeatTogether</Company>
+    <RepositoryUrl>https://github.com/beattogether/BeatTogether.MasterServer</RepositoryUrl>
+    <Version>1.0.0</Version>
+    <PackageId>BeatTogether.MasterServer.Api</PackageId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="../icon.png" PackagePath="" Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BeatTogether.Core" Version="1.0.3" />
+    <PackageReference Include="BeatTogether.Extensions.Serilog" Version="2.1.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="6.0.29" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BeatTogether.MasterServer.Domain\BeatTogether.MasterServer.Domain.csproj" />
+    <ProjectReference Include="..\BeatTogether.MasterServer.Messaging\BeatTogether.MasterServer.Messaging.csproj" />
+  </ItemGroup>
+
+</Project>

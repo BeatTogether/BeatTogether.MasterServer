@@ -33,7 +33,7 @@ namespace BeatTogether.MasterServer.Messaging.Models.HttpApi
             PlayerSessionInfo.PrivateGameCode = request.PrivateGameCode;
             PlayerSessionInfo.PrivateGameSecret = request.PrivateGameSecret;
             TicketId = request.TicketId;
-            PlacementId = request.PlacementId;
+            PlacementId = request.PlacementId ?? "";
         }
 
         public void AddSessionContext(string playerSessionId)

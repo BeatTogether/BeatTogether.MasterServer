@@ -1,6 +1,6 @@
 ﻿using System.Net;
 using System.Threading.Tasks;
-using BeatTogether.MasterServer.Domain.Enums;
+using BeatTogether.Core.Enums;
 using BeatTogether.MasterServer.Domain.Models;
 
 namespace BeatTogether.MasterServer.Data.Abstractions.Repositories
@@ -16,9 +16,8 @@ namespace BeatTogether.MasterServer.Data.Abstractions.Repositories
             GameplayServerControlSettings serverControlSettings,
             BeatmapDifficultyMask difficultyMask,
             GameplayModifiersMask modifiersMask,
-            ulong songPackTop,
-            ulong songPackBottom);
-
+            string SongPackMasks);
+        Task<bool> UpdateServer(string secret, Server server);
         Task<string[]> GetPublicServerSecrets();
         Task<string[]> GetPublicServerCodes();
         Task<Server[]> GetPublicServerList();
@@ -29,16 +28,12 @@ namespace BeatTogether.MasterServer.Data.Abstractions.Repositories
         Task<bool> AddServer(Server server);
         Task<bool> RemoveServer(string secret);
         Task<bool> RemoveServersWithEndpoint(IPAddress EndPoint);
-
         Task<int> GetServerCountOnEndpoint(IPAddress EndPoint);
         Task<int> GetPlayerCountOnEndpoint(IPAddress EndPoint);
-
-        Task<bool> IncrementCurrentPlayerCount(string secret);
-        Task<bool> DecrementCurrentPlayerCount(string secret);
-        Task<bool> UpdateCurrentPlayerCount(string secret, int currentPlayerCount);
-
-        Task<bool> UpdateServerGameplayState(string secret, bool InGameplay);
-
+        Task<bool> UpdateCurrentPlayers(string secret, string[] Players);
+        Task<bool> AddPlayer(string secret, string UserHash);
+        Task<bool> RemovePlayer(string secret, string UserHash);
         Task<long> TotalPlayerJoins();
+        Task<long> TotalServersMade();
     }
 }

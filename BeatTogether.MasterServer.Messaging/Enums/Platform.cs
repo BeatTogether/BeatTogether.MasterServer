@@ -9,6 +9,9 @@
         PS4,
         PS4Dev,
         PS4Cert,
+        PS5,
+        PS5Dev,
+        PS5Cert,
         Oculus = 1
     }
 }

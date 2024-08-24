@@ -19,7 +19,7 @@ namespace BeatTogether.Extensions
                         .AddStackExchangeRedis()
                         .AddScoped<IServerRepository, ServerRepository>();
                 else
-                    services.AddScoped<IServerRepository, MemoryServerRepository>();
+                    services.AddSingleton<IServerRepository, MemoryServerRepository>();
             });
     }
 }

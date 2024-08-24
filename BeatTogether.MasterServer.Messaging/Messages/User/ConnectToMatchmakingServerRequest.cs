@@ -1,12 +1,8 @@
-﻿using BeatTogether.Core.Messaging.Abstractions;
-using BeatTogether.Extensions;
-using BeatTogether.MasterServer.Messaging.Enums;
-using BeatTogether.MasterServer.Messaging.Models;
-using Krypton.Buffers;
+﻿using BeatTogether.MasterServer.Messaging.Models;
 
 namespace BeatTogether.MasterServer.Messaging.Messages.User
 {
-    public sealed class ConnectToMatchmakingServerRequest : IEncryptedMessage, IReliableRequest
+    public sealed class ConnectToMatchmakingServerRequest
     {
         public uint SequenceId { get; set; }
         public uint RequestId { get; set; }
@@ -18,29 +14,6 @@ namespace BeatTogether.MasterServer.Messaging.Messages.User
         public string Secret { get; set; }
         public string Code { get; set; }
         public GameplayServerConfiguration GameplayServerConfiguration { get; set; } = new();
-
-        public void WriteTo(ref SpanBufferWriter bufferWriter)
-        {
-            bufferWriter.WriteString(UserId);
-            bufferWriter.WriteString(UserName);
-            bufferWriter.WriteBytes(Random);
-            bufferWriter.WriteVarBytes(PublicKey);
-            BeatmapLevelSelectionMask.WriteTo(ref bufferWriter);
-            bufferWriter.WriteString(Secret);
-            bufferWriter.WriteString(Code);
-            GameplayServerConfiguration.WriteTo(ref bufferWriter);
-        }
-
-        public void ReadFrom(ref SpanBufferReader bufferReader)
-        {
-            UserId = bufferReader.ReadString();
-            UserName = bufferReader.ReadString();
-            Random = bufferReader.ReadBytes(32).ToArray();
-            PublicKey = bufferReader.ReadVarBytes().ToArray();
-            BeatmapLevelSelectionMask.ReadFrom(ref bufferReader);
-            Secret = bufferReader.ReadString();
-            Code = bufferReader.ReadString();
-            GameplayServerConfiguration.ReadFrom(ref bufferReader);
-        }
+        public ExtraServerConfiguration? ExtraServerConfiguration { get; set; }
     }
 }

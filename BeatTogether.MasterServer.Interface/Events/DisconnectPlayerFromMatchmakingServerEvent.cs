@@ -2,7 +2,6 @@
 {
     public record DisconnectPlayerFromMatchmakingServerEvent(
         string Secret,
-        string UserId,
-        string UserEndPoint
+        string HashedUserId
         );
 }
