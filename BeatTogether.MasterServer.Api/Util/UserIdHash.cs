@@ -14,9 +14,9 @@ namespace BeatTogether.MasterServer.Api.Util
                 Platform.Test => "Test#",
                 Platform.Oculus => "Oculus#",
                 Platform.OculusQuest => "OculusQuest#",
-                Platform.Steam => "Steam#",
                 Platform.Pico => "Pico#",
-                Platform.PS4 or Platform.PS5 => "PSN#",
+                Platform.Steam => "Steam#",
+                Platform.PS4 => "PSN#",
                 _ => ""
             };
             return Generate(platformStr, platformUserId);
