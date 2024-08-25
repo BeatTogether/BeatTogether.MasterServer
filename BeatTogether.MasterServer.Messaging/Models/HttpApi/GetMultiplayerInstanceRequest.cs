@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using BeatTogether.MasterServer.HttpApi.Models.Enums;
-using BeatTogether.MasterServer.Messaging.Enums;
+using BeatTogether.Core.Enums;
 using Newtonsoft.Json;
 
 namespace BeatTogether.MasterServer.Messaging.Models.HttpApi

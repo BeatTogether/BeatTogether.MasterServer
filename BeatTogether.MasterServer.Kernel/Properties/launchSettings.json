@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "BeatTogether.MasterServer.Kernel": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "DOTNET_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:58530;http://localhost:58531"
+    }
+  }
+}
