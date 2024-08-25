@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Text;
-using BeatTogether.MasterServer.Messaging.Enums;
+using BeatTogether.Core.Enums;
 
 namespace BeatTogether.MasterServer.Messaging.Models
 {
