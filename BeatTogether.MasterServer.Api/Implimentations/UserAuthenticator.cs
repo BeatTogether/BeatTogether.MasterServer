@@ -13,6 +13,7 @@ namespace BeatTogether.MasterServer.Api.Implementations
     public class UserAuthenticator : IUserAuthenticator
     {
         public const string BeatSaverVerifyUserUrl = "https://api.beatsaver.com/users/verify";
+        public const string PicoVerifyUserUrl = "https://platform-us.picovr.com/s2s/v1/user/validate";
 
         private readonly ApiServerConfiguration _apiServerConfiguration;
         private readonly HttpClient _httpClient;
@@ -35,9 +36,8 @@ namespace BeatTogether.MasterServer.Api.Implementations
             var authLogReason = "unknown";
 
             if (_apiServerConfiguration.AuthenticateClients &&
-                GetPlatformRequiresAuth(session.PlayerPlatform))
+                GetPlatformRequiresAuth(session.PlayerPlatform) && session.PlayerPlatform != Platform.Pico)
             {
-
                 var requestContent = new
                 {
                     proof = session.PlayerPlatform == Platform.Steam ? BitConverter.ToString(session.SessionToken).Replace("-", "") : Encoding.UTF8.GetString(session.SessionToken),
@@ -69,7 +69,41 @@ namespace BeatTogether.MasterServer.Api.Implementations
                     authLogReason = "BeatSaver verify request failed, skipping authentication";
                 }
             }
-            else
+            else if (_apiServerConfiguration.AuthenticateClients &&
+                     GetPlatformRequiresAuth(session.PlayerPlatform) && session.PlayerPlatform == Platform.Pico)
+            {
+	            var requestContent = new
+	            { 
+		            access_token = Encoding.UTF8.GetString(session.SessionToken),
+                    user_id = session.PlatformUserId
+				};
+	            try
+	            {
+		            using var verifyResponse = await _httpClient.PostAsync(PicoVerifyUserUrl,
+			            new StringContent(JsonSerializer.Serialize(requestContent), null, "application/json"));
+
+                    verifyResponse.EnsureSuccessStatusCode();
+
+                    var stringContent = await verifyResponse.Content.ReadAsStringAsync();
+                    if (stringContent.Contains("\"is_validate\": true"))
+                    {
+	                    authPasses = true;
+	                    authLogReason = "Authentication success";
+					}
+                    else
+                    {
+	                    authPasses = false;
+	                    authLogReason = "Authentication rejected";
+                        _logger.Debug($"Pico API returned: {stringContent}");
+                    }
+				}
+	            catch (Exception)
+	            {
+		            authPasses = true;
+		            authLogReason = "Pico verify request failed, skipping authentication";
+	            }
+            }
+			else
             {
                 authPasses = true;
                 authLogReason = $"Authentication not required for this platform";
@@ -96,7 +130,7 @@ namespace BeatTogether.MasterServer.Api.Implementations
                 Platform.Steam => true,
                 Platform.OculusQuest => true,
                 Platform.Oculus => true,
-                Platform.Pico => false, // TODO: Pico auth, if possible
+                Platform.Pico => true,
                 _ => false,
             };
         }
