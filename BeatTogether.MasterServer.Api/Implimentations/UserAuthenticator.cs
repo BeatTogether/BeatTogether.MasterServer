@@ -88,7 +88,7 @@ namespace BeatTogether.MasterServer.Api.Implementations
 			            verifyResponse.EnsureSuccessStatusCode();
 
 			            var stringContent = await verifyResponse.Content.ReadAsStringAsync();
-			            if (stringContent.Contains("\"is_validate\": true"))
+			            if (stringContent.Contains("\"is_validate\":true"))
 			            {
 				            authPasses = true;
 				            authLogReason = "Authentication success";
@@ -103,7 +103,7 @@ namespace BeatTogether.MasterServer.Api.Implementations
 							verifyResponseCN.EnsureSuccessStatusCode();
 
 							stringContent = await verifyResponseCN.Content.ReadAsStringAsync();
-							if (stringContent.Contains("\"is_validate\": true"))
+							if (stringContent.Contains("\"is_validate\":true"))
 							{
 								authPasses = true;
 								authLogReason = "Authentication success";
