@@ -9,6 +9,7 @@
         ServerAtCapacity,
         AuthenticationFailed,
         RequestTimeout,
-        MatchmakingTimeout
+        MatchmakingTimeout,
+        LobbyHostVersionMismatch = 50
     }
 }

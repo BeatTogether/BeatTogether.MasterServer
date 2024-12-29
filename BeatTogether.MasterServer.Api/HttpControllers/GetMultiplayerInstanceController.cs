@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using BeatTogether.MasterServer.Messaging.Enums;
 using BeatTogether.MasterServer.Messaging.Models;
@@ -10,8 +11,10 @@ using BeatTogether.MasterServer.Api.Implementations;
 using BeatTogether.MasterServer.Api.Abstractions;
 using BeatTogether.MasterServer.Api.Util;
 using System.Text;
+using BeatTogether.Core.Models;
 using BeatTogether.MasterServer.Domain.Models;
 using BeatTogether.MasterServer.Api.Abstractions.Providers;
+using BeatTogether.MasterServer.Api.Configuration;
 
 namespace BeatTogether.MasterServer.Api.HttpControllers
 {
@@ -30,12 +33,15 @@ namespace BeatTogether.MasterServer.Api.HttpControllers
 
         private readonly ILayer2 _layer2;
 
-        public GetMultiplayerInstanceController(
+        private readonly ApiServerConfiguration _apiServerConfiguration;
+
+		public GetMultiplayerInstanceController(
             IMasterServerSessionService sessionService,
             ILayer2 layer2,
             IServerCodeProvider serverCodeProvider,
             ISecretProvider secretProvider,
-            IUserAuthenticator userAuthenticator)
+            IUserAuthenticator userAuthenticator,
+            ApiServerConfiguration configuration)
         {
             _layer2 = layer2;
             _sessionService = sessionService;
@@ -43,8 +49,9 @@ namespace BeatTogether.MasterServer.Api.HttpControllers
             _secretProvider = secretProvider;
             _userAuthenticator = userAuthenticator;
 
-            
-            _logger = Log.ForContext<GetMultiplayerInstanceController>();
+            _apiServerConfiguration = configuration;
+
+			_logger = Log.ForContext<GetMultiplayerInstanceController>();
         }
 
         /// <summary>
@@ -56,8 +63,6 @@ namespace BeatTogether.MasterServer.Api.HttpControllers
         {
             var response = new GetMultiplayerInstanceResponse();
             response.AddRequestContext(request);
-
-            // TODO Validate game client version supported range?
 
             if (HttpContext.Connection.RemoteIpAddress is null)
             {
@@ -143,14 +148,25 @@ namespace BeatTogether.MasterServer.Api.HttpControllers
             {
                 string secret = request.PrivateGameSecret;
                 string managerId = FixedServerUserId;
+                VersionRange supportedRange = VersionRange.FindVersionRange(_apiServerConfiguration.VersionRanges.ToList(), session.PlayerClientVersion!);
+                if (supportedRange == null)
+                {
+					// Version not supported at all according to config
+					_logger.Error($"Could not find matching version range for client version: {session.PlayerClientVersion}");
+					response.ErrorCode = MultiplayerPlacementErrorCode.LobbyHostVersionMismatch;
+                    return new JsonResult(response);
+                }
+
+                _logger.Debug(
+	                $"Found version range MinVersion: '{supportedRange.MinVersion}' MaxVersion: '{supportedRange.MaxVersion}' for client version '{session.PlayerClientVersion}'");
                 if (!isQuickplay)
-                    managerId = session.HashedUserId;//sets the manager to the player who is requesting
+                    managerId = session.HashedUserId; //sets the manager to the player who is requesting
                 else
                     secret = _secretProvider.GetSecret();
 
                 string ServerName = string.Empty;
                 if (isQuickplay)
-                    ServerName = "BeatTogether Quickplay: " + ((Core.Enums.BeatmapDifficultyMask)request.BeatmapLevelSelectionMask.BeatmapDifficultyMask).ToString();
+                    ServerName = "BeatTogether Quickplay: " + ((Core.Enums.BeatmapDifficultyMask)request.BeatmapLevelSelectionMask.BeatmapDifficultyMask);
                 else if (request.ExtraServerConfiguration != null && request.ExtraServerConfiguration.ServerName != null)
                 {
                     ServerName = request.ExtraServerConfiguration.ServerName;
@@ -184,7 +200,8 @@ namespace BeatTogether.MasterServer.Api.HttpControllers
                     ServerStartJoinTimeout = 10000L,
                     //ServerStartJoinTimeout = request.ExtraServerConfiguration.Timeout ?? 10, //Dont allow everyone to do this as -1 means infinite server online time, server wont turn off when a player leaves
                     PermanentManager = request.ExtraServerConfiguration != null ? request.ExtraServerConfiguration.PermenantManger ?? true : true,
-                };
+                    SupportedVersionRange = supportedRange
+				};
                 //Missing values from the server instance such as endpoint, will be added from within the CreateInstance function below.
                 if (!await _layer2.CreateInstance(server))
                 {
@@ -200,6 +217,15 @@ namespace BeatTogether.MasterServer.Api.HttpControllers
             {
                 response.ErrorCode = MultiplayerPlacementErrorCode.ServerAtCapacity;
                 response.PollIntervalMs = -1;
+                return new JsonResult(response);
+            }
+
+            // Checks if the joining players version is witin the supported range of the lobby
+            if (!VersionRange.VersionRangeSatisfies(server.SupportedVersionRange,
+	                session.PlayerClientVersion.ToString()))
+            {
+                _logger.Warning($"Player '{session.HashedUserId}' on version '{session.PlayerClientVersion}' cannot join lobby with range {server.SupportedVersionRange.MinVersion} - {server.SupportedVersionRange.MaxVersion}");
+                response.ErrorCode = MultiplayerPlacementErrorCode.LobbyHostVersionMismatch;
                 return new JsonResult(response);
             }
 

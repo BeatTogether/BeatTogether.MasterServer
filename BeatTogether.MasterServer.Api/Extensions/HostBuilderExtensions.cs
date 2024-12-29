@@ -7,8 +7,10 @@ using BeatTogether.MasterServer.Api.Configuration;
 using BeatTogether.MasterServer.Api.Implementations;
 using BeatTogether.MasterServer.Api.Implimentations;
 using BeatTogether.MasterServer.Kernel.Implementations.Providers;
+using BinaryRecords.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Rewrite;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -38,9 +40,14 @@ namespace BeatTogether.Extensions
                         )
                         .Configure(applicationBuilder =>
                             applicationBuilder
-                                .UseRouting()
+	                            .Use((context, next) =>
+	                            {
+		                            context.Response.Headers.Add("X-Robots-Tag", "noindex, nofollow"); // Tell everyone that we don't want to be indexed
+		                            return next(context);
+	                            })
+								.UseRouting()
                                 .UseEndpoints(endPointRouteBuilder => endPointRouteBuilder.MapControllers())
-                        )
-                );
+						)
+				);
     }
 }
