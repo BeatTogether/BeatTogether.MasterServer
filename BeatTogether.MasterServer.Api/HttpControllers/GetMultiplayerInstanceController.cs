@@ -109,8 +109,25 @@ namespace BeatTogether.MasterServer.Api.HttpControllers
             //if(session == null) { _logger.Information("Player Session is null"); }
             response.AddSessionContext(session.PlayerSessionId);
 
-            //Player authed and has a session, now get them a server.
-            bool isQuickplay = string.IsNullOrEmpty(request.PrivateGameCode) && string.IsNullOrEmpty(request.PrivateGameSecret); //Quickplay is true if there is no code and no secret
+            // Get version range of player
+            VersionRange supportedRange = VersionRange.FindVersionRange(_apiServerConfiguration.VersionRanges.ToList(), session.PlayerClientVersion!);
+            if (supportedRange == null)
+            {
+	            // Version not supported at all according to config
+	            _logger.Error($"Could not find matching version range for client version: {session.PlayerClientVersion}");
+	            response.ErrorCode = MultiplayerPlacementErrorCode.GameVersionUnknown;
+	            return new JsonResult(response);
+            }
+
+            //if (supportedRange != null) // TODO: Should we just set to exact version match if not known?
+            //  supportedRange = new VersionRange
+            //          { MinVersion = session.PlayerClientVersion.ToString(), MaxVersion = session.PlayerClientVersion.ToString() };
+
+			_logger.Debug(
+	            $"Found version range MinVersion: '{supportedRange.MinVersion}' MaxVersion: '{supportedRange.MaxVersion}' for client version '{session.PlayerClientVersion}'");
+
+			//Player authed and has a session, now get them a server.
+			bool isQuickplay = string.IsNullOrEmpty(request.PrivateGameCode) && string.IsNullOrEmpty(request.PrivateGameSecret); //Quickplay is true if there is no code and no secret
             IServerInstance server = null;
             if (!isQuickplay)
             {
@@ -128,7 +145,8 @@ namespace BeatTogether.MasterServer.Api.HttpControllers
                     (Core.Enums.GameplayServerControlSettings)request.GameplayServerConfiguration.GameplayServerControlSettings,
                     (Core.Enums.BeatmapDifficultyMask)request.BeatmapLevelSelectionMask.BeatmapDifficultyMask,
                     (Core.Enums.GameplayModifiersMask)request.BeatmapLevelSelectionMask.GameplayModifiersMask,
-                    request.BeatmapLevelSelectionMask.SongPackMasks);
+                    request.BeatmapLevelSelectionMask.SongPackMasks,
+                    supportedRange);
             }
 
             //If the server is still null, then make new server
@@ -148,17 +166,6 @@ namespace BeatTogether.MasterServer.Api.HttpControllers
             {
                 string secret = request.PrivateGameSecret;
                 string managerId = FixedServerUserId;
-                VersionRange supportedRange = VersionRange.FindVersionRange(_apiServerConfiguration.VersionRanges.ToList(), session.PlayerClientVersion!);
-                if (supportedRange == null)
-                {
-					// Version not supported at all according to config
-					_logger.Error($"Could not find matching version range for client version: {session.PlayerClientVersion}");
-					response.ErrorCode = MultiplayerPlacementErrorCode.LobbyHostVersionMismatch;
-                    return new JsonResult(response);
-                }
-
-                _logger.Debug(
-	                $"Found version range MinVersion: '{supportedRange.MinVersion}' MaxVersion: '{supportedRange.MaxVersion}' for client version '{session.PlayerClientVersion}'");
                 if (!isQuickplay)
                     managerId = session.HashedUserId; //sets the manager to the player who is requesting
                 else
@@ -221,15 +228,28 @@ namespace BeatTogether.MasterServer.Api.HttpControllers
             }
 
             // Checks if the joining players version is witin the supported range of the lobby
-            if (!VersionRange.VersionRangeSatisfies(server.SupportedVersionRange,
-	                session.PlayerClientVersion.ToString()))
+            switch (VersionRange.CheckVersionRange(server.SupportedVersionRange, session.PlayerClientVersion))
             {
-                _logger.Warning($"Player '{session.HashedUserId}' on version '{session.PlayerClientVersion}' cannot join lobby with range {server.SupportedVersionRange.MinVersion} - {server.SupportedVersionRange.MaxVersion}");
-                response.ErrorCode = MultiplayerPlacementErrorCode.LobbyHostVersionMismatch;
-                return new JsonResult(response);
-            }
+                case VersionRange.VersionStatus.Ok:
+	                break;
+                case VersionRange.VersionStatus.TooHigh:
+                    _logger.Warning($"Player '{session.HashedUserId}' on version '{session.PlayerClientVersion}' cannot join lobby with range {server.SupportedVersionRange.MinVersion} - {server.SupportedVersionRange.MaxVersion}  reason: Game Version Too New");
+                    response.ErrorCode = MultiplayerPlacementErrorCode.GameVersionTooNew;
+                    return new JsonResult(response);
+                case VersionRange.VersionStatus.TooLow:
+	                _logger.Warning($"Player '{session.HashedUserId}' on version '{session.PlayerClientVersion}' cannot join lobby with range {server.SupportedVersionRange.MinVersion} - {server.SupportedVersionRange.MaxVersion} reason: Game Version Too Old");
+	                response.ErrorCode = MultiplayerPlacementErrorCode.GameVersionTooOld;
+	                return new JsonResult(response);
+			}
+			//if (!VersionRange.VersionRangeSatisfies(server.SupportedVersionRange,
+			//     session.PlayerClientVersion.ToString()))
+			//{
+			//    _logger.Warning($"Player '{session.HashedUserId}' on version '{session.PlayerClientVersion}' cannot join lobby with range {server.SupportedVersionRange.MinVersion} - {server.SupportedVersionRange.MaxVersion}");
+			//    response.ErrorCode = MultiplayerPlacementErrorCode.LobbyHostVersionMismatch;
+			//    return new JsonResult(response);
+			//}
 
-            _logger.Information("Player session data from player: " + session.HashedUserId + " Is being sent to node: " + server.InstanceEndPoint + ", Server secret: " + server.Secret + ", Player count before join: " + server.PlayerHashes.Count);
+			_logger.Information("Player session data from player: " + session.HashedUserId + " Is being sent to node: " + server.InstanceEndPoint + ", Server secret: " + server.Secret + ", Player count before join: " + server.PlayerHashes.Count);
 
             if (!await _layer2.SetPlayerSessionData(server.Secret, session))
             {

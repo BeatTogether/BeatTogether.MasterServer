@@ -10,6 +10,9 @@
         AuthenticationFailed,
         RequestTimeout,
         MatchmakingTimeout,
-        LobbyHostVersionMismatch = 50
+        // Below are our custom error codes
+        GameVersionUnknown = 50,
+        GameVersionTooOld,
+		GameVersionTooNew
     }
 }

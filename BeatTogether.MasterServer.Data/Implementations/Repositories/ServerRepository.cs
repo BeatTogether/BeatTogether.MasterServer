@@ -97,7 +97,8 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
             GameplayServerControlSettings serverControlSettings,
             BeatmapDifficultyMask difficultyMask,
             GameplayModifiersMask modifiersMask,
-            string SongPackMasks)
+            string SongPackMasks,
+            VersionRange versionRange)
         {
             var database = _connectionMultiplexer.GetDatabase();
             var redisValues = await database.SortedSetRangeByScoreAsync(RedisKeys.PublicServersByPlayerCount, take: 1);
@@ -132,6 +133,7 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
                     currentPlayerCount = (RedisValue)server.CurrentPlayerCount,
                     //random = (RedisValue)server.Random,
                     //publicKey = (RedisValue)server.PublicKey
+                    //SupportedVersionRange = (RedisValue)()
                 },
                 flags: CommandFlags.DemandMaster
             );

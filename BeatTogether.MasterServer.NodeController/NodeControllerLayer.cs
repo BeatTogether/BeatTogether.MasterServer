@@ -10,6 +10,7 @@ using BeatTogether.MasterServer.NodeController.Abstractions;
 using BinaryRecords;
 using Serilog;
 using System.Net;
+using BeatTogether.Core.Models;
 
 namespace BeatTogether.MasterServer.NodeController
 {
@@ -61,11 +62,12 @@ namespace BeatTogether.MasterServer.NodeController
             return Task.CompletedTask;
         }
 
-        public async Task<IServerInstance?> GetAvailablePublicServer(InvitePolicy invitePolicy, GameplayServerMode serverMode, SongSelectionMode songMode, GameplayServerControlSettings serverControlSettings, BeatmapDifficultyMask difficultyMask, GameplayModifiersMask modifiersMask, string songPackMasks)
+        public async Task<IServerInstance?> GetAvailablePublicServer(InvitePolicy invitePolicy, GameplayServerMode serverMode, SongSelectionMode songMode, GameplayServerControlSettings serverControlSettings, BeatmapDifficultyMask difficultyMask, GameplayModifiersMask modifiersMask, string songPackMasks, VersionRange versionRange)
         {
-            return await _serverRepository.GetAvailablePublicServer(invitePolicy, serverMode, songMode, serverControlSettings, difficultyMask, modifiersMask, songPackMasks);
+	        return await _serverRepository.GetAvailablePublicServer(invitePolicy, serverMode, songMode, serverControlSettings, difficultyMask, modifiersMask, songPackMasks, versionRange);
         }
-        public async Task<IServerInstance?> GetServer(string secret)
+
+		public async Task<IServerInstance?> GetServer(string secret)
         {
             return await _serverRepository.GetServer(secret);
         }
