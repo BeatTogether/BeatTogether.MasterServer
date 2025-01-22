@@ -16,7 +16,6 @@ namespace BeatTogether.MasterServer.Api.Util
                 Platform.OculusQuest => "OculusQuest#",
                 Platform.Pico => "Pico#",
                 Platform.Steam => "Steam#",
-                Platform.Pico => "Pico#",
                 Platform.PS4 or Platform.PS5 => "PSN#",
                 _ => ""
             };
