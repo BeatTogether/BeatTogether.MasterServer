@@ -75,7 +75,7 @@ namespace BeatTogether.MasterServer.Api.HttpControllers
                 // Failed to get player session, creating new player session
                 session = _sessionService.GetOrAddSession(SessionIdPrefix + Guid.NewGuid().ToString("N"));
                 session.PlayerClientVersion = TryParseGameVersion(request.Version);
-                session.PlayerPlatform = (Core.Enums.Platform)request.Platform;
+                session.PlayerPlatform = request.Platform;
                 session.PlatformUserId = request.AuthUserId;
                 session.HashedUserId = UserIdHash.Generate(session.PlayerPlatform, session.PlatformUserId);
 
