@@ -151,7 +151,7 @@ namespace BeatTogether.MasterServer.Api.Implementations
                 Platform.Steam => true,
                 Platform.OculusQuest => true,
                 Platform.Oculus => true,
-                Platform.Pico => false, // TODO: Pico auth, if possible
+                Platform.Pico => true,
                 _ => false,
             };
         }
