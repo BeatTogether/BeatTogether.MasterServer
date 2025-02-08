@@ -147,8 +147,8 @@ namespace BeatTogether.MasterServer.Api.Implementations
 
         private bool GetPlatformRequiresAuth(Platform platform)
         {
-			_logger.Debug("Authed Platforms: " + string.Join(", ", _apiServerConfiguration.AuthedClients));
-			return _apiServerConfiguration.AuthedClients.Contains(platform);
-		}
+            _logger.Debug("Authed Platforms: " + string.Join(", ", _apiServerConfiguration.AuthedClients));
+            return _apiServerConfiguration.AuthedClients.Contains(platform);
+        }
     }
 }

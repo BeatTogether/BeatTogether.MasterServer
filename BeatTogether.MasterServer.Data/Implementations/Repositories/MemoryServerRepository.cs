@@ -118,21 +118,21 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
 		        server.BeatmapDifficultyMask == difficultyMask &&
 		        server.GameplayModifiersMask == modifiersMask &&
 		        server.SongPackMasks == SongPackMasks &&
-                server.SupportedVersionRange == versionRange
+                server.SupportedVersionRange == versionRange &&
+                server.CurrentPlayerCount <= server.GameplayServerConfiguration.MaxPlayerCount
 	        );
-	        if (!publicServers.Any())
-		        return Task.FromResult<Server>(null);
-	        var server = publicServers.First();
-	        foreach (var publicServer in publicServers)
-	        {
-		        if ((publicServer.CurrentPlayerCount < publicServer.GameplayServerConfiguration.MaxPlayerCount && publicServer.CurrentPlayerCount > server.CurrentPlayerCount))
-		        {
-			        server = publicServer;
-		        }
-	        }
-	        if (server.CurrentPlayerCount >= server.GameplayServerConfiguration.MaxPlayerCount)
-		        return Task.FromResult<Server>(null);
-	        return Task.FromResult(server);
+            if (!publicServers.Any())
+                return Task.FromResult<Server>(null);
+            var server = publicServers.First();
+            //Find server with most players.
+            foreach (var publicServer in publicServers)
+            {
+                if(publicServer.CurrentPlayerCount > server.CurrentPlayerCount)
+                {
+                    server = publicServer;
+                }
+            }
+            return Task.FromResult(server);
         }
 
 
