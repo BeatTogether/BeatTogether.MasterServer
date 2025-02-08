@@ -351,4 +351,4 @@ MigrationBackup/
 
 out/
 run/
-/BeatTogether.MasterServer.Kernel/Properties/launchSettings.json
+/BeatTogether.MasterServer/appsettings.LocalDevelopment.json

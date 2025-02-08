@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -146,14 +147,8 @@ namespace BeatTogether.MasterServer.Api.Implementations
 
         private bool GetPlatformRequiresAuth(Platform platform)
         {
-            return platform switch
-            {
-                Platform.Steam => true,
-                Platform.OculusQuest => true,
-                Platform.Oculus => true,
-                Platform.Pico => false, // TODO: Pico auth, if possible
-                _ => false,
-            };
+            _logger.Debug("Authed Platforms: " + string.Join(", ", _apiServerConfiguration.AuthedClients));
+            return _apiServerConfiguration.AuthedClients.Contains(platform);
         }
     }
 }

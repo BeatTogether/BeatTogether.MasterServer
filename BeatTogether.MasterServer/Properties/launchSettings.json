@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "BeatTogether.MasterServer": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "LocalDevelopment"
+      }
+    }
+  }
+}

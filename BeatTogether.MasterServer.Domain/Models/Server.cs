@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using BeatTogether.Core.Abstractions;
 using BeatTogether.Core.Enums;
@@ -23,6 +24,8 @@ namespace BeatTogether.MasterServer.Domain.Models
         public HashSet<string> PlayerHashes { get; set; } = new();
 
         public string ManagerId { get; set; }
+
+        public VersionRange SupportedVersionRange { get; set; }
         public bool PermanentManager { get; set; }
         public long ServerStartJoinTimeout { get; set; }
         public bool NeverCloseServer { get; set; }

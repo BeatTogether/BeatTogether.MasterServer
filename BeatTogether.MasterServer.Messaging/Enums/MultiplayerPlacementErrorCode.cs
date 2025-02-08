@@ -9,6 +9,10 @@
         ServerAtCapacity,
         AuthenticationFailed,
         RequestTimeout,
-        MatchmakingTimeout
+        MatchmakingTimeout,
+        // Below are our custom error codes
+        GameVersionUnknown = 50,
+        GameVersionTooOld,
+		GameVersionTooNew
     }
 }

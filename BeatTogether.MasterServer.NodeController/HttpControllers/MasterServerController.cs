@@ -26,6 +26,17 @@ namespace BeatTogether.MasterServer.NodeController.HttpControllers
         }
 
         /// <summary>
+        /// Returns a test message so players can test if the connection works
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("test")]
+        public string GetTestMessage()
+        {
+	        return "Yay, seems like you are able to connect to the master server!";
+        }
+
+        /// <summary>
         /// Returns the amount of active instances
         /// </summary>
         [HttpGet]

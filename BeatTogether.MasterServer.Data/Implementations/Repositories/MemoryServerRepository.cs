@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -6,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using BeatTogether.MasterServer.Data.Abstractions.Repositories;
 using BeatTogether.Core.Enums;
+using BeatTogether.Core.Models;
 using BeatTogether.MasterServer.Domain.Models;
 
 namespace BeatTogether.MasterServer.Data.Implementations.Repositories
@@ -96,28 +98,29 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
         }
 
         public Task<Server> GetAvailablePublicServer(
-            InvitePolicy invitePolicy, 
-            GameplayServerMode serverMode, 
-            SongSelectionMode songMode, 
-            GameplayServerControlSettings serverControlSettings, 
-            BeatmapDifficultyMask difficultyMask, 
-            GameplayModifiersMask modifiersMask, 
-            string SongPackMasks)
+	        InvitePolicy invitePolicy,
+	        GameplayServerMode serverMode,
+	        SongSelectionMode songMode,
+	        GameplayServerControlSettings serverControlSettings,
+	        BeatmapDifficultyMask difficultyMask,
+	        GameplayModifiersMask modifiersMask,
+	        string SongPackMasks,
+	        VersionRange versionRange)
         {
-            if (!_servers.Any())
-                return Task.FromResult<Server>(null);
-            //Search for public server that fits the filter
-            var publicServers = _servers.Values.Where(server => 
-                server.GameplayServerConfiguration.DiscoveryPolicy == DiscoveryPolicy.Public &&
-                server.GameplayServerConfiguration.InvitePolicy == invitePolicy &&
-                server.GameplayServerConfiguration.GameplayServerMode == serverMode &&
-                server.GameplayServerConfiguration.SongSelectionMode == songMode &&
-                server.GameplayServerConfiguration.GameplayServerControlSettings == serverControlSettings &&
-                server.BeatmapDifficultyMask == difficultyMask &&
-                server.GameplayModifiersMask == modifiersMask &&
-                server.SongPackMasks == SongPackMasks &&
+	        if (!_servers.Any())
+		        return Task.FromResult<Server>(null);
+	        var publicServers = _servers.Values.Where(server =>
+		        server.GameplayServerConfiguration.DiscoveryPolicy == DiscoveryPolicy.Public &&
+		        server.GameplayServerConfiguration.InvitePolicy == invitePolicy &&
+		        server.GameplayServerConfiguration.GameplayServerMode == serverMode &&
+		        server.GameplayServerConfiguration.SongSelectionMode == songMode &&
+		        server.GameplayServerConfiguration.GameplayServerControlSettings == serverControlSettings &&
+		        server.BeatmapDifficultyMask == difficultyMask &&
+		        server.GameplayModifiersMask == modifiersMask &&
+		        server.SongPackMasks == SongPackMasks &&
+                server.SupportedVersionRange == versionRange &&
                 server.CurrentPlayerCount <= server.GameplayServerConfiguration.MaxPlayerCount
-            );
+	        );
             if (!publicServers.Any())
                 return Task.FromResult<Server>(null);
             var server = publicServers.First();
@@ -132,7 +135,8 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
             return Task.FromResult(server);
         }
 
-        public Task<bool> AddServer(Server server)
+
+		public Task<bool> AddServer(Server server)
         {
             if (!_servers.TryAdd(server.Secret, server))
                 return Task.FromResult(false);
