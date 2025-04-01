@@ -119,7 +119,7 @@ namespace BeatTogether.MasterServer.Data.Implementations.Repositories
 		        server.GameplayModifiersMask == modifiersMask &&
 		        server.SongPackMasks == SongPackMasks &&
                 server.SupportedVersionRange == versionRange &&
-                server.CurrentPlayerCount <= server.GameplayServerConfiguration.MaxPlayerCount
+                server.CurrentPlayerCount < server.GameplayServerConfiguration.MaxPlayerCount
 	        );
             if (!publicServers.Any())
                 return Task.FromResult<Server>(null);
