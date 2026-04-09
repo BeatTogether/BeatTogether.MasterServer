@@ -7,7 +7,7 @@ using BeatTogether.DedicatedServer.Interface.Requests;
 using BeatTogether.MasterServer.Data.Abstractions.Repositories;
 using BeatTogether.MasterServer.Interface.Events;
 using BeatTogether.MasterServer.NodeController.Abstractions;
-using BinaryRecords;
+using BeatTogether.DedicatedServer.Interface.Responses;
 using Serilog;
 using System.Net;
 using BeatTogether.Core.Models;
@@ -45,7 +45,20 @@ namespace BeatTogether.MasterServer.NodeController
 
         public async Task<bool> CreateInstance(IServerInstance serverInstance)
         {
-            var response = await _matchmakingService.CreateMatchmakingServer(new CreateMatchmakingServerRequest(new Server(serverInstance)));
+            CreateMatchmakingServerResponse? response = null;
+            try
+            {
+                response = await _matchmakingService.CreateMatchmakingServer(new CreateMatchmakingServerRequest(new Server(serverInstance)));
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex.ToString());
+            }
+            if (response == null)
+            {
+                _logger.Warning("Failed to recv response from Dedi server");
+                return false;
+            }
             if (response.Success)
             {
                 serverInstance.InstanceEndPoint = IPEndPoint.Parse(response.RemoteEndPoint);
